@@ -5,10 +5,22 @@ import os
 from six.moves import urllib
 from sys import exit
 import re
-import globals
-globals.initialize()
+#import globals
+#globals.initialize()
 from PDBHelper import PDBEntitiesClass
 
+class globals:
+
+  def initialize(): 
+    global PTM_CONTACT_DICT 
+    #to look up a ligand code replace the <> with intention in this URL
+    # https://www.rcsb.org/ligand/<ALY>
+    PTM_CONTACT_DICT = {'PTR':'Y', 'MSE':'S', 'SEP':'S', 'CAS':'C', 'ALY':'K'}
+    #FYQ, AYI, YEN are synthetic pTYR sequences that act as inhibitors, have to decide what to do about that.
+    global MOLECULES_TO_REMOVE
+    MOLECULES_TO_REMOVE = ['HOH', 'SO4', 'NBS', 'CSO', 'MN', 'MG', 'ZN', 'MYR', 'P16', 'GOL', 'QUE', 'CA', 'ANP', 'EDO', 'DVT', 'CL', 'PO4', 'FMT', 'ACE', 'CAT', '1N1', 'VSH', 'PB']
+    synthetic_inhibitors = ['FYQ', 'AYI', 'YEN', 'AYQ']
+    MOLECULES_TO_REMOVE = MOLECULES_TO_REMOVE+synthetic_inhibitors
 
 
 class chainMap:
@@ -29,6 +41,7 @@ class chainMap:
     self.resNums = []
     self.adjacencyDict = {}
     self.unmodeled_list = []
+    globals.initialize()
 
 
   def construct(self, PATH, ang_cutoff=4, noc=2):
@@ -81,7 +94,7 @@ class chainMap:
     except:
       exit(PDB_ID+" does not exist at " +file)
 
-    for molecule in globals.MOLECULES_TO_REMOVE:
+    for molecule in MOLECULES_TO_REMOVE:
       df = df.loc[lambda df: df['Res1'] != molecule]
       df = df.loc[lambda df: df['Res2'] != molecule]
     df = df[df['Res1'].notnull()]
@@ -216,19 +229,16 @@ class chainMap:
     
     minResidue =self.return_min_residue()
     maxResidue = self.return_max_residue()
-    print("minResidue is %d, maxresidue is %d"%(minResidue, maxResidue))
+    #print("minResidue is %d, maxresidue is %d"%(minResidue, maxResidue))
     size = maxResidue - minResidue+1
     arr = np.zeros((size, size))
-    print("array size is"+str(size))
+    #print("array size is: "+str(size))
     #for i in range(minResidue+1, maxResidue):
     for i in self.adjacencyDict:
       adjacencyDict_inner = self.adjacencyDict[i]
       for j in adjacencyDict_inner:
         arr[i-minResidue][j-minResidue] = adjacencyDict_inner[j]
         arr[j-minResidue][i-minResidue] = adjacencyDict_inner[j]
-        #else: #else, the data is missing and we'll set that entire row and column set to -1
-          #arr[i-offset][:] = -1
-          #arr[:][i-offset] = -1
   
       
     return arr
