@@ -172,9 +172,9 @@ class chainMap:
       if res in aa_dict:
         aa = aa_dict[res]
         if len(aa)>1:
-            if aa in globals.PTM_CONTACT_DICT:
+            if aa in PTM_CONTACT_DICT:
                 transDict[res] = aa
-                aa = globals.PTM_CONTACT_DICT[aa]
+                aa = PTM_CONTACT_DICT[aa]
             else:
                 print("ERROR: encountered new amino acid code %s"%(aa))
                 aa = '-'
