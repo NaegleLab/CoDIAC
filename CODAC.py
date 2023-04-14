@@ -174,7 +174,29 @@ class Uniprot:
         outputfile = 'Domain_referencer_'+IPR_ID+'_'+Specie+'.csv'
         df.to_csv(outputfile)
         print('Domain Reference File successfully created!')
+    
+    def getPDBID(self):
+        '''Returns a list of PDB IDs that are associated to a specific Uniprot ID'''
+        
+        PDB_list = []
+        URL = f'https://www.ebi.ac.uK/proteins/api/proteins/{self.UPROT_ID}'
+        try:
+            response = requests.get(URL)
+            data = response.json()
+            for i in range(len(data['dbReferences'])):
+
+                reftype = data['dbReferences'][i]['type']
+                PDB_ID = data['dbReferences'][i]['id']
+
+                if reftype == 'PDB':
+                    PDB_list.append(PDB_ID)
+        
+        except requests.exceptions.RequestException as err:
+            print('ERROR:',err)
             
+        print('Found {count} PDB IDs for {uID}'.format(count = len(PDB_list), uID = self.UPROT_ID))
+        return(PDB_list)
+    
     def make_fastafile(DOMAIN, input_RefFile, IPR_ID, specie='HUMAN'):
 
         '''Makes fasta file for domain of interest
