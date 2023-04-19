@@ -125,3 +125,32 @@ def makeRefFile(UniProt_IDs, outputFile):
     df.to_csv(outputFile)
     print('Domain Reference File successfully created!')
     
+def PDB_IDs(UniProt_ID):
+    '''Returns a list of PDB IDs that are associated to a specific Uniprot ID
+    
+    Parameters
+    ----------
+        UniProt_ID : Uniprot Accession ID used to pull a list of PDB IDs
+        
+    Returns
+    -------
+        PDB_IDs : List of PDB IDs'''
+    
+    PDB_IDs = []
+    URL = f'https://www.ebi.ac.uK/proteins/api/proteins/{UniProt_ID}'
+    try:
+        response = requests.get(URL)
+        data = response.json()
+        for i in range(len(data['dbReferences'])):
+
+            reftype = data['dbReferences'][i]['type']
+            PDB_ID = data['dbReferences'][i]['id']
+
+            if reftype == 'PDB':
+                PDB_IDs.append(PDB_ID)
+    
+    except requests.exceptions.RequestException as err:
+        print('ERROR:',err)
+        
+    print('Found {count} PDB IDs for {uID}'.format(count = len(PDB_IDs), uID = UniProt_ID))
+    return(PDB_IDs)
