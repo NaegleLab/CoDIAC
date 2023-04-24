@@ -90,8 +90,10 @@ class PDB_interface:
         """
         overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
-        if outputFile[-3:] != '.csv':
-        df.to_csv(outputFile + '.csv')
+        if outputFile[-4:] == '.csv':
+            df.to_csv(outputFile)
+        else:
+            df.to_csv(outputFile + '.csv')
         
     def get_output_xlsx(self):
         """
@@ -647,4 +649,6 @@ def generateStructureRefFile(PDB_IDs, outputFile):
         .csv Structure reference file with relevant metadata
     '''
 
-
+    interface = PDB_interface(PDB_IDs)
+    interface.get_output_csv(outputFile)
+    print('Structure Reference File successfully created!')
