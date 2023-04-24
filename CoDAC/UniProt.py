@@ -136,13 +136,13 @@ def makeRefFile(Uniprot_IDs, outputFile):
         Specie_list.append(SPECIE)
         print(ID)
         
-    df = pd.DataFrame(columns=['UPROT Accession','Gene','Domain Boundaries','Ref Sequence','Domain Architecture', 'Specie'])
-    df['UPROT Accession'] = UniProt_IDs
-    df['Gene'] = Gene_list
-    df['Domain Boundaries'] = Domain_list
-    df['Ref Sequence'] = Refseq_list
-    df['Domain Architecture'] = Domain_Arch
-    df['Specie'] = Specie_list
+    df = pd.DataFrame(columns=['Accession','Gene Name','Domains','Sequence','Architecture', 'Species'])
+    df['Accession'] = Uniprot_IDs
+    df['Gene Name'] = Gene_list
+    df['Domains'] = Domain_list
+    df['Sequence'] = Refseq_list
+    df['Architecture'] = Domain_Arch
+    df['Species'] = Specie_list
     df.index = np.arange(1, len(df) + 1)
     df.to_csv(outputFile, index=False)
     print('Domain Reference File successfully created!')
