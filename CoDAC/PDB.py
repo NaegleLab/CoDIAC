@@ -18,7 +18,7 @@ class PDB_interface:
     --------
     get_anno_dict
         Produces a dictionary full of the annotations for all of the PDB IDs from the inputted csv file.
-    get_output_csv
+    print_output_csv
         Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
     get_output_xlsx
@@ -73,7 +73,7 @@ class PDB_interface:
 
 
     
-    def get_output_csv(self, outputFile):
+    def print_output_csv(self, outputFile):
         """
         Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
@@ -90,6 +90,7 @@ class PDB_interface:
         """
         overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
+        df = df.transpose()
         if outputFile[-4:] == '.csv':
             df.to_csv(outputFile)
         else:
@@ -650,5 +651,5 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     '''
 
     interface = PDB_interface(PDB_IDs)
-    interface.get_output_csv(outputFile)
+    interface.print_output_csv(outputFile)
     print('Structure Reference File successfully created!')
