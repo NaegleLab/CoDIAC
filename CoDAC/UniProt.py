@@ -22,7 +22,7 @@ class Uniprot:
                             start = s['begin']
                             end = s['end']
                             name = s['description']
-                            header = self.UniProt_ID+':'+gene+':'+name+':'+start+':'+end
+                            header = name+':'+start+':'+end
                             #print(header)
                             get_dom.append(header)                    
         else:
