@@ -1,95 +1,8 @@
 import requests
 import pandas as pd
 import numpy as np
-import ast
+import csv
 
-class Uniprot:
-    '''Given a Uniprot ID, this class can be used to fetch reference structure attributes such as Domains, Domain Architecture, Gene name, Reference sequence from Uniprot for specie of interest and returns a Domain reference csv file'''
-    
-    def __init__(self, UniProt_ID):
-        self.UniProt_ID = UniProt_ID
-
-    def Domains(self):
-        res = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{self.UniProt_ID}').json() 
-        gene = res['id']
-        get_dom = []
-        if 'features' in res.keys():
-            for i in range(len(res['features'])):
-                s = res['features'][i]
-                for k, v in s.items():
-                    if k == 'type':
-                        if v == 'DOMAIN':
-                            start = s['begin']
-                            end = s['end']
-                            name = s['description']
-                            header = name+':'+start+':'+end
-                            #print(header)
-                            get_dom.append(header)                    
-        else:
-            get_dom.append('None')
-        return(get_dom)
-    
-    def DomainArchitecture(self):
-        res = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{self.UniProt_ID}').json() 
-        gene = res['id']
-        get_dom = []
-        domdict = {}
-        if 'features' in res.keys():
-            for i in range(len(res['features'])):
-                s = res['features'][i]
-                for k, v in s.items():
-                    if k == 'type':
-                        if v == 'DOMAIN':
-                            start = s['begin']
-                            end = s['end']
-                            name = s['description']
-                            header = self.UniProt_ID+':'+gene+':'+name+':'+start+':'+end
-                            get_dom.append(header)  
-                            domdict[start] = end, name
-                    
-        sorted_dict = dict(sorted(domdict.items(),reverse=True))
-        domain_arch = []
-        for key, value in sorted_dict.items():
-            sort_start = key
-            sort_end = value[0]
-            domain = value[1]
-            domain_arch.append(domain)
-            
-        if len(domain_arch) > 1:
-            final_domarch = '|'.join(domain_arch)   
-        else:
-            final_domarch = domain
-        #print('{count} number of domains with Architecture {Arch}'.format(count=len(domain_arch),Arch = final_domarch))  
-        return(final_domarch)
-    
-    def Gene(self):
-        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{self.UniProt_ID}')
-        if get_url.status_code == 200:
-            response = get_url.json()
-            gene = response['id']
-        else:
-            gene = 'None'
-        return(gene)
-
-    def Specie(self):
-        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{self.UniProt_ID}')
-        if get_url.status_code == 200:
-            response = get_url.json()
-            specie = response['organism']['names'][0]['value']
-        else:
-            specie = 'None'
-        return(specie)
-    
-    def RefSeq(self):
-        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{self.UniProt_ID}')
-        if get_url.status_code == 200:
-            response = get_url.json()
-            if 'sequence' in response.keys():
-                seq = (response['sequence']['sequence'])
-        else:
-            seq = 'None'                 
-        return(seq)
-        
 def makeRefFile(Uniprot_IDs, outputFile):
     '''Makes a Domain Reference file
     
@@ -102,77 +15,104 @@ def makeRefFile(Uniprot_IDs, outputFile):
         
     Attributes
     ----------
-        UPROT_Accession : Uniprot Accession ID
+        UniProt_ID : Uniprot Accession ID
         Gene : gene name
-        Domain Boundaries : reference domain boundary ranges with its start and end positions
+        Species : scientific name
+        Domains : Reference domain names with boundary ranges
         Ref Sequence : Reference sequence
+        PDB IDs : All PDB IDs linked to specific UniProt ID
         Domain Architecture : Domains found within the protein sequence arranged from N ter to C ter
-        Specie : Scientific name 
         
     Returns
     -------
-        output_df: pandas dataframe
-            the dataframe that is written to the output .csv Domain reference file with all attributes'''
+        Domain reference file in .csv format'''
     
     
-    Domain_list = []
-    Gene_list = []
-    Refseq_list = []
-    Domain_Arch = []
-    Specie_list = []
-    #print('Fetch successful for Uniprot IDs :\n')
+    f = open(outputFile, 'w')
+    writer = csv.writer(f)
+    header = ['UniProt ID', 'Gene', 'Species', 'Domains', 'Ref Sequence','PDB IDs','Domain Architecture']
+    writer.writerow(header)
     for ID in Uniprot_IDs:
-        instance = Uniprot(ID)
-        DOMAIN = Uniprot.Domains(instance)
-        GENE = Uniprot.Gene(instance)
-        REFSEQ = Uniprot.RefSeq(instance)
-        DOMAIN_ARCH = Uniprot.DomainArchitecture(instance)
-        SPECIE = Uniprot.Specie(instance)
-        
-        Domain_list.append(DOMAIN)
-        Gene_list.append(GENE)
-        Refseq_list.append(REFSEQ)
-        Domain_Arch.append(DOMAIN_ARCH)
-        Specie_list.append(SPECIE)
-        print(ID)
-        
-    df = pd.DataFrame(columns=['Accession','Gene Name','Domains','Sequence','Architecture', 'Species'])
-    df['Accession'] = Uniprot_IDs
-    df['Gene Name'] = Gene_list
-    df['Domains'] = Domain_list
-    df['Sequence'] = Refseq_list
-    df['Architecture'] = Domain_Arch
-    df['Species'] = Specie_list
-    df.index = np.arange(1, len(df) + 1)
-    df.to_csv(outputFile, index=False)
+        rowdata = []
+        try:
+            get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{ID}')
+            if get_url.status_code == 200:
+                response = get_url.json()
+                #Gene
+                gene = response['gene'][0]['name']['value']
+
+                #Species
+                species = response['organism']['names'][0]['value']
+
+                #Reference sequence
+                if 'sequence' in response.keys():
+                    seq = (response['sequence']['sequence'])
+                else:
+                    seq = 'None'  
+
+                #Domain name along with its boundaries
+                domainheader=[]
+                if 'features' in response.keys():
+                    for i in range(len(response['features'])):
+                        s = response['features'][i]
+                        for k, v in s.items():
+                            if k == 'type':
+                                if v == 'DOMAIN':
+                                    start = s['begin']
+                                    end = s['end']
+                                    name = s['description']
+                                    header = name+':'+start+':'+end
+                                    domainheader.append(header)
+                Domain = ';'.join(map(str, domainheader))
+
+                #PDB IDs
+                PDB_IDs=[]
+                for i in range(len(response['dbReferences'])):
+
+                    reftype = response['dbReferences'][i]['type']
+                    PDB_ID = response['dbReferences'][i]['id']
+
+                    if reftype == 'PDB':
+                        PDB_IDs.append(PDB_ID)
+                PDBID = ','.join(map(str, PDB_IDs))
+
+                #Domain Architecture
+                domdict = {}
+                if 'features' in response.keys():
+                    for i in range(len(response['features'])):
+                        s = res['features'][i]
+                        for k, v in s.items():
+                            if k == 'type':
+                                if v == 'DOMAIN':
+                                    start = s['begin']
+                                    end = s['end']
+                                    name = s['description']
+                                    domdict[start] = end, name
+
+                sorted_dict = dict(sorted(domdict.items(),reverse=False))
+                domain_arch = []
+                for key, value in sorted_dict.items():
+                    sort_start = key
+                    sort_end = value[0]
+                    domain = value[1]
+                    domain_arch.append(domain)
+
+                if len(domain_arch) > 1:
+                    final_domarch = '|'.join(domain_arch)   
+                else:
+                    final_domarch = domain 
+                    
+        except requests.exceptions.RequestException as err:
+            print('ERROR:',err)
+            
+        rowdata.append(ID)
+        rowdata.append(gene)      
+        rowdata.append(species)
+        rowdata.append(Domain)
+        rowdata.append(seq)
+        rowdata.append(PDBID)
+        rowdata.append(final_domarch)
+        writer.writerow(rowdata)
+    f.close()
+    
     print('Domain Reference File successfully created!')
-    
-def PDB_IDs(UniProt_ID):
-    '''Returns a list of PDB IDs that are associated to a specific Uniprot ID
-    
-    Parameters
-    ----------
-        UniProt_ID : Uniprot Accession ID used to pull a list of PDB IDs
-        
-    Returns
-    -------
-        PDB_IDs : List of PDB IDs'''
-    
-    PDB_IDs = []
-    URL = f'https://www.ebi.ac.uK/proteins/api/proteins/{UniProt_ID}'
-    try:
-        response = requests.get(URL)
-        data = response.json()
-        for i in range(len(data['dbReferences'])):
-
-            reftype = data['dbReferences'][i]['type']
-            PDB_ID = data['dbReferences'][i]['id']
-
-            if reftype == 'PDB':
-                PDB_IDs.append(PDB_ID)
-    
-    except requests.exceptions.RequestException as err:
-        print('ERROR:',err)
-        
-    print('Found {count} PDB IDs for {uID}'.format(count = len(PDB_IDs), uID = UniProt_ID))
-    return(PDB_IDs)
