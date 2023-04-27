@@ -74,7 +74,7 @@ def makeRefFile(Uniprot_IDs, outputFile):
 
                     if reftype == 'PDB':
                         PDB_IDs.append(PDB_ID)
-                PDBID = ','.join(map(str, PDB_IDs))
+                PDBID = ';'.join(map(str, PDB_IDs))
 
                 #Domain Architecture
                 domdict = {}
