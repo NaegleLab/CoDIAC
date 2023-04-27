@@ -4,7 +4,7 @@ import os
 import requests
 import logging
 
-def fetch_uniprotids(InterPro_ID, specie='Homo sapiens'):
+def fetch_uniprotids(InterPro_ID, species='Homo sapiens'):
     
     '''Returns a list of Uniprot Accession IDs associated to this Interpro Acc ID'''
 
@@ -40,7 +40,7 @@ def fetch_uniprotids(InterPro_ID, specie='Homo sapiens'):
         Scientific_name = entry['metadata']['source_organism']['scientificName']
         fullname = (entry['metadata']['source_organism']['fullName'] )
 
-        if Scientific_name == specie:
+        if Scientific_name == species:
 
             UNIPROT_ID_LIST.append(Uniprot_Accession)
 
