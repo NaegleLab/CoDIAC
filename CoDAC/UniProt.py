@@ -80,7 +80,7 @@ def makeRefFile(Uniprot_IDs, outputFile):
                 domdict = {}
                 if 'features' in response.keys():
                     for i in range(len(response['features'])):
-                        s = res['features'][i]
+                        s = response['features'][i]
                         for k, v in s.items():
                             if k == 'type':
                                 if v == 'DOMAIN':
