@@ -84,7 +84,7 @@ def makeRefFile(Uniprot_IDs, outputFile):
                         for k, v in s.items():
                             if k == 'type':
                                 if v == 'DOMAIN':
-                                    start = s['begin']
+                                    start = int(s['begin'])
                                     end = s['end']
                                     name = s['description']
                                     domdict[start] = end, name
@@ -97,10 +97,9 @@ def makeRefFile(Uniprot_IDs, outputFile):
                     domain = value[1]
                     domain_arch.append(domain)
 
-                if len(domain_arch) > 1:
-                    final_domarch = '|'.join(domain_arch)   
-                else:
-                    final_domarch = domain 
+               
+                final_domarch = '|'.join(domain_arch)   
+
                     
         except requests.exceptions.RequestException as err:
             print('ERROR:',err)
