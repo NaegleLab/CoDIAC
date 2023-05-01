@@ -96,7 +96,7 @@ class PDB_interface:
         else:
             df.to_csv(outputFile + '.csv')
         
-    def get_output_xlsx(self):
+    def get_output_xlsx(self, outputFile):
         """
         Produces an Excel file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
@@ -109,7 +109,11 @@ class PDB_interface:
         file_name = input('Enter a file name for the output Excel file: ')
         overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
-        df.to_excel(file_name + '.xlsx')
+        df.transpose()
+        if outputFile[-4:] == '.xlsx':
+            df.to_excel(outputFile)
+        else:
+            df.to_excel(outputFile + '.xlsx')
         
     def get_all(self):
         """
@@ -595,8 +599,8 @@ class PDB_interface:
                 except KeyError:
                     return 'N/A'
             elif (attribute == 'DEPOSITED (DATE)'):
-                summary = self.entry_dict['pdbx_vrpt_summary']
-                DEPOSITED_DATE = summary['pdbdeposition_date']
+                summary = self.entry_dict['rcsb_accession_info']
+                DEPOSITED_DATE = summary['deposit_date'][:10]
                 return DEPOSITED_DATE
             elif (attribute == 'DEPOSITED (AUTHORS)'): #fixed
                 AUTHORS_LIST = []
