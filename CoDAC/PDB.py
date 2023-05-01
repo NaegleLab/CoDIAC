@@ -106,11 +106,10 @@ class PDB_interface:
         None.
 
         """
-        file_name = input('Enter a file name for the output Excel file: ')
         overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
-        df.transpose()
-        if outputFile[-4:] == '.xlsx':
+        df = df.transpose()
+        if outputFile[-5:] == '.xlsx':
             df.to_excel(outputFile)
         else:
             df.to_excel(outputFile + '.xlsx')
@@ -655,5 +654,6 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     '''
 
     interface = PDB_interface(PDB_IDs)
-    interface.print_output_csv(outputFile)
+    #interface.print_output_csv(outputFile)
+    interface.get_output_xlsx(outputFile)
     print('Structure Reference File successfully created!')
