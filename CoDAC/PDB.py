@@ -653,3 +653,25 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     interface = PDB_interface(PDB_IDs)
     interface.print_output_csv(outputFile)
     print('Structure Reference File successfully created!')
+    
+def download_cifFile(PDB_list, PATH):
+    '''generates .cif files for PDB structures
+    
+    Parameters
+    ----------
+        PDB_list : list of PDB IDs 
+        PATH : to find the store the .cif file
+        
+    Returns
+    -------
+        .cif files to the path specified'''
+    
+    for PDB_ID in PDB_list:
+        
+        response=requests.get(f'https://files.rcsb.org/view/{PDB_ID}.cif')
+        cif_path = PATH+'/'+PDB_ID+'.cif'
+
+        with open(cif_path, 'wb') as f:
+            f.write(response.content)
+        
+    return cif_path
