@@ -660,7 +660,7 @@ def download_cifFile(PDB_list, PATH):
     Parameters
     ----------
         PDB_list : list of PDB IDs 
-        PATH : to find the store the .cif file
+        PATH : path to the store the .cif file
         
     Returns
     -------
