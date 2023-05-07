@@ -141,15 +141,18 @@ def Intraprotein_AdjFile(PDB_ID,PATH):
     #duplicate columns for residue numbers
     df['ResNum1_upd'] = df.loc[:, 'ResNum1']
     df['ResNum2_upd'] = df.loc[:, 'ResNum2']
+    
+    #join chain and residue number column values to use as identifier for updating the residue numbers if required
+    df['map1'] = df['Chain1'].astype(str)+(df['ResNum1']).astype(str)
+    df['map2'] = df['Chain2'].astype(str)+(df['ResNum2']).astype(str)
+    
     #update residue numbers if needed
     if DBREF(PDB_ID)[1].values():
         dict_resnums = (DBREF(PDB_ID)[1])
-        for chain in dict_resnums.keys():
-            for i in range(len(df)):
-                if chain == df['Chain1'][i]:
-                    df.replace({'ResNum1_upd': dict_resnums[chain]}, inplace=True) 
-                    df.replace({'ResNum2_upd': dict_resnums[chain]}, inplace=True)
-
+         
+    df['ResNum1_upd'] = df['map1'].map(dict_resnums)
+    df['ResNum2_upd'] = df['map2'].map(dict_resnums)
+    
     #pair the chain and residue number for each row (representing a feature)
     df['ResNum pair'] = df['ResNum1_upd'].astype(str)+'-'+(df['ResNum2_upd']).astype(str)
     df['Chain Pair'] = df['Chain1'].astype(str)+'-'+(df['Chain2']).astype(str)
@@ -193,7 +196,7 @@ def Intraprotein_AdjFile(PDB_ID,PATH):
 
                 df3.at[i,'Binary Feature'] = BF
 
-    df_edit = df3.drop(['ResNum1', 'ResNum2', 'ResNum pair', 'Chain Pair', 'Atoms', 'Contact_type', 'Distance'], axis=1)
+    df_edit = df3.drop(['ResNum1', 'ResNum2', 'ResNum pair', 'Chain Pair', 'Atoms', 'Contact_type', 'Distance','map1','map2'], axis=1)
     df3 = df_edit.drop_duplicates()
     df3 = df3.drop(['Chain1','Chain2'],axis=1)
     df4 = df3.drop_duplicates()  
@@ -205,6 +208,8 @@ def Intraprotein_AdjFile(PDB_ID,PATH):
                                     axis=0,
                                     ascending=[True, True], 
                                     inplace=True)
+    df4 = df4.drop_duplicates()
+    df4 = df4.reset_index(drop=True)
     #df4.to_csv(OUTFILE, index=None, sep='\t', mode='w')
     return(df4)
 
@@ -225,14 +230,18 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     #duplicate columns for residue numbers
     df['ResNum1_upd'] = df.loc[:, 'ResNum1']
     df['ResNum2_upd'] = df.loc[:, 'ResNum2']
+    
+    #join chain and residue number column values to use as identifier for updating the residue numbers if required
+    df['map1'] = df['Chain1'].astype(str)+(df['ResNum1']).astype(str)
+    df['map2'] = df['Chain2'].astype(str)+(df['ResNum2']).astype(str)
+    
     #update residue numbers if needed
     if DBREF(PDB_ID)[1].values():
         dict_resnums = (DBREF(PDB_ID)[1])
-        for chain in dict_resnums.keys():
-            for i in range(len(df)):
-                if chain == df['Chain1'][i]:
-                    df.replace({'ResNum1_upd': dict_resnums[chain]}, inplace=True) 
-                    df.replace({'ResNum2_upd': dict_resnums[chain]}, inplace=True)
+         
+    df['ResNum1_upd'] = df['map1'].map(dict_resnums)
+    df['ResNum2_upd'] = df['map2'].map(dict_resnums)
+
 
     #pair the chain and residue number for each row (representing a feature)
     df['ResNum Pair'] = df['ResNum1_upd'].astype(str)+'-'+(df['ResNum2_upd']).astype(str)
@@ -240,10 +249,12 @@ def Interprotein_AdjFile(PDB_ID,PATH):
 
     entity_dict = entity_for_chain(PDB_ID)[0]
     threshold = interprotein_threshold(PDB_ID)
+    
     #map entity values based on chain and add columns 
     df['Entity1'] = df['Chain1'].map(entity_dict)
     df['Entity2'] = df['Chain2'].map(entity_dict)
     df['Entity Pair'] = df['Entity1'].astype(str)+'-'+(df['Entity2']).astype(str)
+    
     #for interprotein we filter features that are present between entities
     df2 = df[df['Entity1']!=df['Entity2']]
     df2 = df2.reset_index(drop=True)
@@ -251,6 +262,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     
     for i in range(len(df2)):
         respair = df2['ResNum Pair'][i] 
+        
         #group chain pairs based on the respair to find the occurrence of the feature across all chains
         fea_in_chains = df2.loc[df2['ResNum Pair'] == respair, 'Chain Pair'].values.tolist()
 
@@ -261,7 +273,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
             BF = 0
         df2.at[i,'Binary Feature'] = BF
     
-    df_edit = df2.drop(['ResNum1', 'ResNum2', 'ResNum Pair', 'Chain Pair','Entity Pair', 'Distance','Atoms','Contact_type'], axis=1)
+    df_edit = df2.drop(['ResNum1', 'ResNum2', 'ResNum Pair', 'Chain Pair','Entity Pair', 'Distance','Atoms','Contact_type','map1', 'map2'], axis=1)
     df3 = df_edit.drop_duplicates()
     df3 = df3.drop(['Chain1','Chain2'],axis=1)
     df4 = df3.drop_duplicates()
@@ -292,6 +304,8 @@ def Interprotein_AdjFile(PDB_ID,PATH):
                                     axis=0,
                                     ascending=[True, True], 
                                     inplace=True)
+    df4 = df4.drop_duplicates()
+    df4 = df4.reset_index(drop=True)
     #df4.to_csv(OUTFILE,index=None, sep='\t', mode='w')
     return(df4)
     
@@ -308,8 +322,9 @@ def DBREF(PDB_ID):
     -------
         dbref_dict : dict
             Dictionary with chains as keys and list of sequence start and end residue numbers for both databases as values
-        final_dict : dict
-            Upon fidning differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict '''
+        dict_new_id : dict
+            Dictionary whose keys are chain and residue number and its values are updated residue number. 
+            Upon finding differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict '''
     
     dbref_dict={}
     
@@ -332,21 +347,29 @@ def DBREF(PDB_ID):
                 list_attributes.append(end)
                 dbref_dict[chain] = list_attributes
                 
-    final_dict = {}
+    dict_new_id = {}
     for k, v in dbref_dict.items():
-        dict_new_id = {}
+        
         if v[0] == v[2] and v[1] == v[3]:
-            print('No difference in residue numbers in chain',k)   
+            sequence_length = v[3] - v[2] +1
+            print('No difference in residue numbers in chain',k) 
+            index = 0
+            for i in range(sequence_length):
+                value = v[0]+index
+                key = k + str(value)
+                dict_new_id[key] = v[2]+index
+                index +=1
         else:
             print('Difference in residue numbers in chain',k)
             sequence_length = v[3] - v[2] +1
             index = 0
             for i in range(sequence_length):
-                dict_new_id[v[0]+index] = v[2]+index
+                value = v[0]+index
+                key = k + str(value)
+                dict_new_id[key] = v[2]+index
                 index +=1
-        final_dict[k] = dict_new_id
         
-    return(dbref_dict, final_dict)
+    return(dbref_dict, dict_new_id)
 
 
 def intraprotein_threshold(chain_entity_dict, entity):
