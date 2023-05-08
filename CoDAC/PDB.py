@@ -92,9 +92,9 @@ class PDB_interface:
                    'ACCESS', 'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 
                    'MOLECULAR_WEIGHT', 'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 
                    'PDB_SEQ_BEG_POSITION', 'CANNONICAL_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
-                   'SPECIES', 'MUTATIONS (Y/N)', 'MUTATIONS (#)', 'MUTATIONS (LOCATION)',
-                   'MUTATIONS (TYPE)', 'DEPOSITED (DATE)', 'DEPOSITED (AUTHORS)', 'TITLE',
-                   'DOI', 'PUBMED_ID']
+                   'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 'MUTATIONS (LOCATION)',
+                   'MUTATIONS (TYPE)', 'MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 'DEPOSITED (DATE)', 
+                   'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
         overall_dict = self.get_anno_dict()
         data_list = []
         for each_key in overall_dict.keys():
@@ -121,9 +121,9 @@ class PDB_interface:
                    'ACCESS', 'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 
                    'MOLECULAR_WEIGHT', 'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 
                    'PDB_SEQ_BEG_POSITION', 'CANNONICAL_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
-                   'SPECIES', 'MUTATIONS (Y/N)', 'MUTATIONS (#)', 'MUTATIONS (LOCATION)',
-                   'MUTATIONS (TYPE)', 'DEPOSITED (DATE)', 'DEPOSITED (AUTHORS)', 'TITLE',
-                   'DOI', 'PUBMED_ID']
+                   'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 'MUTATIONS (LOCATION)',
+                   'MUTATIONS (TYPE)', 'MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 'DEPOSITED (DATE)', 
+                   'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
         overall_dict = self.get_anno_dict()
         data_list = []
         for each_key in overall_dict.keys():
@@ -193,13 +193,12 @@ class PDB_interface:
         
         """
 
-        meta_data_categories = ['PDB_ID', 'ENTITY_ID', 'ENTITY_DESCRIPTION', 'CHAIN_ID', 'DATABASE', 'GENE_NAME', 'ACCESS', 'PDB_SEQ',
-                                'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 'MOLECULAR_WEIGHT',
-                                'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 
-                                'PDB_SEQ_BEG_POSITION', 'CANNONICAL_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
-                                'SPECIES', 'MUTATIONS (Y/N)', 'MUTATIONS (#)', 'MUTATIONS (LOCATION)',
-                                'MUTATIONS (TYPE)', 'DEPOSITED (DATE)', 'DEPOSITED (AUTHORS)', 'TITLE',
-                                'DOI', 'PUBMED_ID']
+        meta_data_categories = ['PDB_ID', 'ENTITY_ID', 'ENTITY_DESCRIPTION', 'CHAIN_ID', 'DATABASE', 'GENE_NAME', 'ACCESS', 
+                                'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 'MOLECULAR_WEIGHT',
+                                'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 'PDB_SEQ_BEG_POSITION', 
+                                'CANNONICAL_SEQ_BEG_POSITION', 'REF_SEQ_LENGTH', 'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 
+                                'MUTATIONS (LOCATION)', 'MUTATIONS (TYPE)','MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 
+                                'DEPOSITED (DATE)', 'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
 
         def __init__(self, PDB_ID):
             """
@@ -219,6 +218,8 @@ class PDB_interface:
             self.name = PDB_ID
 
             self.entry_dict, self.pubmed_dict, self.schema_dict, self.schema_uniprot_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
+            self.mods = ''
+            self.locs = ''
 
         def set_PDB_API_annotation(self):
             """
@@ -257,6 +258,43 @@ class PDB_interface:
             for meta in meta_data:
                 inner[meta] = ""
             return inner
+    
+        def find_mods(self, polymer_entity_id):
+            polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
+            pdb_seq = polymer_entity_dict['entity_poly']['pdbx_seq_one_letter_code']
+            start = 0
+            offset = 0
+            mods = []
+            locs = []
+            while pdb_seq.find('(', start) != -1:
+                index = pdb_seq.find('(', start)
+                end = pdb_seq.find(')', index)
+                mod = pdb_seq[index+1:end]
+                loc = index + 1 - offset
+                mod_loc = mod+'-'+str(loc)
+                mods.append(mod_loc)
+                locs.append(str(loc))
+                offset = offset + len(mod) + 1
+                start = end
+            return mods, locs
+    
+        def get_mod_locations(self, polymer_entity_id):
+            if self.locs == '':
+                mods, locs = self.find_mods(polymer_entity_id)
+                self.mods = mods
+                self.locs = locs
+            else:
+                locs = self.locs
+            return locs
+        
+        def get_mod_types(self, polymer_entity_id):
+            if self.mods == '':
+                mods, locs = self.find_mods(polymer_entity_id)
+                self.mods = mods
+                self.locs = locs
+            else:
+                mods = self.mods
+            return mods
 
         def get_all_dicts(self):
             """
@@ -556,7 +594,7 @@ class PDB_interface:
                     return species
                 except KeyError:
                     return 'not found'
-            elif (attribute == 'MUTATIONS (Y/N)'):
+            elif (attribute == 'MUTATIONS/MODS (Y/N)'):
                 mutation_count = 0
                 if len(polymer_entity_dict) > 3:
                     entity_poly = polymer_entity_dict['entity_poly']
@@ -565,11 +603,31 @@ class PDB_interface:
                     return 'Y'
                 else:
                     return 'N'
-            elif (attribute == 'MUTATIONS (#)'):
+            elif (attribute == 'MUTATIONS/MODS (#)'):
                 if len(polymer_entity_dict) > 3:
                     entity_poly = polymer_entity_dict['entity_poly']
                     mutation_count = entity_poly['rcsb_mutation_count']
                 return mutation_count
+            elif (attribute == 'MODIFICATIONS (LOCATION)'):
+                try:
+                    if len(polymer_entity_dict) > 3:
+                        locations = self.get_mod_locations(polymer_entity_id=polymer_entity_id)
+                        if len(locations)>0:
+                            return '; '.join(locations)
+                        else:
+                            return 'N/A'
+                except KeyError:
+                    return 'N/A'
+            elif (attribute == 'MODIFICATIONS (TYPE)'):
+                try:
+                    if len(polymer_entity_dict) > 3:
+                        types = self.get_mod_types(polymer_entity_id=polymer_entity_id)
+                        if len(types)>0:
+                            return '; '.join(types)
+                        else:
+                            return 'N/A'
+                except KeyError:
+                    return 'N/A'                
             elif (attribute == 'MUTATIONS (LOCATION)'):
                 try:
                     if len(polymer_entity_dict) > 3:
@@ -654,8 +712,8 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     '''
 
     interface = PDB_interface(PDB_IDs)
-    #interface.print_output_csv(outputFile)
-    interface.get_output_xlsx(outputFile)
+    interface.print_output_csv(outputFile)
+    #interface.get_output_xlsx(outputFile)
     print('Structure Reference File successfully created!')
     
 def download_cifFile(PDB_list, PATH):
