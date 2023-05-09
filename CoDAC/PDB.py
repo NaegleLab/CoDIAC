@@ -7,7 +7,7 @@ import errno
 class PDB_interface:
     """
     A class that obtains and outputs relevant metadata/annotations for individual PDB IDs in the form of a dictionary
-    a csv file, or an Excel file separately, or all 3 at the same time (most efficient).
+    and/or a csv file.
     
     Attributes
     -----------
@@ -21,11 +21,8 @@ class PDB_interface:
     print_output_csv
         Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
-    get_output_xlsx
-        Produces an Excel file (to the location of the inputted file path) full of the annotations for all of the pdb ids
-        from the inputted csv file.
     get_all
-        Produces a dictionary, csv file, & Excel file (to the location of the inputted file path) full of the annotations
+        Produces a dictionary, csv file, & Excel file (to the location of the input file path) full of the annotations
         for all of the pdb ids from the inputted csv file.
     
 	
@@ -49,7 +46,7 @@ class PDB_interface:
        
     def get_anno_dict(self):
         """
-        Produces a dictionary full of the annotations for all of the PDB IDs from the inputted csv file.
+        Produces a dictionary full of the annotations for all of the PDB IDs from the PDB List of IDs used to instantiate the object
 
         Returns
         -------
@@ -107,38 +104,9 @@ class PDB_interface:
         else:
             df.to_csv(outputFile + '.csv', index=False)
         
-    def get_output_xlsx(self, outputFile):
-        """
-        Produces an Excel file (to the location of the inputted file path) full of the annotations for all of the pdb ids
-        from the inputted csv file.
-
-        Returns
-        -------
-        None.
-
-        """
-        columns = ['PDB_ID', 'ENTITY_ID', 'ENTITY_DESCRIPTION', 'CHAIN_ID', 'DATABASE', 'GENE_NAME', 
-                   'ACCESS', 'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 
-                   'MOLECULAR_WEIGHT', 'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 
-                   'PDB_SEQ_BEG_POSITION', 'CANNONICAL_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
-                   'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 'MUTATIONS (LOCATION)',
-                   'MUTATIONS (TYPE)', 'MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 'DEPOSITED (DATE)', 
-                   'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
-        overall_dict = self.get_anno_dict()
-        data_list = []
-        for each_key in overall_dict.keys():
-            for each_entity in overall_dict[each_key]:
-                data_list.append(each_entity)
-        df = pd.DataFrame(data_list, columns=columns)
-
-        if outputFile[-5:] == '.xlsx':
-            df.to_excel(outputFile, index=False)
-        else:
-            df.to_excel(outputFile + '.xlsx', index=False)
-        
     def get_all(self):
         """
-        Produces a dictionary, csv file, & Excel file (to the location of the inputted file path) full of the annotations
+        Produces a dictionary and csv file  full of the annotations
         for all of the pdb ids from the inputted csv file.
 
         Returns
@@ -148,11 +116,9 @@ class PDB_interface:
 
         """
         csv_file_name = input('Enter a file name for the output csv file: ')
-        excel_file_name = input('Enter a file name for the output Excel file: ')
         overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
         df.to_csv(csv_file_name + '.csv')
-        df.to_excel(excel_file_name + '.xlsx')
         return overall_dict
 
     class PDB_metadata:
@@ -230,7 +196,7 @@ class PDB_interface:
             Returns
             -------
             anno_dict : dictionary
-                dictionary storing all information for the inputted PDB_ID
+                dictionary storing all information for the PDB_ID
 
             """
             anno_dict_list = []
