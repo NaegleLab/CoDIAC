@@ -171,7 +171,7 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
     df2 = df[df['Chain1']==df['Chain2']]
     df3 = df2[df2['Entity1']==df2['Entity2']]
     df3 = df3.reset_index(drop=True)
-    df3.insert(11,'Binary Feature','')
+    df3.insert(11,'Binary_Feature','')
 
     for entity in unique_entities:
         threshold = intraprotein_threshold(entity_dict, entity)
@@ -261,7 +261,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     #for interprotein we filter features that are present between entities
     df2 = df[df['Entity1']!=df['Entity2']]
     df2 = df2.reset_index(drop=True)
-    df2.insert(11,'Binary Feature','')
+    df2.insert(11,'Binary_Feature','')
     
     for i in range(len(df2)):
         respair = df2['ResNum Pair'][i] 
