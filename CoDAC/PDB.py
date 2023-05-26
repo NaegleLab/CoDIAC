@@ -184,8 +184,8 @@ class PDB_interface:
             self.name = PDB_ID
 
             self.entry_dict, self.pubmed_dict, self.schema_dict, self.schema_uniprot_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
-            self.mods = ''
-            self.locs = ''
+            self.mods = {}
+            self.locs = {}
 
         def set_PDB_API_annotation(self):
             """
@@ -245,21 +245,21 @@ class PDB_interface:
             return mods, locs
     
         def get_mod_locations(self, polymer_entity_id):
-            if self.locs == '':
-                mods, locs = self.find_mods(polymer_entity_id)
-                self.mods = mods
-                self.locs = locs
+            if polymer_entity_id in self.locs:
+                locs = self.locs[polymer_entity_id]
             else:
-                locs = self.locs
+                mods, locs = self.find_mods(polymer_entity_id)
+                self.mods[polymer_entity_id] = mods
+                self.locs[polymer_entity_id] = locs
             return locs
         
         def get_mod_types(self, polymer_entity_id):
-            if self.mods == '':
-                mods, locs = self.find_mods(polymer_entity_id)
-                self.mods = mods
-                self.locs = locs
+            if polymer_entity_id in self.mods:
+                mods = self.mods[polymer_entity_id]
             else:
-                mods = self.mods
+                mods, locs = self.find_mods(polymer_entity_id)
+                self.mods[polymer_entity_id] = mods
+                self.locs[polymer_entity_id] = locs                
             return mods
 
         def get_all_dicts(self):
