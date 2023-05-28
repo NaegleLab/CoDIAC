@@ -1,4 +1,5 @@
 from CoDAC import alignmentTools
+import bisect
 
 
 def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
@@ -81,7 +82,7 @@ def return_domains_tuple(domain_str):
         domain_tuple.append([domain_name, int(start), int(stop)])
     return domain_tuple
 
-def returnDomainStruct(aln, domains):
+def returnDomainStruct(aln, domains, diffList):
     """
     Given a cogent3 alignment, from return_mapping_between_sequences and a list of domains in reference, test whether
     the alignment is of good enough quality in the region and return a dictionary of mapped elements. 
@@ -110,6 +111,7 @@ def returnDomainStruct(aln, domains):
     pscout_to_aln_map = aln.get_gapped_seq(fromName).gap_maps()[0]
     mapToStruct = aln.get_gapped_seq(toName).gap_maps()[1]
 
+    mutPositions = returnMutPosList(diffList)
     gap_threshold = 0.7
     domainStruct = {}
     for domain in domains:
@@ -121,6 +123,9 @@ def returnDomainStruct(aln, domains):
         start_aln = pscout_to_aln_map[start]
         stop_aln = pscout_to_aln_map[stop]
         numGaps = aln.seqs[1][start_aln:stop_aln].count_gaps()
+        nuMuts = 0
+        if(diffList):
+            numMuts = countMutsInRange(mutPositions, start, stop) 
         #count the number of gaps in each sequence:
        # print('Domain: %s\t Length: %d \t Num Gaps: %d'%(domain_name, stop_aln-start_aln, numGaps ))
         if (numGaps/(stop_aln-start_aln) <= gap_threshold):
@@ -134,9 +139,63 @@ def returnDomainStruct(aln, domains):
             try:
                 if domain_name in domainStruct:
                     domain_name = "%s_%d"%(domain_name, 2)
-                domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps]
+                domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
                 #domain_name may already exist, so add a new value to it
             except:
                 #print("ERROR: could not map domains")
                 return -1
     return domainStruct
+
+
+def countMutsInRange(posList, start, end):
+    """
+    Given a region of a protein, defined by start, end - count the number of mutations in that region
+    This assumes all sequencing is in the same base (i.e. 0-based or 1-based counting)
+
+    Parameters
+    ----------
+    posList: list of ints
+        sorted integer list of ints from returnMutPosList(diffList)
+    start: int
+        position of start of range
+    end: int
+        position of end of range
+
+    Returns
+    -------
+    numMuts: int
+        number of mutations found in range start to end
+
+    """
+
+    numMuts = 0
+    i = bisect.bisect_left(posList, start)
+    g = bisect.bisect_right(posList, end)
+    #if i != len(posList) and g != len(posList):
+    return len(posList[i:g])
+    #else return 0
+
+    
+
+def returnMutPosList(diffList):
+    """
+    Given a diffList (such as found in return_mapping_between_sequences), return just the positions that have mutations
+
+    Parameters
+    ----------
+    diffList: list
+        list of strings, each string is <aa><pos><aa>
+
+
+    Returns
+    -------
+    mut_positions: list
+        list of ints, just the positions mutations exist in, sorted
+
+    """
+    mut_positions = []
+    for mutation in diffList:
+        pos = ''.join(c for c in mutation if c.isdigit())
+        mut_positions.append(int(pos))
+    mut_positions.sort()
+    return mut_positions
