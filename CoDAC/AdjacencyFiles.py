@@ -7,6 +7,9 @@ import ast
 import json
 import urllib.request
 
+from Bio.PDB import PDBList
+from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+
 def ProcessArpeggio(input_file, PATH):
         ''' This function generates a contactmap text file.
         
@@ -124,7 +127,7 @@ def BinaryFeatures(PDB_ID, PATH):
     df.to_csv(OUTFILE, index=None, sep='\t', mode='w') 
     
     
-def Intraprotein_AdjFile(PDB_ID,PATH):
+def Intraprotein_AdjFile(PDB_ID, PATH):
     ''' Produces adjacency file for only Intraprotein contacts along with binary features
     Parameters
     ----------
@@ -168,7 +171,7 @@ def Intraprotein_AdjFile(PDB_ID,PATH):
     df2 = df[df['Chain1']==df['Chain2']]
     df3 = df2[df2['Entity1']==df2['Entity2']]
     df3 = df3.reset_index(drop=True)
-    df3.insert(11,'Binary Feature','')
+    df3.insert(11,'Binary_Feature','')
 
     for entity in unique_entities:
         threshold = intraprotein_threshold(entity_dict, entity)
@@ -258,7 +261,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     #for interprotein we filter features that are present between entities
     df2 = df[df['Entity1']!=df['Entity2']]
     df2 = df2.reset_index(drop=True)
-    df2.insert(11,'Binary Feature','')
+    df2.insert(11,'Binary_Feature','')
     
     for i in range(len(df2)):
         respair = df2['ResNum Pair'][i] 
@@ -311,7 +314,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     
     
 def DBREF(PDB_ID):
-    ''' This function uses the DBREF record from PDB header to find differences in residue numbers between PDB and reference (such as Uniprot)
+    ''' This function uses the DBREF record from PDB header to find differences in residue numbers between PDB and reference (such as Uniprot) If PDB legacy formats are unavailable, we make use of the mmCif headers and extract the same information 
     
     Parameters
     ----------
@@ -327,29 +330,53 @@ def DBREF(PDB_ID):
             Upon finding differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict '''
     
     dbref_dict={}
-    
-    response = urllib.request.urlopen("https://files.rcsb.org/header/"+ \
+
+    res = requests.get("https://files.rcsb.org/header/"+ \
+                            PDB_ID + ".pdb")
+    if res.status_code != 404:
+        response = urllib.request.urlopen("https://files.rcsb.org/header/"+ \
                         PDB_ID + ".pdb")
-    for line in response:
-        list_attributes = []
-        line = (line.strip())
-        if (line.startswith(b'DBREF')):
-            if isinstance(line, bytes):
-                data =(line.decode())
-                chain = data[12]
-                begin_pdb = int(data[14:18])
-                end_pdb = int(data[20:24])
-                begin = int(data[55:60])
-                end = int(data[62:67])
-                list_attributes.append(begin_pdb)
-                list_attributes.append(end_pdb)
-                list_attributes.append(begin)
-                list_attributes.append(end)
-                dbref_dict[chain] = list_attributes
-                
+        for line in response:
+            list_attributes = []
+            line = (line.strip())
+            if (line.startswith(b'DBREF ')):
+                if isinstance(line, bytes):
+                    data =(line.decode())
+                    chain = data[12]
+                    begin_pdb = int(data[14:18])
+                    end_pdb = int(data[20:24])
+                    begin = int(data[55:60])
+                    end = int(data[62:67])
+                    list_attributes.append(begin_pdb)
+                    list_attributes.append(end_pdb)
+                    list_attributes.append(begin)
+                    list_attributes.append(end)
+                    dbref_dict[chain] = list_attributes
+    else:
+        i = PDBList()
+        file = i.retrieve_pdb_file(PDB_ID, pdir ='/Users/adk9hq/Documents/Research_UVA/CM_project/',file_format='mmCif')
+        p = MMCIF2Dict("/Users/adk9hq/Documents/Research_UVA/CM_project/"+\
+                    PDB_ID+'.cif')
+
+        df = pd.DataFrame()
+        df['chain'] = p['_struct_ref_seq.pdbx_strand_id']
+        df['pdb'] = p['_struct_ref_seq.pdbx_PDB_id_code']
+        df['pdb_start'] = p['_struct_ref_seq.pdbx_auth_seq_align_beg']
+        df['pdb_end'] = p['_struct_ref_seq.pdbx_auth_seq_align_end']
+        df['db_start'] = p['_struct_ref_seq.db_align_beg']
+        df['db_end'] = p['_struct_ref_seq.db_align_end']
+
+        for i in range(len(df)):
+            l=[]
+            l.append(int(df.iloc[i,2]))
+            l.append(int(df.iloc[i,3]))
+            l.append(int(df.iloc[i,4]))
+            l.append(int(df.iloc[i,5]))
+            dbref_dict[df.iloc[i,0]] = l 
+    
     dict_new_id = {}
     for k, v in dbref_dict.items():
-        
+
         if v[0] == v[2] and v[1] == v[3]:
             sequence_length = v[3] - v[2] +1
             print('No difference in residue numbers in chain',k) 
@@ -368,7 +395,7 @@ def DBREF(PDB_ID):
                 key = k + str(value)
                 dict_new_id[key] = v[2]+index
                 index +=1
-        
+                    
     return(dbref_dict, dict_new_id)
 
 
