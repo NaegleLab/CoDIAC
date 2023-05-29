@@ -3,7 +3,7 @@ import bisect
 import pandas as pd
 
 
-def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
+def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start, pdb_start, ref_length):
     """
     Return information about the pairwise alignment between a structure sequence (mapping from this sequence) 
     to a reference sequence (to_sequence). Specifically, this assumes that the structure sequence is some shortened 
@@ -18,6 +18,10 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
         reference sequence
     ref_start: int
         the one's based counting of where the ref_start is documented as being
+    pdb_start: int 
+        the one's based counting of where pdb begins matching reference
+    ref_length: int 
+        the length of the sequence in the experimental structure that matches the reference
     
     Returns
     -------
@@ -41,7 +45,8 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
     #pscout here is reference instead
     fromName = 'structure'
     toName = 'reference'
-    aln  = alignmentTools.returnAlignment(struct_sequence, ref_sequence, fromName, toName)
+    struct_sequence_ref_spanning = struct_sequence[pdb_start-1:pdb_start+ref_length+1]
+    aln  = alignmentTools.returnAlignment(struct_sequence_ref_spanning, ref_sequence, fromName, toName)
     mapToRef = aln.get_gapped_seq('structure').gap_maps()[1]
     fromSeqValues = list(mapToRef.keys())
     from_start = min(fromSeqValues)
@@ -58,7 +63,7 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
     gaps_ref_to_struct = aln[from_start:from_end].count_gaps_per_seq()[fromName]
     gaps_struct_to_ref =  aln[from_start:from_end].count_gaps_per_seq()[toName]
     
-    return aln, from_start+1, from_end+1, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref
+    return aln, struct_sequence_ref_spanning, from_start+1, from_end+1, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref
 
 
 def return_domains_tuple(domain_str):
@@ -219,7 +224,7 @@ def returnMutPosList(diffList):
     return mut_positions
 
 
-def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_pos_start):
+def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_pos_start, ref_length):
     """
     Given inforation from a structure reference line, for a uniprot_id, the structure sequence
     and the mapped reference position, return the string-based information for appending to the
@@ -251,13 +256,14 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     domainStr = '-1'
     structure_arch = '-1'
     full_domain_arch = '-1'
+    struct_seq_ref_spanning = struct_seq[pdb_pos_start-1:pdb_pos_start+ref_length+1]
 
     #First find the protein information in the reference file based on uniprot_id
     protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
     if len(protein_rec.index) < 1:
         print("ERROR: Did not find %s in reference"%(uniprot_id))
         #return default information here
-        return gene_name, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
+        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
     elif len(protein_rec.index) > 1:
         print("ERROR: Found more than one record for %s in reference"%(uniprot_id))
     else:
@@ -267,7 +273,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         reference_seq = list(protein_rec['Ref Sequence'])[0]
         gene_name = list(protein_rec['Gene'])[0]
     
-    aln, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start)
+    aln, struct_seq_ref_spanning, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start, pdb_pos_start, ref_length)
     pos_overall_diff = pdb_pos_start + pos_diff
     domainStruct = returnDomainStruct(aln, from_start, from_end, domain_tuple, diffList)
     #make the domainStr
@@ -292,7 +298,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     
     #make gaps 
     
-    return gene_name, rangeStr, pos_overall_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
+    return gene_name, struct_seq_ref_spanning, rangeStr, pos_overall_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
 
 def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='False'):
     """
@@ -322,11 +328,13 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='
         struct_seq = row['CANNONICAL_REF_SEQ']
         ref_seq_pos_start = row['CANNONICAL_SEQ_BEG_POSITION']
         pdb_seq_pos_start  = row['PDB_SEQ_BEG_POSITION']
+        ref_length = row['REF_SEQ_LENGTH']
         if verbose:
             print("Working on %s"%(uniprot_id))
-        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start)
-        gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
+        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length)
+        gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
         struct_df.loc[index,'gene name'] = gene_name
+        struct_df.loc[index, 'struct/ref sequence'] = struct_seq_ref_spanning
         struct_df.loc[index, 'reference range'] = rangeStr
         struct_df.loc[index, 'pos diff'] = pos_diff
         struct_df.loc[index, 'Gaps Ref:Struct'] = gaps_ref_to_struct
