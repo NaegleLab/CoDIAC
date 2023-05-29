@@ -1,5 +1,6 @@
 from CoDAC import alignmentTools
 import bisect
+import pandas as pd
 
 
 def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start):
@@ -82,7 +83,7 @@ def return_domains_tuple(domain_str):
         domain_tuple.append([domain_name, int(start), int(stop)])
     return domain_tuple
 
-def returnDomainStruct(aln, domains, diffList):
+def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclValue=10):
     """
     Given a cogent3 alignment, from return_mapping_between_sequences and a list of domains in reference, test whether
     the alignment is of good enough quality in the region and return a dictionary of mapped elements. 
@@ -95,7 +96,11 @@ def returnDomainStruct(aln, domains, diffList):
         Has two sequences, first entry is name1, aln_seq_1 and other is name2, aln_seq_2
     domains: list of tuples
         List of domains in format [('domainName', 'start', 'stop')] this is relative to the fromName sequence (i.e. name1 or name2 used in alignment creation)
-
+    diffList: list
+        list of mutations in aaPosaa 
+    domainExclValue: int
+        The window where you would allow a domain to map within this range of the start and stop
+    
     Returns
     -------
     domainStruct: dict
@@ -115,27 +120,36 @@ def returnDomainStruct(aln, domains, diffList):
     gap_threshold = 0.7
     domainStruct = {}
     for domain in domains:
-        domain_name = domain[0] #ProteomeScout indexes positions by 1, so have to remove
-        start = int(domain[1])-1
-        stop = int(domain[2])-1
+        #first check to see if the domain is within the range of the mapping. 
+        domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
+        start_domain = int(domain[1])-1
+        stop_domain = int(domain[2])-1
+        if start_domain < ref_start:
+            if start_domain < ref_start + domainExclValue:
+                start = ref_start #reset the domain-start to the begininning of the sequence covered
+            else: 
+                continue
+        else: 
+            start = start_domain
+        if stop_domain > ref_stop:
+            if stop_domain < ref_stop - domainExclValue:
+                stop = ref_stop #reset the domain-stop to the end of the sequence covered
+            else: 
+                continue
+        else:
+            stop = stop_domain
         #domain = aln.get_seq(fromName).add_annotation(Feature, 'domain', domain_name, [(start, end)])
-
-        start_aln = pscout_to_aln_map[start]
-        stop_aln = pscout_to_aln_map[stop]
+        start_aln = mapToStruct[start_domain]
+        stop_aln = mapToStruct[stop_domain]
         numGaps = aln.seqs[1][start_aln:stop_aln].count_gaps()
-        nuMuts = 0
+        numMuts = 0
         if(diffList):
             numMuts = countMutsInRange(mutPositions, start, stop) 
         #count the number of gaps in each sequence:
-       # print('Domain: %s\t Length: %d \t Num Gaps: %d'%(domain_name, stop_aln-start_aln, numGaps ))
+    # print('Domain: %s\t Length: %d \t Num Gaps: %d'%(domain_name, stop_aln-start_aln, numGaps ))
         if (numGaps/(stop_aln-start_aln) <= gap_threshold):
             start_aln_val = start_aln
             stop_aln_val = stop_aln
-            #if start_aln > min(mapToStruct.keys()):
-            #    start_aln_val = min(mapToStruct.keys())
-            #if stop_aln > max(mapToStruct.keys()):
-            #    stop_aln_val = max(mapToStruct.keys())
-            #print("Domain: %s is MATCHED: start=%d, stop=%d"%(domain_name, mapToStruct[start_aln_val], mapToStruct[stop_aln_val]))
             try:
                 if domain_name in domainStruct:
                     domain_name = "%s_%d"%(domain_name, 2)
@@ -248,15 +262,16 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         gene_name = list(protein_rec['Gene'])[0]
     
     aln, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start)
-    domainStruct = returnDomainStruct(aln, domain_tuple, diffList)
+    domainStruct = returnDomainStruct(aln, from_start, from_end, domain_tuple, diffList)
     #make the domainStr
     domainList = []
     domainDict_forArch = {}
-    for domain_name in domainStruct:
-        start, end, numGaps, numMuts = domainStruct[domain_name]
-        valStr = str(start)+','+str(end)+','+str(numGaps)+','+str(numMuts)
-        domainDict_forArch[start] = domain_name
-        domainList.append(domain_name+':'+valStr)
+    if isinstance(domainStruct, dict):
+        for domain_name in domainStruct:
+            start, end, numGaps, numMuts = domainStruct[domain_name]
+            valStr = str(start)+','+str(end)+','+str(numGaps)+','+str(numMuts)
+            domainDict_forArch[start] = domain_name
+            domainList.append(domain_name+':'+valStr)
     domainStr = ';'.join(domainList)
 
     arch_list = []
@@ -271,3 +286,49 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     #make gaps 
     
     return gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
+
+def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='False'):
+    """
+    Given a PDB meta structure file and a Uniprot reference, integrate the two pieces to add information from reference
+    
+    Parameters
+    ----------
+    struct_file: str
+        Name of structure reference file
+    ref_file: str 
+        Name of reference file
+    out_file: str   
+        name of output file to write
+    verbose: boolean
+        Print information about processing
+    
+    Returns
+    -------
+    out_struct: pandas dataframe
+        the appended dataframe of the structure (also written to out_file)
+    """
+    struct_df = pd.read_csv(struct_file)
+    reference_df = pd.read_csv(ref_file)
+
+    for index, row in struct_df.iterrows():
+        uniprot_id = row['ACCESS']
+        struct_seq = row['CANNONICAL_REF_SEQ']
+        ref_seq_pos_start = row['CANNONICAL_SEQ_BEG_POSITION']
+        if verbose:
+            print("Working on %s"%(uniprot_id))
+        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start)
+        gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
+        struct_df.loc[index,'gene name'] = gene_name
+        struct_df.loc[index, 'reference range'] = rangeStr
+        struct_df.loc[index, 'pos diff'] = pos_diff
+        struct_df.loc[index, 'Gaps Ref:Struct'] = gaps_ref_to_struct
+        struct_df.loc[index, 'Gaps Struct:Ref'] = gaps_struct_to_ref
+        struct_df.loc[index, 'mutations'] = diffStr
+        struct_df.loc[index, 'domains'] = domainStr
+        struct_df.loc[index, 'struct domain architecture'] = structure_arch
+        struct_df.loc[index, 'protein domain architecture'] = full_domain_arch
+    struct_df.to_csv(out_file)
+    return struct_df
+
+
+
