@@ -108,7 +108,8 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
         numGaps says how many gaps existed in the alignment. 
         Returns -1 if the region could not be mapped. It returns an empty dictionary if the alignment did not meet a gap threshold of less than 30%
     """
-
+    ref_start = int(ref_start)
+    ref_stop = int(ref_stop)
     fromName = 'structure'
     toName = 'reference'
     #check how to map from positions in struct to alignment
@@ -124,20 +125,23 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
         domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
         start_domain = int(domain[1])-1
         stop_domain = int(domain[2])-1
+        print("DEBUG: checking if domain %d start is between positions %d and %d"%(start_domain, ref_start, ref_stop))
+        if start_domain < (ref_start-domainExclValue):
+            print("\tit is not")
+            continue
+        if stop_domain > (ref_stop + domainExclValue):
+            print("\tit is not")
+            continue
+        
         if start_domain < ref_start:
-            if start_domain < ref_start + domainExclValue:
-                start = ref_start #reset the domain-start to the begininning of the sequence covered
-            else: 
-                continue
-        else: 
+            start = ref_start
+        else:
             start = start_domain
         if stop_domain > ref_stop:
-            if stop_domain < ref_stop - domainExclValue:
-                stop = ref_stop #reset the domain-stop to the end of the sequence covered
-            else: 
-                continue
+            stop = ref_stop
         else:
             stop = stop_domain
+  
         #domain = aln.get_seq(fromName).add_annotation(Feature, 'domain', domain_name, [(start, end)])
         start_aln = mapToStruct[start_domain]
         stop_aln = mapToStruct[stop_domain]
@@ -215,7 +219,7 @@ def returnMutPosList(diffList):
     return mut_positions
 
 
-def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start):
+def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_pos_start):
     """
     Given inforation from a structure reference line, for a uniprot_id, the structure sequence
     and the mapped reference position, return the string-based information for appending to the
@@ -231,6 +235,8 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         the structure sequence, includes mutations and modifications translated to single aa codes
     ref_seq_pos_start: int  
         position in reference of structure where experimental structure begins coverage
+    pdb_pos_start: int
+        position of structure where the reference position begins, may be different than 1 when tags exist experimentally
 
     Returns
     -------
@@ -262,6 +268,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         gene_name = list(protein_rec['Gene'])[0]
     
     aln, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start)
+    pos_overall_diff = pdb_pos_start + pos_diff
     domainStruct = returnDomainStruct(aln, from_start, from_end, domain_tuple, diffList)
     #make the domainStr
     domainList = []
@@ -285,7 +292,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     
     #make gaps 
     
-    return gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
+    return gene_name, rangeStr, pos_overall_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
 
 def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='False'):
     """
@@ -314,9 +321,10 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='
         uniprot_id = row['ACCESS']
         struct_seq = row['CANNONICAL_REF_SEQ']
         ref_seq_pos_start = row['CANNONICAL_SEQ_BEG_POSITION']
+        pdb_seq_pos_start  = row['PDB_SEQ_BEG_POSITION']
         if verbose:
             print("Working on %s"%(uniprot_id))
-        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start)
+        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start)
         gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
         struct_df.loc[index,'gene name'] = gene_name
         struct_df.loc[index, 'reference range'] = rangeStr
