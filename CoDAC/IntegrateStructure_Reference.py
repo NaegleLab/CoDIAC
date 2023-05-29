@@ -199,3 +199,75 @@ def returnMutPosList(diffList):
         mut_positions.append(int(pos))
     mut_positions.sort()
     return mut_positions
+
+
+def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start):
+    """
+    Given inforation from a structure reference line, for a uniprot_id, the structure sequence
+    and the mapped reference position, return the string-based information for appending to the
+    structure file, including domains, mutations, sequence range, etc.
+
+    Parameters
+    ----------
+    reference_df: pandas DataFrame
+        loaded from a reference file
+    uniprot_id: str
+        uniprot ID of the structure sequence of interest
+    struct_seq: str
+        the structure sequence, includes mutations and modifications translated to single aa codes
+    ref_seq_pos_start: int  
+        position in reference of structure where experimental structure begins coverage
+
+    Returns
+    -------
+
+    """
+
+    rangeStr = '-1'
+    diffStr = '-1'
+    domainStr = ''
+    gene_name = '-1'
+    pos_diff = 0
+    domainStr = '-1'
+    structure_arch = '-1'
+    full_domain_arch = '-1'
+
+    #First find the protein information in the reference file based on uniprot_id
+    protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
+    if len(protein_rec.index) < 1:
+        print("ERROR: Did not find %s in reference"%(uniprot_id))
+        #return default information here
+        return gene_name, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
+    elif len(protein_rec.index) > 1:
+        print("ERROR: Found more than one record for %s in reference"%(uniprot_id))
+    else:
+        domains = list(protein_rec['Domains'])[0]
+        domain_tuple = return_domains_tuple(domains)
+        full_domain_arch = list(protein_rec['Domain Architecture'])[0]
+        reference_seq = list(protein_rec['Ref Sequence'])[0]
+        gene_name = list(protein_rec['Gene'])[0]
+    
+    aln, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start)
+    domainStruct = returnDomainStruct(aln, domain_tuple, diffList)
+    #make the domainStr
+    domainList = []
+    domainDict_forArch = {}
+    for domain_name in domainStruct:
+        start, end, numGaps, numMuts = domainStruct[domain_name]
+        valStr = str(start)+','+str(end)+','+str(numGaps)+','+str(numMuts)
+        domainDict_forArch[start] = domain_name
+        domainList.append(domain_name+':'+valStr)
+    domainStr = ';'.join(domainList)
+
+    arch_list = []
+    starts = sorted(list(domainDict_forArch.keys()))
+    for start in starts:
+        arch_list.append(domainDict_forArch[start])
+    structure_arch = '|'.join(arch_list)
+
+
+    diffStr = ";".join(diffList)
+    
+    #make gaps 
+    
+    return gene_name, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
