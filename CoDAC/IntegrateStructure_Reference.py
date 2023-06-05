@@ -54,9 +54,12 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start, p
     #print("Range is %d to %d"%(from_start, from_end))
     range = "%d-%d"%(from_start+1, from_end+1)
 
-    pos_diff = mapToRef[from_start] - (ref_start-1) #checking the frame of reference   
+    pos_diff = ref_start-(from_start+1) #move from_start to ones-base 
     diffList = alignmentTools.findDifferencesBetweenPairs(aln, from_start, from_end, ref_start, toName, fromName)
 
+    print("DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d"%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))
+    #print("DEBUG: fromSeqValues")
+    #print(fromSeqValues)
     #if diffList:
         #print("Diff between Structure and Reference: %s"%(';'.join(diffList)))
 
@@ -273,7 +276,6 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         gene_name = list(protein_rec['Gene'])[0]
     
     aln, struct_seq_ref_spanning, from_start, from_end, rangeStr, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = return_mapping_between_sequences(struct_seq, reference_seq, ref_seq_pos_start, pdb_pos_start, ref_length)
-    pos_overall_diff = pdb_pos_start + pos_diff
     domainStruct = returnDomainStruct(aln, from_start, from_end, domain_tuple, diffList)
     #make the domainStr
     domainList = []
@@ -297,7 +299,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     
     #make gaps 
     
-    return gene_name, struct_seq_ref_spanning, rangeStr, pos_overall_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
+    return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
 
 def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='False'):
     """
