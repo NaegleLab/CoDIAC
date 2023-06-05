@@ -247,8 +247,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     -------
 
     """
-
-    rangeStr = '-1'
+    rangeStr = str(ref_seq_pos_start)+'-'+str(ref_seq_pos_start+ref_length) #start the default, to be updated later 
     diffStr = '-1'
     domainStr = ''
     gene_name = '-1'
