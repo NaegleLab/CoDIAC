@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import numpy as np
 import csv
+#import InterProDomain
 
 def makeRefFile(Uniprot_IDs, outputFile):
     '''Makes a Domain Reference file
@@ -30,7 +31,7 @@ def makeRefFile(Uniprot_IDs, outputFile):
     
     f = open(outputFile, 'w')
     writer = csv.writer(f)
-    header = ['UniProt ID', 'Gene', 'Species', 'Domains', 'Ref Sequence','PDB IDs','Domain Architecture']
+    header = ['UniProt ID', 'Gene', 'Species', 'Uniprot Domains', 'Ref Sequence','PDB IDs','Uniprot Domain Architecture']
     writer.writerow(header)
     for ID in Uniprot_IDs:
         rowdata = []
@@ -115,3 +116,5 @@ def makeRefFile(Uniprot_IDs, outputFile):
     f.close()
     
     print('Domain Reference File successfully created!')
+    #now add the InterPro Domains.
+    #InterProDomain.appendRefFile(outputfile, outputfile)
