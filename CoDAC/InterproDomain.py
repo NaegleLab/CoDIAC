@@ -22,7 +22,7 @@ def appendRefFile(input_RefFile, outputfile):
     metadata_string_list = generate_domain_metadata_string_list(processed_MD, uniprotList)
     
     df['Interpro Boundaries'] = metadata_string_list
-    df.to_csv(outputfile)
+    df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
 
 def generate_domain_metadata_string_list(processed_metadata, uniprot_list):
@@ -51,7 +51,7 @@ def generate_domain_metadata_string_list(processed_metadata, uniprot_list):
             end = domain_dict['end']
             metadata_string = short_name+':'+id+':'+str(start)+':'+str(end)
             string_list.append(metadata_string)
-        metadata_string_list.append(string_list)
+        metadata_string_list.append(';'.join(string_list))
     return metadata_string_list
 
 def generateDomainMetadata(uniprot_accessions):
