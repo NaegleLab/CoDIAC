@@ -19,9 +19,10 @@ def appendRefFile(input_RefFile, outputfile):
     
     domainMD = generateDomainMetadata(uniprotList)
     processed_MD = process_proteins(domainMD)
-    metadata_string_list = generate_domain_metadata_string_list(processed_MD, uniprotList)
+    metadata_string_list, domain_arch_list = generate_domain_metadata_string_list(processed_MD, uniprotList)
     
     df['Interpro Boundaries'] = metadata_string_list
+    df['Interpro Architecture'] = domain_arch_list
     df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
 
@@ -40,6 +41,7 @@ def generate_domain_metadata_string_list(processed_metadata, uniprot_list):
         list containing lists of domain strings that condense domain metadata information
     """
     metadata_string_list = []
+    domain_arch_list = []
     for i in range(len(uniprot_list)):
         string_list = []
         accession = uniprot_list[i]
@@ -51,8 +53,10 @@ def generate_domain_metadata_string_list(processed_metadata, uniprot_list):
             end = domain_dict['end']
             metadata_string = short_name+':'+id+':'+str(start)+':'+str(end)
             string_list.append(metadata_string)
+        domain_arch = return_domain_architecture(string_list)
+        domain_arch_list.append(domain_arch)
         metadata_string_list.append(';'.join(string_list))
-    return metadata_string_list
+    return metadata_string_list, domain_arch_list
 
 def generateDomainMetadata(uniprot_accessions):
     interpro_url = "https://www.ebi.ac.uk/interpro/api"
@@ -373,3 +377,28 @@ def collapse_domains(domain_list):
         domain_list.pop(to_remove[i])
 
     return domain_list
+
+def return_domain_architecture(domain_list):
+    """
+    Given a domain_list, list of domain information short_name:id:start:end return a domain 
+    architecture, which is the | separated list of domain names, in the order they appear in protein
+
+    """
+    #Domain Architecture
+    domdict = {}
+    for domain_info in domain_list:
+        name, id, start, end = domain_info.split(':')
+
+        domdict[start] = end, name
+
+    sorted_dict = dict(sorted(domdict.items(),reverse=False))
+    domain_arch = []
+    for key, value in sorted_dict.items():
+        #sort_start = key
+        #sort_end = value[0]
+        domain = value[1]
+        domain_arch.append(domain)
+
+    
+    final_domarch = '|'.join(domain_arch)   
+    return final_domarch
