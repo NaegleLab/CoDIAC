@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import numpy as np
 import csv
+from CoDAC import InterproDomain
 #import InterProDomain
 
 def makeRefFile(Uniprot_IDs, outputFile):
@@ -28,8 +29,8 @@ def makeRefFile(Uniprot_IDs, outputFile):
     -------
         Domain reference file in .csv format'''
     
-    
-    f = open(outputFile, 'w')
+    outputfile_temp = outputFile+'.temp'
+    f = open(outputfile_temp, 'w')
     writer = csv.writer(f)
     header = ['UniProt ID', 'Gene', 'Species', 'Uniprot Domains', 'Ref Sequence','PDB IDs','Uniprot Domain Architecture']
     writer.writerow(header)
@@ -116,5 +117,9 @@ def makeRefFile(Uniprot_IDs, outputFile):
     f.close()
     
     print('Domain Reference File successfully created!')
+    print('Adding Interpro Domains')
+    InterproDomain.appendRefFile(outputfile_temp,  outputFile)
+    #print('Adding Interpro Domains')
+
     #now add the InterPro Domains.
     #InterProDomain.appendRefFile(outputfile, outputfile)
