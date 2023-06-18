@@ -21,8 +21,8 @@ def appendRefFile(input_RefFile, outputfile):
     processed_MD = process_proteins(domainMD)
     metadata_string_list, domain_arch_list = generate_domain_metadata_string_list(processed_MD, uniprotList)
     
-    df['Interpro Boundaries'] = metadata_string_list
-    df['Interpro Architecture'] = domain_arch_list
+    df['Interpro Domains'] = metadata_string_list
+    df['Interpro Domain Architecture'] = domain_arch_list
     df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
 
@@ -388,7 +388,7 @@ def return_domain_architecture(domain_list):
     domdict = {}
     for domain_info in domain_list:
         name, id, start, end = domain_info.split(':')
-
+        start = int(start)
         domdict[start] = end, name
 
     sorted_dict = dict(sorted(domdict.items(),reverse=False))

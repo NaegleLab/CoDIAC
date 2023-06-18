@@ -69,7 +69,7 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start, p
     return aln, struct_sequence_ref_spanning, from_start+1, from_end+1, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref
 
 
-def return_domains_tuple(domain_str):
+def return_domains_tuple(domain_str, INTERPRO):
     """
     Given the domain string from a reference file, split this into tuples
 
@@ -77,6 +77,8 @@ def return_domains_tuple(domain_str):
     ----------
     domain_str: str
         domain string that is ';' separated with domain name:start:stop
+    INTERPRO: boolean
+        If True, assumes the string to parse is INTERPRO (contains an extra ID), else it's Uniprot
     
     Returns
     -------
@@ -87,7 +89,11 @@ def return_domains_tuple(domain_str):
     domain_list = domain_str.split(';')
     domain_tuple = []
     for domain_vals in domain_list:
-        domain_name, start, stop = domain_vals.split(':')
+        if INTERPRO:
+            domain_name, Interpro_ID, start, stop = domain_vals.split(':')
+        else:
+            domain_name, start, stop = domain_vals.split(':')
+
         domain_tuple.append([domain_name, int(start), int(stop)])
     return domain_tuple
 
@@ -227,7 +233,7 @@ def returnMutPosList(diffList):
     return mut_positions
 
 
-def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_pos_start, ref_length):
+def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_pos_start, ref_length, INTERPRO):
     """
     Given inforation from a structure reference line, for a uniprot_id, the structure sequence
     and the mapped reference position, return the string-based information for appending to the
@@ -245,7 +251,8 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         position in reference of structure where experimental structure begins coverage
     pdb_pos_start: int
         position of structure where the reference position begins, may be different than 1 when tags exist experimentally
-
+    INTERPRO: boolean   
+        If True, uses the Intepro domain information, otherwise use Uniprot
     Returns
     -------
 
@@ -269,8 +276,11 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     elif len(protein_rec.index) > 1:
         print("ERROR: Found more than one record for %s in reference"%(uniprot_id))
     else:
-        domains = list(protein_rec['Domains'])[0]
-        domain_tuple = return_domains_tuple(domains)
+        if INTERPRO:
+            domains = list(protein_rec['Interpro Domains'])[0]
+        else:
+            domains = list(protein_rec['Uniprot Domains'])[0]
+        domain_tuple = return_domains_tuple(domains, INTERPRO)
         full_domain_arch = list(protein_rec['Domain Architecture'])[0]
         reference_seq = list(protein_rec['Ref Sequence'])[0]
         gene_name = list(protein_rec['Gene'])[0]
@@ -301,7 +311,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     
     return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
 
-def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='False'):
+def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=True, verbose=False):
     """
     Given a PDB meta structure file and a Uniprot reference, integrate the two pieces to add information from reference
     
@@ -313,6 +323,8 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='
         Name of reference file
     out_file: str   
         name of output file to write
+    INTERPRO: boolean
+        If True, sues Interpro, otherwise appends Uniprot from reference file 
     verbose: boolean
         Print information about processing
     
@@ -332,7 +344,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, verbose='
         ref_length = row['REF_SEQ_LENGTH']
         if verbose:
             print("Working on %s"%(uniprot_id))
-        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length)
+        information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length, INTERPRO)
         gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
         struct_df.loc[index,'gene name'] = gene_name
         struct_df.loc[index, 'struct/ref sequence'] = struct_seq_ref_spanning
