@@ -57,7 +57,7 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start, p
     pos_diff = ref_start-(from_start+1) #move from_start to ones-base 
     diffList = alignmentTools.findDifferencesBetweenPairs(aln, from_start, from_end, ref_start, toName, fromName)
 
-    #print("DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d"%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))
+    print("DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d"%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))
     #print("DEBUG: fromSeqValues")
     #print(fromSeqValues)
     #if diffList:
@@ -141,10 +141,10 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
         stop_domain = int(domain[2])-1
         #print("DEBUG: checking if domain %d start is between positions %d and %d"%(start_domain, ref_start, ref_stop))
         if start_domain < (ref_start-domainExclValue):
-            print("\tit is not")
+            #print("\tit is not")
             continue
         if stop_domain > (ref_stop + domainExclValue):
-            print("\tit is not")
+            #print("\tit is not")
             continue
         
         if start_domain < ref_start:
@@ -257,7 +257,9 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     -------
 
     """
-    rangeStr = str(ref_seq_pos_start)+'-'+str(ref_seq_pos_start+ref_length) #start the default, to be updated later 
+
+
+    
     diffStr = '-1'
     domainStr = ''
     gene_name = '-1'
@@ -265,11 +267,21 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     domainStr = '-1'
     structure_arch = '-1'
     full_domain_arch = '-1'
+    
+    if ref_seq_pos_start == 'not found':
+        rangeStr = 'not found'
+        struct_seq_ref_spanning = 'not found'
+        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
+    else:
+        ref_seq_pos_start = int(ref_seq_pos_start)
+        ref_length = int(ref_length)
+        pdb_pos_start = int(pdb_pos_start)
+    rangeStr = str(ref_seq_pos_start)+'-'+str(ref_seq_pos_start+ref_length) #start the default, to be updated later 
     struct_seq_ref_spanning = struct_seq[pdb_pos_start-1:pdb_pos_start+ref_length+1]
 
     #First find the protein information in the reference file based on uniprot_id
     protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
-    if len(protein_rec.index) < 1:
+    if len(protein_rec.index) < 1 or uniprot_id == 'not found':
         print("ERROR: Did not find %s in reference"%(uniprot_id))
         #return default information here
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
@@ -278,10 +290,14 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     else:
         if INTERPRO:
             domains = list(protein_rec['Interpro Domains'])[0]
+            full_domain_arch = list(protein_rec['Interpro Domain Architecture'])[0]
+
         else:
             domains = list(protein_rec['Uniprot Domains'])[0]
+            full_domain_arch = list(protein_rec['Uniprot Domain Architecture'])[0]
+
+            
         domain_tuple = return_domains_tuple(domains, INTERPRO)
-        full_domain_arch = list(protein_rec['Domain Architecture'])[0]
         reference_seq = list(protein_rec['Ref Sequence'])[0]
         gene_name = list(protein_rec['Gene'])[0]
     
@@ -343,7 +359,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
         pdb_seq_pos_start  = row['PDB_SEQ_BEG_POSITION']
         ref_length = row['REF_SEQ_LENGTH']
         if verbose:
-            print("Working on %s"%(uniprot_id))
+            print("Working on %s for protein %s"%(row['PDB_ID'], uniprot_id))
         information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length, INTERPRO)
         gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
         struct_df.loc[index,'gene name'] = gene_name
