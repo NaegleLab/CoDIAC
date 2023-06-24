@@ -130,6 +130,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     #seq_to_aln_map = aln.get_gapped_seq(toName).gap_maps()[0]
     pscout_to_aln_map = aln.get_gapped_seq(fromName).gap_maps()[0]
     mapToStruct = aln.get_gapped_seq(toName).gap_maps()[1]
+    print(mapToStruct)
 
     mutPositions = returnMutPosList(diffList)
     gap_threshold = 0.7
@@ -139,7 +140,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
         domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
         start_domain = int(domain[1])-1
         stop_domain = int(domain[2])-1
-        #print("DEBUG: checking if domain %d start is between positions %d and %d"%(start_domain, ref_start, ref_stop))
+        print("DEBUG: checking if domain %d start and %d stop is between positions %d and %d"%(start_domain, stop_domain, ref_start, ref_stop))
         if start_domain < (ref_start-domainExclValue):
             #print("\tit is not")
             continue
@@ -147,6 +148,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
             #print("\tit is not")
             continue
         
+        print("\tFound domain")
         if start_domain < ref_start:
             start = ref_start
         else:
@@ -157,8 +159,30 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
             stop = stop_domain
   
         #domain = aln.get_seq(fromName).add_annotation(Feature, 'domain', domain_name, [(start, end)])
-        start_aln = mapToStruct[start_domain]
-        stop_aln = mapToStruct[stop_domain]
+        
+        #There is a very infrequent, but possible event, that a domain boundary exists at a gap, leading to a key issue
+        if start not in mapToStruct:
+            #how about is a start +/-1 OK?
+            if start-1 in mapToStruct:
+                start = start-1
+            elif start+1 in mapToStruct:
+                start = start+1
+            else: 
+                print("ERROR: domain start boundary not found due to gaps")
+        
+        if stop not in mapToStruct:
+            #how about is a stop +/-1 OK?
+            if stop+1 in mapToStruct:
+                stop = stop+1
+            elif stop-1 in mapToStruct:
+                stop = stop-1
+            else: 
+                print("ERROR: domain stop boundary not found due to gaps")
+        
+
+        
+        start_aln = mapToStruct[start]
+        stop_aln = mapToStruct[stop]
         numGaps = aln.seqs[1][start_aln:stop_aln].count_gaps()
         numMuts = 0
         if(diffList):
