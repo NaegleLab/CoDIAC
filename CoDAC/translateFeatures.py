@@ -7,6 +7,7 @@ import pandas as pd
 '''
 These tools allow you to translate features from an input fasta version of protein or protein coding regions onto a reference.
 '''
+
 def read_feature_file(feature_file):
     feature_file='lipid_features.txt'
     feature_dict={}
@@ -262,6 +263,19 @@ def return_best_match_from_set(matched_dict):
 def return_percent_matched(aln):
     """
     Given a cogent3 alignment object, calculate the percent matched (exact amino acid matches of the input sequence to the comparator)
+    and percent gapped
+
+    Parameters
+    ----------
+    aln: cogent3 alignment object
+        assumes two sequences, 'Input' and 'Reference'
+    
+    Returns
+    -------
+    percent_matched: float
+        percent matched, excluding gaps
+    percent_gapped: float
+        percent of input that is gapped, relative to reference
     
 
     """
@@ -273,6 +287,43 @@ def return_percent_matched(aln):
     percent_matched = 100*matches/input_length
     percent_gaps = 100*total_gaps/input_length
     return(percent_matched, percent_gaps)
+
+def return_translation_dict_for_all_feature_seqs(feature_dict, input_dict, reference_dict):
+    """
+    Given a set of unique features that we need to translate from an input feature file (see ead_feature_file)
+    Return a dictionary with input fasta headers and a dictionary type that includes the matching output header, alignment and quality scores
+
+    Parameters
+    ----------
+    feature_dict: dict
+        keys are fasta headers, values are the list of features to translate
+    input_dict: dict
+        input dictionary, keys fasta headers and values are sequences
+    reference_dict: dict
+        reference dictionary, keys fasta headers, and values are sequences
+    
+    Returns
+    -------
+    feature_trans_dict: dict
+        Dict of dicts, outer key is the header and inner keys are the following special keys
+            'header': header to output
+            'aln': alignment object of best header
+            'percent_matched': percent of input sequence that matches, not including gaps
+            'percent_gapped': percent of input sequence that is gapped 
+            'aln_score': alignment score, calculated by cogent3
+    
+    """
+    feature_trans_dict = {}
+    for fasta_header in feature_dict:
+        header, aln, aln_score, percent_matched, percent_gapped = return_best_match(fasta_header,  input_dict[fasta_header], reference_dict)
+        temp_dict = {}
+        temp_dict['header'] = header
+        temp_dict['aln'] = aln
+        temp_dict['percent_matched'] = percent_matched
+        temp_dict['percent_gapped'] = percent_gapped
+        temp_dict['aln_score'] = aln_score
+        feature_trans_dict[fasta_header] = temp_dict
+    return feature_trans_dict
 
 def translate_features(matched_alns, feature_pos):
     """
