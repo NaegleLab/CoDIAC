@@ -153,7 +153,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
     Returns
     -------
     No returns, prints a fasta file as described above. Fasta headers will be 
-    '>uniprot_ID|InterproID|domain_name|domain_number|domain_start|domain_end
+    '>uniprot_ID|domain_name|domain_number|InterproID|domain_start|domain_end
 
     """
     if n_term_offset < 0 or n_term_offset > 20:
@@ -194,7 +194,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
                     print("NOTICE: %s c-term offset capped at end of protein"%(ID))
                 domain_seq = seq[new_start-1:new_end-1] #0 based indexing for python access of protein indexes
                 #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
-                f.write(">%s|%s|%s|%s|%d|%d|%d\n"%(uniprot_id, gene_name, Interpro_ID, domain_name, domainNum, new_start, new_end))
+                f.write(">%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, domain_name, domainNum, Interpro_ID, new_start, new_end))
                 f.write(domain_seq+"\n")
         #if EDIT:
         #    domainRef.at[row_index, 'domains_edited'] = ";".join(domainsArr)
