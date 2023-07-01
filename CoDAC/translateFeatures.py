@@ -9,7 +9,6 @@ These tools allow you to translate features from an input fasta version of prote
 '''
 
 def read_feature_file(feature_file):
-    feature_file='lipid_features.txt'
     feature_dict={}
     type_dict = {}
     with open(feature_file, 'r') as file:
@@ -340,45 +339,20 @@ def translate_features(matched_alns, feature_pos):
     for feature in feature_dict[fasta_header]:
         if aa[feature-1][0]==aa[feature-1][1]: #true features
             validated_features.append(feature)
-            #print('Validated features:', validated_features)
-        if aa[feature-1][0] != aa[feature-1][1] and aa[feature-1][0]=='-': 
-            aa[feature-1][0]= 'Z'
-    for x in range(0, len(feature_dict[fasta_header])-1):
-        if aa[feature-1][0]=='Z' or aa[feature-1][0]=='-':
-            gaps.append(feature_dict[fasta_header][x])
-            print('Gap identified at position:', gaps[x])
-        if aa[feature-1][0] != aa[feature-1][1] and aa[feature-1][0]!='-' and aa[feature-1][0]!='Z': #mutation
-            mutations.append(feature)
-            print('Mutation identified at position:', mutations[x])
-    
-    #percent match code 
-    for gap in gaps:
-        if aa[gap-1][0] != aa[gap-1][1] and aa[gap-1][0]=='-': 
-            aa[gap-1][0]= 'Z'
-    input_seq = [pair[0] for pair in aa]
-    ref_seq=[pair[1] for pair in aa]
-    seq_length = min(len(input_seq), len(ref_seq))
-    match=0
-    for i in range(0, seq_length):
-        if input_seq[i] == ref_seq[i]:
-            match=match+1
-        i=i+1
-    percent_match=(match/seq_length) *100
-
-    if percent_match < 95:
-        temp_dict = {}
-        temp_dict['header'] = best_header
-        temp_dict['aln'] = best_aln
-        matched_dict[fasta_header] = temp_dict
-        percent_match= 'ERROR: BELOW SIMILARITY THRESHOLD'
-        del feature_dict[fasta_header][feature]
-   
-    print('The alignment score is:', aln_score)
-    print('The validated features are at positions:', validated_features)
- 
-    return mutations,gaps, validated_features
+            
+    return validated_features
 
 
+def write_feature_file(type_dict, validated_features):
+    with open('new_features_test.txt', 'w') as file:
+        ptm_type = list(type_dict.keys())[0]
+        color = list(type_dict.values())[0]
+        file.write('{}\t{}\n'.format(ptm_type, color))
+        for feature in validated_features:
+            header = feature[0]
+            f = feature[1]
+            file.write('{}\t{}\t-1\t{}\t{}\t{}\n'.format(ptm_type, header, f, f, ptm_type))
+    return file
 
 
 
