@@ -364,11 +364,15 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
                 #get the position in the alignment of the 'Input', then translate to 
                 # what position that is in the output, keeping it only if the two amino acids match
                 # at that aligned position.
-                if aa[feature-1][0] == aa[feature-1][1]:  # amino acids are the same
-                    validated_features.append(map_to_ref[feature-1]+1)
+                try:
+                    if aa[feature-1][0] == aa[feature-1][1]:  # amino acids are the same
+                        validated_features.append(map_to_ref[feature-1]+1)
+                except:
+                    print("ERROR: position%d is out of range for match %s to %s"%(feature, input_header, output_header))
+
             feature_dict_output[output_header]=validated_features
         else:
-            print("LOG: %s did not have sufficent match that meant %0.2f"%(input_header, threshold))
+            print("LOG: %s did not have sufficent match that meant %0.2f"%(input_header, percent_match_threshold))
     return feature_dict_output
 
 def write_feature_file(type_dict, feature_dict, output_file):
