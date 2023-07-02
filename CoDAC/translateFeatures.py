@@ -365,7 +365,7 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
                 # what position that is in the output, keeping it only if the two amino acids match
                 # at that aligned position.
                 if aa[feature-1][0] == aa[feature-1][1]:  # amino acids are the same
-                    validated_features.append(map_to_ref[feature-1])
+                    validated_features.append(map_to_ref[feature-1]+1)
             feature_dict_output[output_header]=validated_features
         else:
             print("LOG: %s did not have sufficent match that meant %0.2f"%(input_header, threshold))
