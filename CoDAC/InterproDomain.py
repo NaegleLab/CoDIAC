@@ -180,7 +180,7 @@ def process_proteins(PROTEINS):
     processed_proteins_dict: dict
         dictionary of protein accessions containing a list of collapsed and arranged domains
     """
-    #interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
+    interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
 
     processed_proteins_dict = {}
     for protein_accession, domains_list in PROTEINS.items():
@@ -406,7 +406,7 @@ def return_domain_architecture(domain_list):
     final_domarch = '|'.join(domain_arch)   
     return final_domarch
 
-def calculate_domain_overlap(interpro, threshold):
+def calculate_domain_overlap(interpro, overlap_threshold, length_larger_than):
     """
     Given a dict of intpro domains, where keys are the position they are found in the list for domain metadata, 
     calculate the percent overlap between all domains -- this skips multiple entries of the same domain from the calculation
@@ -417,35 +417,40 @@ def calculate_domain_overlap(interpro, threshold):
     keys = interpro.keys()
     to_remove = []
     for i in range(0, len(keys)):
+        boundaries_i = interpro[i]['boundaries']
+        if len(boundaries_i) > 1:
+            continue
+
         for j in range(i+1, len(keys)):
-            temp_dict = {}
-            boundaries_i = interpro[i]['boundaries']
             boundaries_j = interpro[j]['boundaries']
-            if len(boundaries_i) > 1 or len(boundaries_j)> 1:
-                    print("Skipping double domains")
+            if len(boundaries_j)> 1:
+                    #print("Skipping double domains")
+                    continue
             else:
-                temp_dict = {}
                 set_i = set(range(boundaries_i[0]['start'], boundaries_i[0]['end']))
                 set_j  = set(range(boundaries_j[0]['start'], boundaries_j[0]['end']))
                 if len(set_i) < len(set_j):
-                    intersection = len(set_i.intersection(set_j))/len(set_i)
-                    if intersection > threshold:
-                         print("Should replace domain %d with %d"%(i, j))
-                         to_remove.append(i)
+                    if length_larger_than*len(set_i) < len(set_j):
+                        intersection = len(set_i.intersection(set_j))/len(set_i)
+                        if intersection > overlap_threshold:
+                            #print("Should replace domain %d with %d"%(i, j))
+                            to_remove.append(i)
                 else:
-                    intersection = len(set_j.intersection(set_i))/len(set_j)
-                    if intersection > threshold:
-                         print("Should replace domain %d with %d"%(j, i))
-                         to_remove.append(j)
+                    if length_larger_than*len(set_j) < len(set_i):
+                        intersection = len(set_j.intersection(set_i))/len(set_j)
+                        if intersection > overlap_threshold:
+                            #print("Should replace domain %d with %d"%(j, i))
+                            to_remove.append(j)
                 #temp_dict[j] = intersection
                 #overlap[i] = temp_dict
     return list(set(to_remove))
 
-def collapse_InterPro_Domains(domain_metadata, threshold=0.8):
+def collapse_InterPro_Domains(domain_metadata, overlap_threshold=0.8, length_larger_than = 1.4):
     """
     Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts)
-    Walk through and first find any larger protein domains that cover smaller IPR domains. Keep 
-    the largets of the domains.  
+    Walk through and first find any larger protein domains that cover smaller interpro domains. Keep 
+    the largets of the domains only if they overlap by overlap_threshold or more and the larger protein 
+    is length_larger_than x longer (for example 1.4 is 40% longer)
     """
 
     #first assemble all the interpro domains across the list. Keep track of their entry number, and the information
@@ -458,7 +463,7 @@ def collapse_InterPro_Domains(domain_metadata, threshold=0.8):
             if database_key in domain_list[i]:
                 interpro_dict[i] = domain_list[i][database_key]
                 #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
-        indexes_to_remove = calculate_domain_overlap(interpro_dict, threshold)
+        indexes_to_remove = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
         for index in indexes_to_remove:
             del domain_list[index][database_key]
     return interpro_dict
