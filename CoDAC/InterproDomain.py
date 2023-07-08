@@ -180,6 +180,8 @@ def process_proteins(PROTEINS):
     processed_proteins_dict: dict
         dictionary of protein accessions containing a list of collapsed and arranged domains
     """
+    #interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
+
     processed_proteins_dict = {}
     for protein_accession, domains_list in PROTEINS.items():
         # domains_list is a list of unprocessed domains which can be processed with make_interpro_annotations
@@ -210,7 +212,8 @@ def make_interpro_annotations(domains_list):
             interpro_domains_list.append(domains_list[i])
 
     # domains_list is processed such that the domains that intersect can be collapsed based on hierarchy
-    collapsed_domains_list = collapse_domains(interpro_domains_list)
+    collapsed_domains_list, hierarchy_dict = collapse_domains(interpro_domains_list)
+    #print(collapsed_domains_list)
 
     formatted_domains_list = handle_bounds(collapsed_domains_list)
     
@@ -376,7 +379,7 @@ def collapse_domains(domain_list):
     for i in range(len(to_remove)):
         domain_list.pop(to_remove[i])
 
-    return domain_list
+    return domain_list, hierarchy_dict
 
 def return_domain_architecture(domain_list):
     """
@@ -402,3 +405,62 @@ def return_domain_architecture(domain_list):
     
     final_domarch = '|'.join(domain_arch)   
     return final_domarch
+
+def calculate_domain_overlap(interpro, threshold):
+    """
+    Given a dict of intpro domains, where keys are the position they are found in the list for domain metadata, 
+    calculate the percent overlap between all domains -- this skips multiple entries of the same domain from the calculation
+    Returns a list of domain entries to delete, because they are contained at > threshold in another domain.
+    """
+
+    #given a number of possible domains, find the domains that overlap each other by at least 50% of the smallest domain
+    keys = interpro.keys()
+    to_remove = []
+    for i in range(0, len(keys)):
+        for j in range(i+1, len(keys)):
+            temp_dict = {}
+            boundaries_i = interpro[i]['boundaries']
+            boundaries_j = interpro[j]['boundaries']
+            if len(boundaries_i) > 1 or len(boundaries_j)> 1:
+                    print("Skipping double domains")
+            else:
+                temp_dict = {}
+                set_i = set(range(boundaries_i[0]['start'], boundaries_i[0]['end']))
+                set_j  = set(range(boundaries_j[0]['start'], boundaries_j[0]['end']))
+                if len(set_i) < len(set_j):
+                    intersection = len(set_i.intersection(set_j))/len(set_i)
+                    if intersection > threshold:
+                         print("Should replace domain %d with %d"%(i, j))
+                         to_remove.append(i)
+                else:
+                    intersection = len(set_j.intersection(set_i))/len(set_j)
+                    if intersection > threshold:
+                         print("Should replace domain %d with %d"%(j, i))
+                         to_remove.append(j)
+                #temp_dict[j] = intersection
+                #overlap[i] = temp_dict
+    return list(set(to_remove))
+
+def collapse_InterPro_Domains(domain_metadata, threshold=0.8):
+    """
+    Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts)
+    Walk through and first find any larger protein domains that cover smaller IPR domains. Keep 
+    the largets of the domains.  
+    """
+
+    #first assemble all the interpro domains across the list. Keep track of their entry number, and the information
+    interpro_dict = {}
+    database_key = 'interpro'
+    for protein in domain_metadata:
+        domain_list = domain_metadata[protein]
+        for i in range(0, len(domain_list)):
+            domain_dict_temp = domain_list[i]
+            if database_key in domain_list[i]:
+                interpro_dict[i] = domain_list[i][database_key]
+                #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
+        indexes_to_remove = calculate_domain_overlap(interpro_dict, threshold)
+        for index in indexes_to_remove:
+            del domain_list[index][database_key]
+    return interpro_dict
+                
+            
