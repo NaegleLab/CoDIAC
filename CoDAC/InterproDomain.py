@@ -16,8 +16,9 @@ def appendRefFile(input_RefFile, outputfile):
     """
     df = pd.read_csv(input_RefFile)
     uniprotList = df['UniProt ID'].to_list()
-    
+    print("Fetching domains..")
     domainMD = generateDomainMetadata(uniprotList)
+    print("Processing domains...")
     processed_MD = process_proteins(domainMD)
     metadata_string_list, domain_arch_list = generate_domain_metadata_string_list(processed_MD, uniprotList)
     
@@ -180,10 +181,17 @@ def process_proteins(PROTEINS):
     processed_proteins_dict: dict
         dictionary of protein accessions containing a list of collapsed and arranged domains
     """
-    interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
+
+    domainMD_new = {}
+    for protein in PROTEINS:
+        #print("Working on %s"%(protein))
+        domain_list = PROTEINS[protein]
+        domain_list_reduced = collapse_InterPro_Domains(domain_list) 
+        domainMD_new[protein] = domain_list_reduced
+    #interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
 
     processed_proteins_dict = {}
-    for protein_accession, domains_list in PROTEINS.items():
+    for protein_accession, domains_list in domainMD_new.items():
         # domains_list is a list of unprocessed domains which can be processed with make_interpro_annotations
         processed_domains_list = make_interpro_annotations(domains_list)
         
@@ -445,7 +453,7 @@ def calculate_domain_overlap(interpro, overlap_threshold, length_larger_than):
                 #overlap[i] = temp_dict
     return list(set(to_remove))
 
-def collapse_InterPro_Domains(domain_metadata, overlap_threshold=0.8, length_larger_than = 1.4):
+def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_than = 1.4):
     """
     Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts)
     Walk through and first find any larger protein domains that cover smaller interpro domains. Keep 
@@ -454,18 +462,36 @@ def collapse_InterPro_Domains(domain_metadata, overlap_threshold=0.8, length_lar
     """
 
     #first assemble all the interpro domains across the list. Keep track of their entry number, and the information
+    #let's make a new version of this, as a dict, where the index values cannot be changed as a result of 
+    #deleting values as we go. We'll cast back to a list for export
+    domain_dict = {}
+    for i in range(0, len(domain_list)):
+        domain_dict[i] = domain_list[i].copy()
+
     interpro_dict = {}
     database_key = 'interpro'
-    for protein in domain_metadata:
-        domain_list = domain_metadata[protein]
-        for i in range(0, len(domain_list)):
-            domain_dict_temp = domain_list[i]
-            if database_key in domain_list[i]:
-                interpro_dict[i] = domain_list[i][database_key]
-                #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
-        indexes_to_remove = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
-        for index in indexes_to_remove:
-            del domain_list[index][database_key]
-    return interpro_dict
+    #for protein in domain_metadata:
+        #print("Working on %s"%(protein))
+        #domain_list = domain_metadata[protein]
+    for key in domain_dict.keys():
+        if database_key in domain_dict[key]:
+            interpro_dict[key] = domain_dict[key][database_key]
+            #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
+    keys_to_remove = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
+    if keys_to_remove is not None:
+        for key in keys_to_remove:#.sort(reverse=True):
+            if key in domain_dict:
+                #have to be careful, if only interpro is in an index, then we shift the entire index over.
+                #print("Removing the following domain:")
+                print(domain_dict[key][database_key])
+                del domain_dict[key][database_key]
+            else:
+                print("ERROR: Index %d no longer in domain list"%(key))
+        #re list the domains
+    domain_list_new = []
+    for key in domain_dict:
+        domain_list_new.append(domain_dict[key])
+
+    return domain_list_new
                 
             
