@@ -483,7 +483,7 @@ def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_
             if key in domain_dict:
                 #have to be careful, if only interpro is in an index, then we shift the entire index over.
                 #print("Removing the following domain:")
-                print(domain_dict[key][database_key])
+                #print(domain_dict[key][database_key])
                 del domain_dict[key][database_key]
             else:
                 print("ERROR: Index %d no longer in domain list"%(key))
