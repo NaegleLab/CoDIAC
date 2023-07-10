@@ -229,6 +229,16 @@ def make_interpro_annotations(domains_list):
 
     return formatted_domains_list
 
+def return_interpro_domain_list(domain_list):
+    """
+    From a list of domain dicts that comes from get meta data, get just the subset of domains that are interpro
+    """
+    interpro_domain_list = []
+    for i in range(len(domain_list)):
+        if 'interpro' in domain_list[i].keys():
+            interpro_domain_list.append(domain_list[i])
+    return interpro_domain_list
+
 # documentation incomplete
 def handle_bounds(domain_list):
     """
@@ -277,11 +287,13 @@ def sort_function(formatted_domain_dict):
 # complete
 def compare_hierarchy(hierarchy_dict):
     """
-    Checks the domain hierarchies of all domains present within a protein and collapses domains into the domain at the top of the hierarchy
+    Checks the domain hierarchies of all domains present within a protein and collapses domains into the domain at the 
+    top of the hierarchy
     Parameters
     ----------
     hierarchy_dict : dict
-        Dictionary containing hierarchy information where the key is the interpro accession of the domain and the value is the dictionary with data regarding the domain's hierarchy
+        Dictionary containing hierarchy information where the key is the interpro accession of the domain and 
+        the value is the dictionary with data regarding the domain's hierarchy
     Returns
     -------
     collapsed_domain_mapper : dict
@@ -424,16 +436,31 @@ def calculate_domain_overlap(interpro, overlap_threshold, length_larger_than):
     #given a number of possible domains, find the domains that overlap each other by at least 50% of the smallest domain
     keys = interpro.keys()
     to_remove = []
+    pairs_coupled = {}
     for i in range(0, len(keys)):
         boundaries_i = interpro[i]['boundaries']
-        if len(boundaries_i) > 1:
-            continue
 
         for j in range(i+1, len(keys)):
             boundaries_j = interpro[j]['boundaries']
-            if len(boundaries_j)> 1:
-                    #print("Skipping double domains")
-                    continue
+            if len(boundaries_i)>1:
+                if len(boundaries_j) > 1:
+                    continue #won't compare multi domains within multidomains
+                OVERLAP, count = handle_domain_sets(boundaries_j[0], boundaries_i,  overlap_threshold, length_larger_than)
+                if OVERLAP:
+                    if j not in pairs_coupled:
+                        pairs_coupled[j] =[]
+                    pairs_coupled[j].append(i)
+                    to_remove.append(i)
+            elif len(boundaries_j)> 1:
+                if len(boundaries_i) > 1:
+                    continue #won't compare multi domains within multidomains
+                OVERLAP, count = handle_domain_sets(boundaries_i[0], boundaries_j,  overlap_threshold, length_larger_than)
+                if OVERLAP:
+                    if i not in pairs_coupled:
+                        pairs_coupled[i] =[]
+                    pairs_coupled[i].append(j)
+                    to_remove.append(j)
+
             else:
                 set_i = set(range(boundaries_i[0]['start'], boundaries_i[0]['end']))
                 set_j  = set(range(boundaries_j[0]['start'], boundaries_j[0]['end']))
@@ -442,18 +469,65 @@ def calculate_domain_overlap(interpro, overlap_threshold, length_larger_than):
                         intersection = len(set_i.intersection(set_j))/len(set_i)
                         if intersection > overlap_threshold:
                             #print("Should replace domain %d with %d"%(i, j))
-                            to_remove.append(i)
+                            #to_remove.append(i), - wait to remove if we know multidomains exist
+                            if j not in pairs_coupled:
+                                pairs_coupled[j] = []
+                            pairs_coupled[j].append(i)
                 else:
                     if length_larger_than*len(set_j) < len(set_i):
                         intersection = len(set_j.intersection(set_i))/len(set_j)
                         if intersection > overlap_threshold:
                             #print("Should replace domain %d with %d"%(j, i))
-                            to_remove.append(j)
+                            #to_remove.append(j)
+                            if i not in pairs_coupled:
+                                pairs_coupled[i] = []
+                            pairs_coupled[i].append(j)
                 #temp_dict[j] = intersection
                 #overlap[i] = temp_dict
-    return list(set(to_remove))
+        #walk through pairs_coupled and if more than one domain is matched
+        for index in pairs_coupled:
+            if len(pairs_coupled[index])>1:
+                for j in pairs_coupled[index]:
+                    to_remove.append(j)
+    return list(set(to_remove)), pairs_coupled
 
-def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_than = 1.4):
+def handle_domain_sets(boundary, boundaries, overlap_threshold, length_larger_than):
+    """
+    If there are multiple boundaries for the same domain, have a look at whether these are repeats 
+    that likely belong to another domain set by boundary. 
+    Boundaries is the list of boundaries for a multi-domain set of possible proteins
+    boundary is the comparator that may be a larger domain that encompasses this set.
+
+    Returns
+    -------
+    OVERLAP: boolean
+        True if all domains in boundaries are within boundary based on overlap_treshold and length_larger_than
+    count: int
+        Number of domains found to overlap. 
+    """
+
+    #let's start with just checking overlap of the first set
+    set_i = set(range(boundaries[0]['start'], boundaries[0]['end']))
+    set_j  = set(range(boundary['start'], boundary['end']))
+    count = 0
+    if len(set_i) < len(set_j):
+        if length_larger_than*len(set_i) < len(set_j):
+            intersection = len(set_i.intersection(set_j))/len(set_i)
+            if intersection > overlap_threshold:
+                count+=1
+        for i in range(1, len(boundaries)):
+            set_i = set(range(boundaries[i]['start'], boundaries[i]['end']))
+            intersection = len(set_i.intersection(set_j))/len(set_i)
+            if intersection > overlap_threshold:
+                count+=1
+    OVERLAP = False
+    if count==len(boundaries):
+        OVERLAP = True
+    return OVERLAP, count
+
+
+
+def collapse_InterPro_Domains(domain_list, overlap_threshold=0.9, length_larger_than = 1.8):
     """
     Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts)
     Walk through and first find any larger protein domains that cover smaller interpro domains. Keep 
@@ -477,7 +551,7 @@ def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_
         if database_key in domain_dict[key]:
             interpro_dict[key] = domain_dict[key][database_key]
             #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
-    keys_to_remove = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
+    keys_to_remove, pairs_coupled = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
     if keys_to_remove is not None:
         for key in keys_to_remove:#.sort(reverse=True):
             if key in domain_dict:
