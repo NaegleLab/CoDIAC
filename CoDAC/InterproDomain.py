@@ -169,13 +169,17 @@ def collect_data(entry, protein_accession, domain_database=None):
     return dictionary
 
 # complete
-def process_proteins(PROTEINS):
+def process_proteins(PROTEINS, VERBOSE=True, log_file = 'process_interpro_log.txt'):
     """
     Takes in a dictionary of proteins accessions containing domain annotations for each protein and outputs a dictionary of proteins with domains for that protein organized and collapsed such that no domain intersects with another domain
     Parameters
     ----------
     PROTEINS: dict
         dictionary of protein accessions containing a list of domains
+    VERBOSE: boolean
+        If VERBOSE, print logging statements to log_file output about decisions being made at the coherence of domains and boundaries
+    log_file: str
+        Location of verbose output. If no file provided, this will default to print logging statements as append to a default file
     Returns
     -------
     processed_proteins_dict: dict
@@ -183,10 +187,17 @@ def process_proteins(PROTEINS):
     """
 
     domainMD_new = {}
+    if VERBOSE:
+        with open(log_file, "+a") as log:
+            log.write("Collapsing domains based on mulit-domains within a larger domain\n")
+            log.write("Parameters: \n")
     for protein in PROTEINS:
         #print("Working on %s"%(protein))
+        if VERBOSE:
+            with open(log_file, "+a") as log:
+                log.write(protein+"\n")
         domain_list = PROTEINS[protein]
-        domain_list_reduced = collapse_InterPro_Domains(domain_list) 
+        domain_list_reduced = collapse_InterPro_Domains(domain_list, VERBOSE, log_file) 
         domainMD_new[protein] = domain_list_reduced
     #interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?
 
@@ -533,12 +544,31 @@ def handle_domain_sets(boundary, boundaries, overlap_threshold, length_larger_th
 
 
 
-def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_than = 1.4):
+def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=0.8, length_larger_than = 1.4):
     """
     Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts)
     Walk through and first find any larger protein domains that cover smaller interpro domains. Keep 
     the largets of the domains only if they overlap by overlap_threshold or more and the larger protein 
     is length_larger_than x longer (for example 1.4 is 40% longer)
+
+    Parameters
+    ----------
+    domain_list: list
+        List of domain dictionaries from InterPro for a single protein 
+    VERBOSE: boolean
+        If VERBOSE, print logging statements to log_file output about decisions being made at the coherence of domains and boundaries
+    log_file: str
+        Location of verbose output. If no file provided, this will default to print logging statements as append to a default file
+    overlap_threshold: float
+        Percent of the smaller domain that must overlap with a larger domain before considering collapsing these. 
+    larger_than_length: float
+        If smaller domain *larger_than_length >= length of a larger domain - consider it for collapsing
+    
+    Returns
+    -------
+    domain_list_new: list
+        List of domain dictionaries with collapsed entries removed. Collapsed when more than one domain is found within a larger
+        domain that has > overlap_threshold and is smaller by larger_than_length.
     """
 
     #first assemble all the interpro domains across the list. Keep track of their entry number, and the information
@@ -574,6 +604,24 @@ def collapse_InterPro_Domains(domain_list, overlap_threshold=0.8, length_larger_
     for key in domain_dict:
         domain_list_new.append(domain_dict[key])
 
+    #write the report if VERBOSE
+    if VERBOSE:
+        with open(log_file, "+a") as log:
+            for domain_val in pairs_coupled.keys():
+                partners = pairs_coupled[domain_val]
+                keeping_str = return_info_string(interpro_dict, domain_val)
+                alternate_str = ''
+                for partner in partners:
+                    alternate_str = return_info_string(interpro_dict, partner)
+                    if partner in keys_to_remove:
+                        log.write("\tCOLLAPSE: Keeping %s, collapsed domain %s into it\n"%(keeping_str, alternate_str))
+                    else:
+                        log.write("\tNOT COLLAPSED: Did not collapse into %s, the possible domains %s\n"%(keeping_str, alternate_str))
     return domain_list_new
                 
-            
+def return_info_string(interpro_dict, dict_item_number):
+    """
+    Given an intepro_dict and the item number, return a string of info about the domain, specifically 
+    the short name, interpro number, and start, stop 
+    """
+    return ':'.join([interpro_dict[dict_item_number]['name'], interpro_dict[dict_item_number]['accession'], str(interpro_dict[dict_item_number]['boundaries'])])
