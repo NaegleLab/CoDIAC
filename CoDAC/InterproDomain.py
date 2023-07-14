@@ -504,7 +504,7 @@ def calculate_domain_overlap(interpro, overlap_threshold, length_larger_than):
                     to_remove.append(j)
     return list(set(to_remove)), pairs_coupled
 
-def handle_domain_sets(boundary, boundaries, overlap_threshold, length_larger_than):
+def handle_domain_sets(boundary, boundaries, overlap_threshold, length_larger_than=1.4):
     """
     If there are multiple boundaries for the same domain, have a look at whether these are repeats 
     that likely belong to another domain set by boundary. 
@@ -587,7 +587,8 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
         if database_key in domain_dict[key]:
             interpro_dict[key] = domain_dict[key][database_key]
             #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
-    keys_to_remove, pairs_coupled = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
+    #keys_to_remove, pairs_coupled = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
+    keys_to_remove, pairs_coupled = calculate_domain_overlap2(interpro_dict, overlap_threshold)
     #print("In area to delete, preparint go delete")
     #print(keys_to_remove)
     if keys_to_remove is not None:
@@ -625,3 +626,76 @@ def return_info_string(interpro_dict, dict_item_number):
     the short name, interpro number, and start, stop 
     """
     return ':'.join([interpro_dict[dict_item_number]['name'], interpro_dict[dict_item_number]['accession'], str(interpro_dict[dict_item_number]['boundaries'])])
+
+def calculate_domain_overlap2(interpro, overlap_threshold):
+    """
+    Given a dict of intpro domains, where keys are the position they are found in the list for domain metadata, 
+    calculate the percent overlap between all domain
+    Returns a list of domain entries to delete, because they are contained at > threshold in another domain and
+    are the latter domain returned by interpro in those possibilities.
+    """
+
+    #given a number of possible domains, find the domains that overlap each other by at least 50% of the smallest domain
+    keys = interpro.keys()
+    pairs_coupled = {}
+    for i in range(0, len(keys)):
+        boundaries_i = interpro[i]['boundaries']
+
+        for j in range(i+1, len(keys)):
+            boundaries_j = interpro[j]['boundaries']
+            if len(boundaries_i)>1:
+                if len(boundaries_j) > 1:
+                    continue #won't compare multi domains within multidomains
+                OVERLAP, count = handle_domain_sets(boundaries_j[0], boundaries_i,  overlap_threshold)
+                if OVERLAP:
+                    if j not in pairs_coupled:
+                        pairs_coupled[j] =[]
+                    pairs_coupled[j].append(i)
+                    #to_remove.append(i)
+                    #print("added index %d to remove"%(j))
+            elif len(boundaries_j)> 1:
+                if len(boundaries_i) > 1:
+                    continue #won't compare multi domains within multidomains
+                OVERLAP, count = handle_domain_sets(boundaries_i[0], boundaries_j,  overlap_threshold)
+                if OVERLAP:
+                    if i not in pairs_coupled:
+                        pairs_coupled[i] =[]
+                    pairs_coupled[i].append(j)
+                    #to_remove.append(j)
+                    #print("added index %d to remove"%(j))
+
+            else:
+                set_i = set(range(boundaries_i[0]['start'], boundaries_i[0]['end']))
+                set_j  = set(range(boundaries_j[0]['start'], boundaries_j[0]['end']))
+                if len(set_i) < len(set_j):
+                    intersection = len(set_i.intersection(set_j))/len(set_i)
+                    if intersection > overlap_threshold:
+                        #print("Should replace domain %d with %d"%(i, j))
+                        #to_remove.append(i), - wait to remove if we know multidomains exist
+                        if j not in pairs_coupled:
+                            pairs_coupled[j] = []
+                        pairs_coupled[j].append(i)
+                else:
+                    intersection = len(set_j.intersection(set_i))/len(set_j)
+                    if intersection > overlap_threshold:
+                        #print("Should replace domain %d with %d"%(j, i))
+                        #to_remove.append(j)
+                        if i not in pairs_coupled:
+                            pairs_coupled[i] = []
+                        pairs_coupled[i].append(j)
+    
+    #now for all possible overlaps, simply select the larger indexes to remove.
+    to_remove = []
+    for index in pairs_coupled:
+        list_of_vals = pairs_coupled[index]
+        list_of_vals.append(index)
+        #list_of_vals = list(set(list_of_vals))
+        #print('Before pop')
+        #print(list_of_vals)
+        list_of_vals.pop(list_of_vals.index(min(list_of_vals)))
+        for val in list_of_vals:
+            to_remove.append(val)            
+        # if len(pairs_coupled[index])>1:
+        #     for j in pairs_coupled[index]:
+        #         to_remove.append(j)
+    return list(set(to_remove)), pairs_coupled
