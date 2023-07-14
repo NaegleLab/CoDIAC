@@ -591,12 +591,12 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
     keys_to_remove, pairs_coupled = calculate_domain_overlap2(interpro_dict, overlap_threshold)
     #print("In area to delete, preparint go delete")
     #print(keys_to_remove)
+
+    info_string = ''
     if keys_to_remove is not None:
         for key in keys_to_remove:#.sort(reverse=True):
             if key in domain_dict:
-                #have to be careful, if only interpro is in an index, then we shift the entire index over.
-                #print("Removing the following domain:")
-                #print(domain_dict[key][database_key])
+
                 del domain_dict[key]#[database_key] #can delete the entire entry
             else:
                 print("ERROR: Index %d no longer in domain list"%(key))
@@ -608,16 +608,17 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
     #write the report if VERBOSE
     if VERBOSE:
         with open(log_file, "+a") as log:
-            for domain_val in pairs_coupled.keys():
-                partners = pairs_coupled[domain_val]
-                keeping_str = return_info_string(interpro_dict, domain_val)
-                alternate_str = ''
-                for partner in partners:
-                    alternate_str = return_info_string(interpro_dict, partner)
-                    if partner in keys_to_remove:
-                        log.write("\tCOLLAPSE: Keeping %s, collapsed domain %s into it\n"%(keeping_str, alternate_str))
-                    else:
-                        log.write("\tNOT COLLAPSED: Did not collapse into %s, the possible domains %s\n"%(keeping_str, alternate_str))
+            log.write("Removal based on domain overlap\n")
+            for domain_val in keys_to_remove:
+                log.write("\t REMOVED: %s\n"%(return_info_string(interpro_dict, domain_val)))
+                #keeping_str = return_info_string(interpro_dict, domain_val)
+                #alternate_str = ''
+                #for partner in partners:
+                    #alternate_str = return_info_string(interpro_dict, partner)
+                    #if partner in keys_to_remove:
+                    #    log.write("\tCOLLAPSE: Keeping %s, collapsed domain %s into it\n"%(keeping_str, alternate_str))
+                    #else:
+                    #    log.write("\tNOT COLLAPSED: Did not collapse into %s, the possible domains %s\n"%(keeping_str, alternate_str))
     return domain_list_new
                 
 def return_info_string(interpro_dict, dict_item_number):
@@ -685,6 +686,8 @@ def calculate_domain_overlap2(interpro, overlap_threshold):
                         pairs_coupled[i].append(j)
     
     #now for all possible overlaps, simply select the larger indexes to remove.
+    #make a new reporter set
+    pairs_by_removal = {}
     to_remove = []
     for index in pairs_coupled:
         list_of_vals = pairs_coupled[index]
@@ -692,10 +695,13 @@ def calculate_domain_overlap2(interpro, overlap_threshold):
         #list_of_vals = list(set(list_of_vals))
         #print('Before pop')
         #print(list_of_vals)
-        list_of_vals.pop(list_of_vals.index(min(list_of_vals)))
+        min_val = min(list_of_vals)
+        pairs_by_removal[min_val] = []
+        list_of_vals.pop(list_of_vals.index(min_val))
         for val in list_of_vals:
-            to_remove.append(val)            
+            to_remove.append(val)
+            pairs_by_removal[min_val].append(val)
         # if len(pairs_coupled[index])>1:
         #     for j in pairs_coupled[index]:
         #         to_remove.append(j)
-    return list(set(to_remove)), pairs_coupled
+    return list(set(to_remove)), pairs_by_removal
