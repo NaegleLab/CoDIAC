@@ -588,15 +588,16 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
             interpro_dict[key] = domain_dict[key][database_key]
             #interpro_dict_list[-1]['name'] = 'test' #test - this can modify dict, it's pointer to dictionary
     #keys_to_remove, pairs_coupled = calculate_domain_overlap(interpro_dict, overlap_threshold, length_larger_than)
-    keys_to_remove, pairs_coupled = calculate_domain_overlap2(interpro_dict, overlap_threshold)
+    #keys_to_remove, pairs_coupled = calculate_domain_overlap2(interpro_dict, overlap_threshold)
     #print("In area to delete, preparint go delete")
     #print(keys_to_remove)
+
+    keys_to_remove = return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold)
 
     info_string = ''
     if keys_to_remove is not None:
         for key in keys_to_remove:#.sort(reverse=True):
             if key in domain_dict:
-
                 del domain_dict[key]#[database_key] #can delete the entire entry
             else:
                 print("ERROR: Index %d no longer in domain list"%(key))
@@ -611,15 +612,34 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
             log.write("Removal based on domain overlap\n")
             for domain_val in keys_to_remove:
                 log.write("\t REMOVED: %s\n"%(return_info_string(interpro_dict, domain_val)))
-                #keeping_str = return_info_string(interpro_dict, domain_val)
-                #alternate_str = ''
-                #for partner in partners:
-                    #alternate_str = return_info_string(interpro_dict, partner)
-                    #if partner in keys_to_remove:
-                    #    log.write("\tCOLLAPSE: Keeping %s, collapsed domain %s into it\n"%(keeping_str, alternate_str))
-                    #else:
-                    #    log.write("\tNOT COLLAPSED: Did not collapse into %s, the possible domains %s\n"%(keeping_str, alternate_str))
     return domain_list_new
+
+
+def return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold):
+        """
+        
+        """
+
+        keys = interpro_dict.keys()
+        # keep track of the domain number and the boundary number that need to be removed
+        to_remove = {}
+        for i in range(0, len(keys)):
+                boundaries_i = interpro_dict[i]['boundaries']
+                for j in range(i+1, len(keys)): 
+                        #j is always a later set than i, so if it overlaps, remove it
+                        boundaries_j = interpro_dict[j]['boundaries']
+                        for boundary_num_j in range(0, len(boundaries_j)):
+                                for boundary_num_i in range(0, len(boundaries_i)):
+                                        intersection = return_overlap(boundaries_i[boundary_num_i], boundaries_j[boundary_num_j])
+                                        if intersection >= overlap_threshold:
+                                                if j not in to_remove:
+                                                        to_remove[j] = []
+                                                to_remove[j].append(boundary_num_j)
+        return to_remove
+                                                
+                                        
+
+
                 
 def return_info_string(interpro_dict, dict_item_number):
     """
@@ -627,6 +647,20 @@ def return_info_string(interpro_dict, dict_item_number):
     the short name, interpro number, and start, stop 
     """
     return ':'.join([interpro_dict[dict_item_number]['name'], interpro_dict[dict_item_number]['accession'], str(interpro_dict[dict_item_number]['boundaries'])])
+
+
+def return_overlap(boundary_set_1, boundary_set_2):
+    """ 
+    Given a boundary dictionary with 'start' and 'end' return the overlap fraction of the 
+    set (measuring the intersection of the two boundaries and normalizing by the smaller domain)
+
+    """
+    set_1 = set(range(boundary_set_1['start'], boundary_set_1['end']))
+    set_2 = set(range(boundary_set_2['start'], boundary_set_2['end']))
+    intersection = len(set_1.intersection(set_2))/min(len(set_1), len(set_2))
+    return intersection
+
+
 
 def calculate_domain_overlap2(interpro, overlap_threshold):
     """
@@ -640,11 +674,10 @@ def calculate_domain_overlap2(interpro, overlap_threshold):
     keys = interpro.keys()
     pairs_coupled = {}
     for i in range(0, len(keys)):
-        boundaries_i = interpro[i]['boundaries']
-
-        for j in range(i+1, len(keys)):
+        boundaries_i = interpro[i]['boundaries'] #i is the domain entry that happens earlier than comparator
+        for j in range(i+1, len(keys)): #compare everything after to domain i.
             boundaries_j = interpro[j]['boundaries']
-            if len(boundaries_i)>1:
+            if len(boundaries_i)>1: 
                 if len(boundaries_j) > 1:
                     continue #won't compare multi domains within multidomains
                 OVERLAP, count = handle_domain_sets(boundaries_j[0], boundaries_i,  overlap_threshold)
