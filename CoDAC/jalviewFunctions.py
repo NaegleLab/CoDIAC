@@ -56,8 +56,10 @@ def return_features_from_file(file):
                 if len(feature_set) > 1:
                     for feat in feature_set:
                         seq_dict[seq_id][pos].append(feat)
+        elif ~len(line_arr):
+            continue
         else:
-            print("Skipping %s since it does not match a color preamble or a feature line"%(line))
+            print("Skipping %s since it does not match a color preamble (2 entries) or a feature line (6 entries)"%(line))
 
     return feature_colors, seq_dict
 
@@ -280,14 +282,37 @@ def return_unique_feature_colors(features):
     color_idx = 0
     #first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors
     for seq_id in features:
+        print(color_idx)
         for pos in features[seq_id]:
             for feature in features[seq_id][pos]:
                 if feature not in feature_color_dict:
-                    feature_color_dict[feature] = COLORS[color_idx]
-                    color_idx +=1
                     if color_idx > len(COLORS):
                         print("ERROR: not enough colors in jalviewFunctions.COLORS")
+                    feature_color_dict[feature] = COLORS[color_idx]
+                    color_idx +=1
+
     return feature_color_dict
+
+def return_unique_integrated_feature_colors(features):
+    """
+    Given a set of features, and the colors  return a unique set of colors, based on a color wheel set by global COLORS
+    """
+    #set the colors
+    feature_color_dict = {}
+    color_idx = 0
+    #first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors
+    for seq_id in features:
+        print(color_idx)
+        for pos in features[seq_id]:
+            for feature in features[seq_id][pos]:
+                if feature not in feature_color_dict:
+                    if color_idx > len(COLORS):
+                        print("ERROR: not enough colors in jalviewFunctions.COLORS")
+                    feature_color_dict[feature] = COLORS[color_idx]
+                    color_idx +=1
+
+    return feature_color_dict
+
 
 def print_ann_file(feature_file, alignment_file, annotation_file):
     """
@@ -350,7 +375,7 @@ def combine_feature_files(output_file, feature_file_list):
     feature_combined = feature_dict_arr[0]
     for i in range(1,len(feature_dict_arr)):
         feature_combined = combine_feature_sets(feature_combined, feature_dict_arr[i])
-    feature_color_dict = return_unique_feature_colors(feature_combined)
+    feature_color_dict = return_unique_integrated_feature_colors(feature_combined, feature_colors_list_of_dicts)
     print_jalview_feature_file(feature_combined, feature_color_dict, output_file)
     print("Created %s"%(output_file))
     return feature_combined, feature_color_dict
