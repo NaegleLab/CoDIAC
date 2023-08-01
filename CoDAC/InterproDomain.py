@@ -481,11 +481,25 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
 
     keys_to_remove = return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold)
 
-    info_string = ''
+    domainVal_report = {}
     if keys_to_remove is not None:
         for key in keys_to_remove:#.sort(reverse=True):
             if key in domain_dict:
-                del domain_dict[key]#[database_key] #can delete the entire entry
+                boundaries = keys_to_remove[key]
+                if len(boundaries)==len(domain_dict[key]['interpro']['boundaries']):
+                    del domain_dict[key]#[database_key] #can delete the entire entry
+                    domainVal_report[key] = 'all instances'
+                elif len(boundaries)>len(domain_dict[key]['interpro']['boundaries']):
+                    print("ERROR: boundaries to remove is larger than available")
+                    print(boundaries)
+                else:
+                    #sort the boundaries in reverse order
+                    boundaries.sort(reverse=True)
+                    domainVal_report[key] = 'some instances:'
+                    for i in range(0, len(boundaries)):
+                        domainVal_report[key] += " %d"%(domain_dict[key]['interpro']['boundaries'][i]['start'])
+                        domain_dict[key]['interpro']['boundaries']=domain_dict[key]['interpro']['boundaries'].pop(i)
+                        domain_dict[key]['interpro']['num_boundaries'] = len(domain_dict[key]['interpro']['boundaries'])
             else:
                 print("ERROR: Index %d no longer in domain list"%(key))
         #re list the domains
@@ -498,13 +512,18 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
         with open(log_file, "+a") as log:
             log.write("Removal based on domain overlap\n")
             for domain_val in keys_to_remove:
-                log.write("\t REMOVED: %s\n"%(return_info_string(interpro_dict, domain_val)))
+                log.write("\t REMOVED: %s, %s\n"%(return_info_string(interpro_dict, domain_val), domainVal_report[domain_val]))
     return domain_list_new
 
 
 def return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold):
         """
         
+        Returns
+        -------
+        keys_to_remove: dict
+            Dictionary with key equal to the dictionary entry of an interpro domain to be removed
+            and values equal to a list of the entries in the domain boundaries 
         """
 
         keys = interpro_dict.keys()
@@ -522,9 +541,10 @@ def return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold):
                                                 if j not in to_remove:
                                                         to_remove[j] = []
                                                 to_remove[j].append(boundary_num_j)
-        return to_remove
-                                                
-                                    
+        #clean up and make boundaries to remove a set
+        for key in to_remove:
+                to_remove[key] = list(set(to_remove[key]))
+        return to_remove               
 
                 
 def return_info_string(interpro_dict, dict_item_number):
