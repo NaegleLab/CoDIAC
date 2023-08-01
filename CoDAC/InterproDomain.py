@@ -1,5 +1,6 @@
 import pandas as pd
 import requests
+import copy
 
 def appendRefFile(input_RefFile, outputfile):
     """
@@ -264,7 +265,7 @@ def handle_bounds(domain_list):
     for i in range(len(domain_list)):
         domain_dict = domain_list[i]['interpro']
 
-        num_boundaries = domain_dict['num_boundaries']
+        num_boundaries = len(domain_dict['boundaries'])#domain_dict['num_boundaries']
         name = domain_dict['name']
         short = domain_dict['short']
         accession = domain_dict['accession']
@@ -466,9 +467,10 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
     #first assemble all the interpro domains across the list. Keep track of their entry number, and the information
     #let's make a new version of this, as a dict, where the index values cannot be changed as a result of 
     #deleting values as we go. We'll cast back to a list for export
+    domain_list_temp = copy.deepcopy(domain_list)
     domain_dict = {}
-    for i in range(0, len(domain_list)):
-        domain_dict[i] = domain_list[i].copy()
+    for i in range(0, len(domain_list_temp)):
+        domain_dict[i] = domain_list_temp[i].copy()
 
     interpro_dict = {}
     database_key = 'interpro'
@@ -485,21 +487,25 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
     if keys_to_remove is not None:
         for key in keys_to_remove:#.sort(reverse=True):
             if key in domain_dict:
-                boundaries = keys_to_remove[key]
-                if len(boundaries)==len(domain_dict[key]['interpro']['boundaries']):
+                boundary_starts = keys_to_remove[key]
+                if len(boundary_starts)==len(domain_dict[key]['interpro']['boundaries']):
                     del domain_dict[key]#[database_key] #can delete the entire entry
                     domainVal_report[key] = 'all instances'
-                elif len(boundaries)>len(domain_dict[key]['interpro']['boundaries']):
+                elif len(boundary_starts)>len(domain_dict[key]['interpro']['boundaries']):
                     print("ERROR: boundaries to remove is larger than available")
-                    print(boundaries)
+                    print(boundary_starts)
                 else:
                     #sort the boundaries in reverse order
-                    boundaries.sort(reverse=True)
                     domainVal_report[key] = 'some instances:'
-                    for i in range(0, len(boundaries)):
-                        domainVal_report[key] += " %d"%(domain_dict[key]['interpro']['boundaries'][i]['start'])
-                        domain_dict[key]['interpro']['boundaries']=domain_dict[key]['interpro']['boundaries'].pop(i)
-                        domain_dict[key]['interpro']['num_boundaries'] = len(domain_dict[key]['interpro']['boundaries'])
+                    for start in boundary_starts:
+                        #find the correct value in the range to remove
+                        for i in range(0, len(domain_dict[key]['interpro']['boundaries'])):
+                            if start == domain_dict[key]['interpro']['boundaries'][i]['start']:
+                                domainVal_report[key] += " %d"%(start)
+                                #print("DEBUG: removing %d position with start %d"%(i, start))
+                                domain_dict[key]['interpro']['boundaries']=domain_dict[key]['interpro']['boundaries'].pop(i)
+                                break
+                    domain_dict[key]['interpro']['num_boundaries'] = len(domain_dict[key]['interpro']['boundaries'])
             else:
                 print("ERROR: Index %d no longer in domain list"%(key))
         #re list the domains
@@ -523,24 +529,28 @@ def return_keys_to_remove_by_overlap(interpro_dict, overlap_threshold):
         -------
         keys_to_remove: dict
             Dictionary with key equal to the dictionary entry of an interpro domain to be removed
-            and values equal to a list of the entries in the domain boundaries 
+            and values equal to a list of unique start positions of boundaries to be removed
+            from the domain set
         """
 
         keys = interpro_dict.keys()
-        # keep track of the domain number and the boundary number that need to be removed
+        # keep track of the start position of the domain number and the boundary number that need to be removed
         to_remove = {}
         for i in range(0, len(keys)):
                 boundaries_i = interpro_dict[i]['boundaries']
                 for j in range(i+1, len(keys)): 
                         #j is always a later set than i, so if it overlaps, remove it
                         boundaries_j = interpro_dict[j]['boundaries']
-                        for boundary_num_j in range(0, len(boundaries_j)):
-                                for boundary_num_i in range(0, len(boundaries_i)):
-                                        intersection = return_overlap(boundaries_i[boundary_num_i], boundaries_j[boundary_num_j])
+                        for boundary_j in boundaries_j:
+                                for boundary_i in boundaries_i:
+                                        #print('DEBUG comparing x to y')
+                                        #print(boundary_i)
+                                        #print(boundary_j)
+                                        intersection = return_overlap(boundary_i, boundary_j)
                                         if intersection >= overlap_threshold:
                                                 if j not in to_remove:
                                                         to_remove[j] = []
-                                                to_remove[j].append(boundary_num_j)
+                                                to_remove[j].append(boundary_j['start'])
         #clean up and make boundaries to remove a set
         for key in to_remove:
                 to_remove[key] = list(set(to_remove[key]))
