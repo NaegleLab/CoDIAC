@@ -439,7 +439,7 @@ def return_domain_architecture(domain_list):
     return final_domarch
 
 
-def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=0.8):
+def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=0.7):
     """
     Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts), remove
     all domains that overlap a domain by more than the fraction defined by overlap_threshold. Behavior: 
@@ -502,8 +502,8 @@ def collapse_InterPro_Domains(domain_list, VERBOSE, log_file, overlap_threshold=
                         for i in range(0, len(domain_dict[key]['interpro']['boundaries'])):
                             if start == domain_dict[key]['interpro']['boundaries'][i]['start']:
                                 domainVal_report[key] += " %d"%(start)
-                                #print("DEBUG: removing %d position with start %d"%(i, start))
-                                domain_dict[key]['interpro']['boundaries']=domain_dict[key]['interpro']['boundaries'].pop(i)
+                                #print("DEBUG: removing %d position with start %d, matching %d"%(i, start, domain_dict[key]['interpro']['boundaries'][i]['start']))
+                                domain_dict[key]['interpro']['boundaries'].pop(i)
                                 break
                     domain_dict[key]['interpro']['num_boundaries'] = len(domain_dict[key]['interpro']['boundaries'])
             else:
