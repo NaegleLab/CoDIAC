@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import numpy as np
 import csv
-from CoDAC import InterproDomain
+from CoDIAC import InterproDomain
 import os
 #import InterProDomain
 

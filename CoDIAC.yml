@@ -1,0 +1,25 @@
+name: codiac-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - ipython
+  - jupyter
+  - jupyterlab  
+  - biopython
+  - ipykernel
+  - numpy
+  - pandas
+  - numexpr
+  - bottleneck
+  - matplotlib
+  - Jinja2
+  - tabulate
+  - pip
+  - xarray
+  - wheel
+  - pip:
+    - cogent3==2023.2.12a1
+    - numba==0.56.4
+    - scipy==1.10.1

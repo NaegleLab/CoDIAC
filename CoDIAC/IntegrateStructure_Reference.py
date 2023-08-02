@@ -1,4 +1,4 @@
-from CoDAC import alignmentTools
+from CoDIAC import alignmentTools
 import bisect
 import pandas as pd
 
