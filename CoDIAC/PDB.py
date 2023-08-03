@@ -661,7 +661,41 @@ class PDB_interface:
                     return rcsb_polymer_entity['pdbx_description']
                 except KeyError:
                     return 'N/A'
-                    
+
+
+
+def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
+    '''
+    Creates a PDB Structure Reference File
+
+    Parameters
+    ----------
+        uniprotRefFile: str
+            Location of the uniprot referenct to use
+        outputFile: str
+            name of the output file
+        
+    Returns
+    -------
+        Writes to the outputFile location a CSV formatted, annotated structure file
+    '''
+    #check that a uniprotRefFile exists
+    if not os.path.isfile(uniprotRefFile):
+        print("ERROR: %s cannot be found"%(uniprotRefFile))
+        return
+    uniprot_df = pd.read_csv(uniprotRefFile)
+    PDB_IDs = []
+    for index, row in uniprot_df.iterrows():
+        pdbs_col = row['PDB IDs']
+   
+        if isinstance(pdbs_col, str):
+            pdbs = pdbs_col.split(';')
+            for pdb_id in pdbs:
+                PDB_IDs.append(pdb_id)
+    print("DEBUG: PDB IDs")
+    print(PDB_IDs)
+    generateStructureRefFile(PDB_IDs, outputFile)    
+
 
 def generateStructureRefFile(PDB_IDs, outputFile):
     '''

@@ -57,7 +57,7 @@ def return_mapping_between_sequences(struct_sequence, ref_sequence, ref_start, p
     pos_diff = ref_start-(from_start+1) #move from_start to ones-base 
     diffList = alignmentTools.findDifferencesBetweenPairs(aln, from_start, from_end, ref_start, toName, fromName)
 
-    print("DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d"%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))
+    #print("DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d"%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))
     #print("DEBUG: fromSeqValues")
     #print(fromSeqValues)
     #if diffList:
@@ -140,7 +140,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
         domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
         start_domain = int(domain[1])-1
         stop_domain = int(domain[2])-1
-        print("DEBUG: checking if domain %d start and %d stop is between positions %d and %d"%(start_domain, stop_domain, ref_start, ref_stop))
+        #print("DEBUG: checking if domain %d start and %d stop is between positions %d and %d"%(start_domain, stop_domain, ref_start, ref_stop))
         if start_domain < (ref_start-domainExclValue):
             #print("\tit is not")
             continue
