@@ -130,7 +130,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     #seq_to_aln_map = aln.get_gapped_seq(toName).gap_maps()[0]
     pscout_to_aln_map = aln.get_gapped_seq(fromName).gap_maps()[0]
     mapToStruct = aln.get_gapped_seq(toName).gap_maps()[1]
-    print(mapToStruct)
+    #print(mapToStruct)
 
     mutPositions = returnMutPosList(diffList)
     gap_threshold = 0.7
@@ -148,7 +148,7 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
             #print("\tit is not")
             continue
         
-        print("\tFound domain")
+        #print("\tFound domain")
         if start_domain < ref_start:
             start = ref_start
         else:
@@ -306,7 +306,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     #First find the protein information in the reference file based on uniprot_id
     protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
     if len(protein_rec.index) < 1 or uniprot_id == 'not found':
-        print("ERROR: Did not find %s in reference"%(uniprot_id))
+        print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
         #return default information here
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
     elif len(protein_rec.index) > 1:
