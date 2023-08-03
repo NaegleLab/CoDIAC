@@ -692,8 +692,8 @@ def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
             pdbs = pdbs_col.split(';')
             for pdb_id in pdbs:
                 PDB_IDs.append(pdb_id)
-    print("DEBUG: PDB IDs")
-    print(PDB_IDs)
+    #print("DEBUG: PDB IDs")
+    #print(PDB_IDs)
     generateStructureRefFile(PDB_IDs, outputFile)    
 
 
