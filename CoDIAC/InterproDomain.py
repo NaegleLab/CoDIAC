@@ -27,6 +27,7 @@ def appendRefFile(input_RefFile, outputfile):
     df['Interpro Domain Architecture'] = domain_arch_list
     df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
+    return df
 
 def generate_domain_metadata_string_list(processed_metadata, uniprot_list):
     """

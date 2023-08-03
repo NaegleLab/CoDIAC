@@ -119,10 +119,11 @@ def makeRefFile(Uniprot_IDs, outputFile):
     
     print('Domain Reference File successfully created!')
     print('Adding Interpro Domains')
-    InterproDomain.appendRefFile(outputfile_temp,  outputFile)
+    df = InterproDomain.appendRefFile(outputfile_temp,  outputFile)
     #print('Adding Interpro Domains')
     #delete the temp file
     os.remove(outputfile_temp)
+    return df
     #now add the InterPro Domains.
     #InterProDomain.appendRefFile(outputfile, outputfile)
 
