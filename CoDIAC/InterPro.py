@@ -86,9 +86,8 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     for entry in fetch_all_results:
         Uniprot_Accession = (entry['metadata']['accession'])
         source_database = (entry['metadata']['source_database'])
-        taxId = (entry['metadata']['source_organism']['taxId'])
+        taxId = (entry['metadata']['source_organism']['taxId']) #not using this, but could be helpful. 
         Scientific_name = entry['metadata']['source_organism']['scientificName']
-        fullname = (entry['metadata']['source_organism']['fullName'] )
         if species!='all' or species!='All' or species!='ALL':
             if Scientific_name==species:
                 UNIPROT_ID_LIST.append(Uniprot_Accession)
