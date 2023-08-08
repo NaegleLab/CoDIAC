@@ -4,6 +4,7 @@ import numpy as np
 import csv
 from CoDIAC import InterPro
 import os
+from Bio import SeqIO
 #import InterProDomain
 
 def makeRefFile(Uniprot_IDs, outputFile):
@@ -206,3 +207,71 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
     #domainRef.to_csv(domainRefOutputFile)
 
 
+def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
+    """
+    UniProt.print_domain_fasta_file
+    prints a highly informative fasta header in the production of printing fasta sequences
+    for a given protein domain of interest. This structure is, in the following order, separated
+    by '|'
+    uniprot_id, gene_name, domain_name, domainNum, Interpro_ID, start, end
+    
+    If you wish to change the order, keeping track of this change, use this function to do so
+    where you will use key_array_order as a list to indicate what items in what listing. 
+    possible_values = ['uniprot', 'gene', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
+
+    For example, if you wanted to use uniprot ID first, gene, and the starting and ending position of the domain you would pass in for 
+    key_array_order ['uniprot', 'gene', 'start', 'end']
+
+    This will print the new fasta file at output_fasta and a mapping file, using the base of the output_fasta with _mapping.csv 
+
+    """
+    possible_values = ['uniprot', 'gene', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
+    values_to_keep = []
+    for i in range(0, len(key_array_order)):
+        item = key_array_order[i]
+        if item not in possible_values:
+            print("ERROR: %s not in possible values, skipping this item")
+        else:
+            values_to_keep.append(item)
+
+    #now read in the fasta file and translate old headers to new. Keep this as dict too, 
+    # fail and return a fatal error if naming convention produces non-unique fasta header
+    header_trans_dict = {}
+    with open(fasta_file, 'r') as handle, open(output_fasta, 'w') as out_handle:
+        for record in SeqIO.parse(handle, "fasta"):
+            temp_dict = {}
+            record_id = record.id
+            record_id_vals = record_id.split('|')
+            if len(record_id_vals) != 7:
+                print("FATAL ERROR: Fasta file not formatted as expected coming from print_domain_fasta_file")
+                return
+            temp_dict['uniprot'] = record_id_vals[0]
+            temp_dict['gene'] = record_id_vals[1]
+            temp_dict['domain_name'] = record_id_vals[2]
+            temp_dict['domain_num'] = record_id_vals[3] 
+            temp_dict['Interpro_ID'] = record_id_vals[4] 
+            temp_dict['start'] = record_id_vals[5] 
+            temp_dict['end'] = record_id_vals[6]
+            new_header_list = []
+            for i in range(0, len(values_to_keep)):
+                print("DEBUG: adding %s, which is %s"%(values_to_keep[i],temp_dict[values_to_keep[i]]))
+                new_header_list.append(temp_dict[values_to_keep[i]])
+            print("DEBUG: new header values are ")
+            print(new_header_list)
+            new_header = "|".join(new_header_list)
+            if new_header not in header_trans_dict:
+                header_trans_dict[new_header] = record_id
+            else:
+                print("FATAL ERROR: Header request results in multiple fasta sequences with the same header. Suggest you consider adding identifying information for multiple domains from the same protein record")
+            modified_record = record
+            modified_record.id = new_header
+            modified_record.description = ''
+            SeqIO.write(modified_record, out_handle, 'fasta')
+        
+        #now make an output file to keep track of the header matching
+        mapping_file = output_fasta.strip(".fasta")
+        mapping_file = mapping_file+"_mapping.csv"
+        df = pd.DataFrame.from_dict(header_trans_dict)
+        #df.to_csv(mapping_file, index=False)
+        return df
+        #print("Created files: %s and %s"%(output_fasta, mapping_file))
