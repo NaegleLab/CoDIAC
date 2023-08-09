@@ -388,9 +388,11 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
     out_file: str   
         name of output file to write
     INTERPRO: boolean
-        If True, sues Interpro, otherwise appends Uniprot from reference file 
+        If True, uses Interpro, otherwise appends Uniprot from reference file. 
+        Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming
+        conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest. 
     verbose: boolean
-        Print information about processing
+        Print information about processing. Default is Falses.
     
     Returns
     -------
@@ -424,4 +426,24 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
     return struct_df
 
 
+def filter_structure_file(appended_structure_file, Interpro_ID, filtered_structure_file):
+    """
+    Given an annotated structure file, keep only structures that have at least one chain that contain the 
+    Interpro_ID of interest. 
 
+    Prints the filtered structure file to filtered_structure_file
+    
+    """
+
+    PDB_df = pd.read_csv(appended_structure_file)
+    filtered_PDB_list = []
+    total_PDBs = 0
+    for name, group in PDB_df.groupby('PDB_ID'):
+        total_PDBs+=1
+        for index, row in group.iterrows():
+            if isinstance(row['domains'], str) and Interpro_ID in row['domains']:
+                filtered_PDB_list.append(name)
+    PDB_df_sub = PDB_df[PDB_df['PDB_ID'].isin(filtered_PDB_list)]
+    PDB_df_sub.to_csv(filtered_structure_file, index=False)
+    print("Made %s file: %d structures retained of %d total"%(filtered_structure_file, len(filtered_PDB_list), total_PDBs))
+        
