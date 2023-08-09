@@ -286,3 +286,40 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
         df = pd.DataFrame(header_trans_dict.items(), columns=['short', 'full'])
         df.to_csv(mapping_file)
         print("Created files: %s and %s"%(output_fasta, mapping_file))
+
+def translate_fasta_back(fasta_file, header_trans_file, output_fasta):
+    """
+    Assuming that you have a fasta_file with shortened headers and would like to move those back 
+    to the long form names, found in the mapping file created by translate_fasta_to_new_headers
+    Use this function to print at the output_fasta location the fasta file with long headers. You would do this assuming 
+    you wish to preserve a change, such as through alignment, of the shortened headers.
+
+    No returns, prints by non-append to output_fasta
+    """
+    
+    #read in the header_translation
+    trans_df = pd.read_csv(header_trans_file, index_col=0)
+    if len(trans_df.columns)!=2 or ('full' not in trans_df.columns) or ('short' not in trans_df.columns):
+        print("FATAL ERROR: translation file %s not formatted as expected with a short and full name"%(header_trans_file))
+        return
+    #a dict look up will be faster, so convert to dictionary
+    trans_dict = {}
+    count = 0
+    count_total = 0
+    for index, row in trans_df.iterrows():
+        trans_dict[row['short']] = row['full']
+    with open(fasta_file, 'r') as handle, open(output_fasta, 'w') as out_handle:
+        for record in SeqIO.parse(handle, "fasta"):
+            count_total+=1
+            if record.id not in trans_dict:
+                print("ERROR, cannot find %s in translation, skipping this record"%(record.id))
+                break
+            modified_record = record
+            modified_record.id = trans_dict[record.id]
+            modified_record.description = ''
+            SeqIO.write(modified_record, out_handle, 'fasta')
+            count+=1
+    print("Complete, printed %d records out of %d to %s file"%(count, count_total, output_fasta))
+
+        
+
