@@ -254,10 +254,10 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
             temp_dict['end'] = record_id_vals[6]
             new_header_list = []
             for i in range(0, len(values_to_keep)):
-                print("DEBUG: adding %s, which is %s"%(values_to_keep[i],temp_dict[values_to_keep[i]]))
+                #print("DEBUG: adding %s, which is %s"%(values_to_keep[i],temp_dict[values_to_keep[i]]))
                 new_header_list.append(temp_dict[values_to_keep[i]])
-            print("DEBUG: new header values are ")
-            print(new_header_list)
+            #print("DEBUG: new header values are ")
+            #print(new_header_list)
             new_header = "|".join(new_header_list)
             if new_header not in header_trans_dict:
                 header_trans_dict[new_header] = record_id
@@ -271,7 +271,9 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
         #now make an output file to keep track of the header matching
         mapping_file = output_fasta.strip(".fasta")
         mapping_file = mapping_file+"_mapping.csv"
-        df = pd.DataFrame.from_dict(header_trans_dict)
-        #df.to_csv(mapping_file, index=False)
-        return df
-        #print("Created files: %s and %s"%(output_fasta, mapping_file))
+        #df = pd.DataFrame.from_dict(header_trans_dict)
+        #
+
+        df = pd.DataFrame(header_trans_dict.items(), columns=['short', 'full'])
+        df.to_csv(mapping_file)
+        print("Created files: %s and %s"%(output_fasta, mapping_file))
