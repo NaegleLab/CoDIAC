@@ -156,6 +156,13 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
     
+    #handle residues that are part of SEQADV record in PDB header (expression tags, variants, conflicts, etc.)
+    for i in range(len(df)):
+    if str(df.loc[i,'ResNum2_upd']) == 'nan':
+        df.loc[i,'ResNum2_upd'] = df.loc[i, 'ResNum2']
+    if str(df.loc[i,'ResNum1_upd']) == 'nan':
+        df.loc[i,'ResNum1_upd'] = df.loc[i, 'ResNum1']
+        
     #pair the chain and residue number for each row (representing a feature)
     df['ResNum pair'] = df['ResNum1_upd'].astype(str)+'-'+(df['ResNum2_upd']).astype(str)
     df['Chain Pair'] = df['Chain1'].astype(str)+'-'+(df['Chain2']).astype(str)
@@ -197,14 +204,14 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
                     else:
                         BF = 0
 
-                df3.at[i,'Binary Feature'] = BF
+                df3.at[i,'Binary_Feature'] = BF
 
     df_edit = df3.drop(['ResNum1', 'ResNum2', 'ResNum pair', 'Chain Pair', 'Atoms', 'Contact_type', 'Distance','map1','map2'], axis=1)
     df3 = df_edit.drop_duplicates()
     df3 = df3.drop(['Chain1','Chain2'],axis=1)
     df4 = df3.drop_duplicates()  
     df4 = df4.rename({'ResNum1_upd': 'ResNum1', 'ResNum2_upd': 'ResNum2'}, axis=1)
-    new_cols = ['PDB', 'ResNum1', 'Res1', 'Entity1', 'ResNum2', 'Res2', 'Entity2', 'Binary Feature']
+    new_cols = ['PDB', 'ResNum1', 'Res1', 'Entity1', 'ResNum2', 'Res2', 'Entity2', 'Binary_Feature']
     df4 = df4.reindex(columns=new_cols)
     df4 = df4.reset_index(drop=True) 
     df4.sort_values(["ResNum1","ResNum2"], 
@@ -213,6 +220,9 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
                                     inplace=True)
     df4 = df4.drop_duplicates()
     df4 = df4.reset_index(drop=True)
+    df4['ResNum1'] = df4['ResNum1'].astype('int')
+    df4['ResNum2'] = df4['ResNum2'].astype('int')
+    df4['Binary_Feature'] = df4['Binary_Feature'].astype('int')
     #df4.to_csv(OUTFILE, index=None, sep='\t', mode='w')
     return(df4)
 
@@ -245,7 +255,13 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
 
-
+    #handle residues that are part of SEQADV record in PDB header (expression tags, variants, conflicts, etc.)
+    for i in range(len(df)):
+    if str(df.loc[i,'ResNum2_upd']) == 'nan':
+        df.loc[i,'ResNum2_upd'] = df.loc[i, 'ResNum2']
+    if str(df.loc[i,'ResNum1_upd']) == 'nan':
+        df.loc[i,'ResNum1_upd'] = df.loc[i, 'ResNum1']
+    
     #pair the chain and residue number for each row (representing a feature)
     df['ResNum Pair'] = df['ResNum1_upd'].astype(str)+'-'+(df['ResNum2_upd']).astype(str)
     df['Chain Pair'] = df['Chain1'].astype(str)+'-'+(df['Chain2']).astype(str)
@@ -274,16 +290,16 @@ def Interprotein_AdjFile(PDB_ID,PATH):
             BF = 1
         else:
             BF = 0
-        df2.at[i,'Binary Feature'] = BF
+        df2.at[i,'Binary_Feature'] = BF
     
     df_edit = df2.drop(['ResNum1', 'ResNum2', 'ResNum Pair', 'Chain Pair','Entity Pair', 'Distance','Atoms','Contact_type','map1', 'map2'], axis=1)
     df3 = df_edit.drop_duplicates()
     df3 = df3.drop(['Chain1','Chain2'],axis=1)
     df4 = df3.drop_duplicates()
     df4.reset_index(drop=True)   
-    df4[['PDB', 'ResNum1_upd', 'Res1', 'Entity1', 'ResNum2_upd', 'Res2', 'Entity2', 'Binary Feature']]
+    df4[['PDB', 'ResNum1_upd', 'Res1', 'Entity1', 'ResNum2_upd', 'Res2', 'Entity2', 'Binary_Feature']]
     df4 = df4.rename({'ResNum1_upd': 'ResNum1', 'ResNum2_upd': 'ResNum2'}, axis=1)
-    new_cols = ['PDB', 'ResNum1', 'Res1', 'Entity1', 'ResNum2', 'Res2', 'Entity2', 'Binary Feature']
+    new_cols = ['PDB', 'ResNum1', 'Res1', 'Entity1', 'ResNum2', 'Res2', 'Entity2', 'Binary_Feature']
     df4 = df4.reindex(columns=new_cols)
     df4 = df4.reset_index(drop=True)
     
@@ -309,6 +325,9 @@ def Interprotein_AdjFile(PDB_ID,PATH):
                                     inplace=True)
     df4 = df4.drop_duplicates()
     df4 = df4.reset_index(drop=True)
+    df4['ResNum1'] = df4['ResNum1'].astype('int')
+    df4['ResNum2'] = df4['ResNum2'].astype('int')
+    df4['Binary_Feature'] = df4['Binary_Feature'].astype('int')
     #df4.to_csv(OUTFILE,index=None, sep='\t', mode='w')
     return(df4)
     

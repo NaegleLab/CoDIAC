@@ -43,7 +43,15 @@ def makeRefFile(Uniprot_IDs, outputFile):
             if get_url.status_code == 200:
                 response = get_url.json()
                 #Gene
-                gene = response['gene'][0]['name']['value']
+                if 'gene' in response.keys():
+                    if 'name' in response['gene'][0].keys():
+                        gene = response['gene'][0]['name']['value']
+                    elif 'orfNames' in response['gene'][0].keys():
+                        gene = response['gene'][0]['orfNames'][0]['value']
+                    else:
+                        gene = 'None'
+                else:
+                    gene = 'None'
 
                 #Species
                 species = response['organism']['names'][0]['value']
