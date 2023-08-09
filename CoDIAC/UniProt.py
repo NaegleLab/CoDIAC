@@ -230,7 +230,7 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
     for i in range(0, len(key_array_order)):
         item = key_array_order[i]
         if item not in possible_values:
-            print("ERROR: %s not in possible values, skipping this item")
+            print("ERROR: %s not in possible values, skipping this item"%(item))
         else:
             values_to_keep.append(item)
 
@@ -263,6 +263,7 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
                 header_trans_dict[new_header] = record_id
             else:
                 print("FATAL ERROR: Header request results in multiple fasta sequences with the same header. Suggest you consider adding identifying information for multiple domains from the same protein record")
+                return
             modified_record = record
             modified_record.id = new_header
             modified_record.description = ''
