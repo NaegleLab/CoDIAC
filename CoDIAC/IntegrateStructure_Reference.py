@@ -83,7 +83,8 @@ def return_domains_tuple(domain_str, INTERPRO):
     Returns
     -------
     domain_tuple: list
-        Tuples of [domain name, start, stop]
+        Tuples of [domain name, start, stop] if INTERPRO=False
+        Tuples of [domain name, Interpro_ID, start, stop] if INTERPRO=True
     """
 
     domain_list = domain_str.split(';')
@@ -91,10 +92,12 @@ def return_domains_tuple(domain_str, INTERPRO):
     for domain_vals in domain_list:
         if INTERPRO:
             domain_name, Interpro_ID, start, stop = domain_vals.split(':')
+            domain_tuple.append([domain_name, Interpro_ID, int(start), int(stop)])
+
         else:
             domain_name, start, stop = domain_vals.split(':')
+            domain_tuple.append([domain_name, int(start), int(stop)])
 
-        domain_tuple.append([domain_name, int(start), int(stop)])
     return domain_tuple
 
 def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclValue=10):
@@ -109,7 +112,9 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     aln: cogent3.make_aligned_seqs
         Has two sequences, first entry is name1, aln_seq_1 and other is name2, aln_seq_2
     domains: list of tuples
-        List of domains in format [('domainName', 'start', 'stop')] this is relative to the fromName sequence (i.e. name1 or name2 used in alignment creation)
+        List of domains in format [('domainName', 'start', 'stop')] 
+        or [('domainName', 'InterPro_ID', 'start', 'stop)]
+        this is relative to the fromName sequence (i.e. name1 or name2 used in alignment creation)
     diffList: list
         list of mutations in aaPosaa 
     domainExclValue: int
@@ -119,6 +124,8 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     -------
     domainStruct: dict
         This dictionary has the name of domainName tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps]
+        if INTERPRO is detected then the tuple is [Interpro_ID, 
+        toName_sequence_start, toName_sequence_stop, numGaps]
         numGaps says how many gaps existed in the alignment. 
         Returns -1 if the region could not be mapped. It returns an empty dictionary if the alignment did not meet a gap threshold of less than 30%
     """
@@ -131,15 +138,23 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     pscout_to_aln_map = aln.get_gapped_seq(fromName).gap_maps()[0]
     mapToStruct = aln.get_gapped_seq(toName).gap_maps()[1]
     #print(mapToStruct)
-
+    INTERPRO=False
     mutPositions = returnMutPosList(diffList)
     gap_threshold = 0.7
     domainStruct = {}
     for domain in domains:
         #first check to see if the domain is within the range of the mapping. 
-        domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
-        start_domain = int(domain[1])-1
-        stop_domain = int(domain[2])-1
+        if len(domain)==4:
+            INTERPRO = True
+            domain_name = domain[0]
+            interpro_ID = domain[1]
+            start_domain = int(domain[2])-1
+            stop_domain = int(domain[3])-1
+
+        else:
+            domain_name = domain[0] #Uniprot indexes positions by 1, so have to remove
+            start_domain = int(domain[1])-1
+            stop_domain = int(domain[2])-1
         #print("DEBUG: checking if domain %d start and %d stop is between positions %d and %d"%(start_domain, stop_domain, ref_start, ref_stop))
         if start_domain < (ref_start-domainExclValue):
             #print("\tit is not")
@@ -195,7 +210,10 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
             try:
                 if domain_name in domainStruct:
                     domain_name = "%s_%d"%(domain_name, 2)
-                domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                if not INTERPRO:
+                    domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                else:
+                    domainStruct[domain_name] = [interpro_ID, mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
                 #domain_name may already exist, so add a new value to it
             except:
                 #print("ERROR: could not map domains")
@@ -321,7 +339,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
             full_domain_arch = list(protein_rec['Uniprot Domain Architecture'])[0]
 
             
-        domain_tuple = return_domains_tuple(domains, INTERPRO)
+        domain_tuple = return_domains_tuple(domains, INTERPRO) #domain_tuple is a different element if INTERPRO (includes ID)
         reference_seq = list(protein_rec['Ref Sequence'])[0]
         gene_name = list(protein_rec['Gene'])[0]
     
@@ -332,10 +350,16 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     domainDict_forArch = {}
     if isinstance(domainStruct, dict):
         for domain_name in domainStruct:
-            start, end, numGaps, numMuts = domainStruct[domain_name]
+            if INTERPRO:
+                interproID, start, end, numGaps, numMuts = domainStruct[domain_name]
+            else:
+                start, end, numGaps, numMuts = domainStruct[domain_name]
             valStr = str(start)+','+str(end)+','+str(numGaps)+','+str(numMuts)
             domainDict_forArch[start] = domain_name
-            domainList.append(domain_name+':'+valStr)
+            if INTERPRO:
+                domainList.append(domain_name+':'+ interproID + ':'+valStr)
+            else:
+                domainList.append(domain_name+':'+valStr)
     domainStr = ';'.join(domainList)
 
     arch_list = []
