@@ -73,6 +73,8 @@ def makeRefFile(Uniprot_IDs, outputFile):
                                     start = s['begin']
                                     end = s['end']
                                     name = s['description']
+                                    #replace the name values if they have ';' in them
+                                    name = name.replace(';', '')
                                     header = name+':'+start+':'+end
                                     domainheader.append(header)
                 Domain = ';'.join(map(str, domainheader))
@@ -107,6 +109,7 @@ def makeRefFile(Uniprot_IDs, outputFile):
                     sort_start = key
                     sort_end = value[0]
                     domain = value[1]
+                    domain = domain.replace(';', '') #for the occasional issue of ';' in uniprot domain names
                     domain_arch.append(domain)
 
                
