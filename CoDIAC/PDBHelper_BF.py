@@ -36,16 +36,16 @@ class PDBEntitiesClass:
 
         self.pdb_dict = {}
 
-        sub_df = df[df['PDB ID']==PDB_ID]
+        sub_df = df[df['PDB_ID']==PDB_ID]
         if sub_df.empty:
             print("ERROR: PDB ID %s not found in dataframe"%(sub_df))
             return -1
 
 
         for index, row in sub_df.iterrows():
-            entity_id = int(row['Entity ID'])
-            resolution = row['Resolution']
-            method = row['Method']
+            entity_id = int(row['ENTITY_ID'])
+            resolution = row['RESOLUTION']
+            method = row['EXPERIMENT_TYPE']
             pdbclass = PDBClass(row)
             self.pdb_dict[entity_id] = pdbclass
 
@@ -110,68 +110,71 @@ class PDBClass:
         protein_domain_arch: str
             the full protein domain architectures
         """
-        self.database_name = row['Database Name']
-        self.acc = row['acc']
+        self.database_name = row['DATABASE']
+        self.acc = row['ACCESS']
         self.chain_list = self.return_chain_list(row)
-        self.structure_seq = row['Sequence']
-        self.entity_macroType = row['Entity Macromolecule Type']
-        self.species = row['Species']
-        self.PDB_ID = row['PDB ID']
-        self.Entity_ID = row['Entity ID']
-        self.ref_seq = row['RefSeq']
-        ref_sequence_positions = row['RefSeq Positions']
-        ref_pos_list = ref_sequence_positions.split('-')
-        self.ref_seq_positions = [int(ref_pos_list[0]), int(ref_pos_list[1])]
+        self.structure_seq = row['struct/ref sequence']
+        self.entity_macroType = row['MACROMOLECULAR_TYPE']
+        self.species = row['SPECIES']
+        self.PDB_ID = row['PDB_ID']
+        self.Entity_ID = row['ENTITY_ID']
+        self.ref_seq = row['UNIPROT_SEQ']
         self.gene_name = row['gene name']
+        ref_sequence_positions = row['reference range']
+        
+        if ref_sequence_positions != 'not found':
+            ref_pos_list = ref_sequence_positions.split('-')
+            self.ref_seq_positions = [int(ref_pos_list[0]), int(ref_pos_list[1])]
 
         domains = row['domains']
         domain_dict = {}
-        if isinstance(domains, str):
-            domain_list = domains.split(';')
-            
-            domain_num = 0
-            for domain in domain_list:
-                name, other = domain.split(':')
-                start, stop, gaps, muts = other.split(',')
-                small_dict = {}
-                small_dict[name] = [int(start), int(stop), int(gaps), int(muts)]
-                domain_dict[domain_num] = small_dict
-                domain_num += 1
+        if domains != '-1':
+            if isinstance(domains, str):
+                domain_list = domains.split(';')
+
+                domain_num = 0
+                for domain in domain_list:
+                    name, other = domain.split(':')
+                    start, stop, gaps, muts = other.split(',')
+                    small_dict = {}
+                    small_dict[name] = [int(start), int(stop), int(gaps), int(muts)]
+                    domain_dict[domain_num] = small_dict
+                    domain_num += 1
         self.domains = domain_dict #will be empty dict if no domains
 
 
-        domains_of_interest = row['SH2 domain sequence from struct']
-        if isinstance(domains_of_interest, str):
-            headers = row['reference']
-            DOI_list = domains_of_interest.split(';')
-            DOI_headers = headers.split(';')
-            DOI_dict = {}
-            if len(DOI_headers) != len(DOI_list):
-                print("ERROR: domains of interest have issue, different number of headers and sequences")
-                self.domains_of_interest = -1
-            else:
-                temp_dict = {}
-                for index in range(0, len(DOI_headers)):
-                    temp_dict[DOI_headers[index]] = DOI_list[index]
-                self.domains_of_interest = temp_dict
-        else:
-            self.domains_of_interest = {}
+#         domains_of_interest = row['SH2 domain sequence from struct']
+#         if isinstance(domains_of_interest, str):
+#             headers = row['reference']
+#             DOI_list = domains_of_interest.split(';')
+#             DOI_headers = headers.split(';')
+#             DOI_dict = {}
+#             if len(DOI_headers) != len(DOI_list):
+#                 print("ERROR: domains of interest have issue, different number of headers and sequences")
+#                 self.domains_of_interest = -1
+#             else:
+#                 temp_dict = {}
+#                 for index in range(0, len(DOI_headers)):
+#                     temp_dict[DOI_headers[index]] = DOI_list[index]
+#                 self.domains_of_interest = temp_dict
+#         else:
+#             self.domains_of_interest = {}
 
         self.struct_domain_arch = row['structure domain architecture']
 
         self.protein_domain_arch = row['protein domain architecture']
-        self.ref_seq_mutated = row['refseq_mutated']
+#         self.ref_seq_mutated = row['refseq_mutated']
 
-        # BELOW HERE IS if we are working with an annotation file that has been processed for contact mapping
-        if 'struct seq ext' in row:
-            self.struct_seq_ext = row['struct seq ext']
-            self.ERROR_CODE = row['ERROR_CODE']
-            self.offset = row['offset']
-            PTM_str = row['PTMs in struct']
-            if isinstance(PTM_str, str):
-                self.transDict = return_PTM_dict(PTM_str)
-            else:
-                self.transDict = {}
+#         # BELOW HERE IS if we are working with an annotation file that has been processed for contact mapping
+#         if 'struct seq ext' in row:
+#             self.struct_seq_ext = row['struct seq ext']
+#             self.ERROR_CODE = row['ERROR_CODE']
+#             self.offset = row['offset']
+        PTM_str = row['MODIFICATIONS (TYPE)']
+        if isinstance(PTM_str, str):
+            self.transDict = return_PTM_dict(PTM_str)
+        else:
+            self.transDict = {}
 
 
 
@@ -184,7 +187,7 @@ class PDBClass:
         """
         chains_list = []
 
-        chains = row['Chain ID']
+        chains = row['CHAIN_ID']
         chains= chains.replace("'", '')
         chains = chains.replace(" ", '')
         remove_digits = str.maketrans('', '', digits)
@@ -202,8 +205,8 @@ def return_PTM_dict(PTM_str):
     transDict = {}
     list_vals = PTM_str.split(';')
     for val in list_vals:
-        if ':' in val:
-            res, PTM = val.split(':')
+        if '-' in val:
+            res, PTM = val.split('-')
             transDict[int(res)] = PTM
 
     return transDict
