@@ -402,7 +402,7 @@ def return_interChain_adj(PATH, from_dict, to_dict):
     PDB_ID = from_dict['PDB_ID']
     if PDB_ID != to_dict['PDB_ID']:
         raise NameError("The PDB_IDs of the two dictionaries are not the same")
-    file = PATH+PDB_ID + '/' + PDB_ID + '.txt'
+    file = PATH+PDB_ID + '/' + PDB_ID + '_BF.txt'
     df = pd.read_csv(file, sep='\t')
     
  #   df = df[df['Distance'] <= ang_cutoff]
