@@ -134,7 +134,7 @@ class PDBClass:
 
                 domain_num = 0
                 for domain in domain_list:
-                    name, other = domain.split(':')
+                    name, IPR, other = domain.split(':')
                     start, stop, gaps, muts = other.split(',')
                     small_dict = {}
                     small_dict[name] = [int(start), int(stop), int(gaps), int(muts)]
@@ -160,10 +160,10 @@ class PDBClass:
 #         else:
 #             self.domains_of_interest = {}
 
-        self.struct_domain_arch = row['structure domain architecture']
+        self.struct_domain_arch = row['struct domain architecture']
 
         self.protein_domain_arch = row['protein domain architecture']
-#         self.ref_seq_mutated = row['refseq_mutated']
+        self.ref_seq_mutated = row['refseq_mutated']
 
 #         # BELOW HERE IS if we are working with an annotation file that has been processed for contact mapping
 #         if 'struct seq ext' in row:
@@ -206,7 +206,7 @@ def return_PTM_dict(PTM_str):
     list_vals = PTM_str.split(';')
     for val in list_vals:
         if '-' in val:
-            res, PTM = val.split('-')
+            PTM, res = val.split('-')
             transDict[int(res)] = PTM
 
     return transDict
