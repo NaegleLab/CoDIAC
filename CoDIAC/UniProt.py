@@ -191,6 +191,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
         uniprot_id = row['UniProt ID']
         gene_name = row['Gene']
         seq = row['Ref Sequence']
+        species = row['Species']
         #since there could be more than one value of array 
         domainNum = 0
         for index in range(0, len(domainsArr)):
@@ -209,7 +210,8 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
                     print("NOTICE: %s c-term offset capped at end of protein"%(ID))
                 domain_seq = seq[new_start-1:new_end-1] #0 based indexing for python access of protein indexes
                 #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
-                f.write(">%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, domain_name, domainNum, Interpro_ID, new_start, new_end))
+                #print("DEBUG: >%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
+                f.write(">%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
                 f.write(domain_seq+"\n")
         #if EDIT:
         #    domainRef.at[row_index, 'domains_edited'] = ";".join(domainsArr)
@@ -236,7 +238,7 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
     This will print the new fasta file at output_fasta and a mapping file, using the base of the output_fasta with _mapping.csv 
 
     """
-    possible_values = ['uniprot', 'gene', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
+    possible_values = ['uniprot', 'gene', 'species', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
     values_to_keep = []
     for i in range(0, len(key_array_order)):
         item = key_array_order[i]
@@ -251,18 +253,22 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
     with open(fasta_file, 'r') as handle, open(output_fasta, 'w') as out_handle:
         for record in SeqIO.parse(handle, "fasta"):
             temp_dict = {}
-            record_id = record.id
+            #record_id = record.id
+            record_id = record.description #changed to description. record.id ends at first space, which happens in species
             record_id_vals = record_id.split('|')
-            if len(record_id_vals) != 7:
-                print("FATAL ERROR: Fasta file not formatted as expected coming from print_domain_fasta_file")
+            #record_id_vals = record_id.split('|(?=[^ ]))
+            if len(record_id_vals) != 8:
+                print("FATAL ERROR: Fasta file not formatted as expected coming from print_domain_fasta_file, has %d items"%(len(record_id_vals)))
+                print(record_id)
                 return
             temp_dict['uniprot'] = record_id_vals[0]
             temp_dict['gene'] = record_id_vals[1]
-            temp_dict['domain_name'] = record_id_vals[2]
-            temp_dict['domain_num'] = record_id_vals[3] 
-            temp_dict['Interpro_ID'] = record_id_vals[4] 
-            temp_dict['start'] = record_id_vals[5] 
-            temp_dict['end'] = record_id_vals[6]
+            temp_dict['species'] = record_id_vals[2]
+            temp_dict['domain_name'] = record_id_vals[3]
+            temp_dict['domain_num'] = record_id_vals[4] 
+            temp_dict['Interpro_ID'] = record_id_vals[5] 
+            temp_dict['start'] = record_id_vals[6] 
+            temp_dict['end'] = record_id_vals[7]
             new_header_list = []
             for i in range(0, len(values_to_keep)):
                 #print("DEBUG: adding %s, which is %s"%(values_to_keep[i],temp_dict[values_to_keep[i]]))
