@@ -163,7 +163,7 @@ class PDBClass:
         self.struct_domain_arch = row['struct domain architecture']
 
         self.protein_domain_arch = row['protein domain architecture']
-        self.ref_seq_mutated = row['refseq_mutated']
+        self.ref_seq_mutated = row['struct/ref sequence']
 
 #         # BELOW HERE IS if we are working with an annotation file that has been processed for contact mapping
 #         if 'struct seq ext' in row:

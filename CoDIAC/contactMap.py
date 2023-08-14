@@ -7,7 +7,7 @@ from sys import exit
 import re
 #import globals
 #globals.initialize()
-from PDBHelper_BF import PDBEntitiesClass
+from CoDIAC.PDBHelper import PDBEntitiesClass
 
 class globals:
 
