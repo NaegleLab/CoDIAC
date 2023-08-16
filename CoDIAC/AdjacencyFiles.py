@@ -192,17 +192,17 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
                 fea_in_chains = df3.loc[df3['ResNum pair'] == respair, 'Chain Pair'].values.tolist()
 
                 #modify threshold if needed
-                if chain_count == 2: #for two chains separate condition
-                    if len(set(fea_in_chains)) > threshold:
-                        BF = 1
-                    else:
-                        BF = 0
-                else:
+#                 if chain_count == 2: #for two chains separate condition
+#                     if len(set(fea_in_chains)) > threshold:
+#                         BF = 1
+#                     else:
+#                         BF = 0
+#                 else:
 
-                    if len(set(fea_in_chains)) >= threshold:
-                        BF = 1
-                    else:
-                        BF = 0
+                if len(set(fea_in_chains)) >= threshold:
+                    BF = 1
+                else:
+                    BF = 0
 
                 df3.at[i,'Binary_Feature'] = BF
 
@@ -437,7 +437,7 @@ def intraprotein_threshold(chain_entity_dict, entity):
     for i in chain_entity_dict.values():
         if i == entity:
             index +=1
-    threshold = (index*50)/100
+    threshold = (index*25)/100
     return(int(threshold))         
         
     
