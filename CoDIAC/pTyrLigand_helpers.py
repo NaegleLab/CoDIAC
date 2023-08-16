@@ -5,8 +5,7 @@ import os
 from six.moves import urllib
 from sys import exit
 import re
-
-import contactMap_BF as cm
+from CoDIAC import contactMap as cm
 
 #Here are helpers for orienting a ligand chain with a pTyr for analysis of SH2 binding pockets
 
