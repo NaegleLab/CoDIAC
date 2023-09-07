@@ -86,9 +86,9 @@ class PDB_interface:
 
         """
         columns = ['PDB_ID', 'ENTITY_ID', 'ENTITY_DESCRIPTION', 'CHAIN_ID', 'DATABASE', 'GENE_NAME', 
-                   'ACCESS', 'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 
-                   'MOLECULAR_WEIGHT', 'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 
-                   'PDB_SEQ_BEG_POSITION', 'CANNONICAL_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
+                   'ACCESS', 'PDB_SEQ', 'REF_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 
+                   'MOLECULAR_WEIGHT', 'EXPERIMENT_TYPE', 'RESOLUTION', 'PDB_REF_SEQ', 
+                   'PDB_SEQ_BEG_POSITION', 'REF_SEQ_BEG_POSITION','REF_SEQ_LENGTH',
                    'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 'MUTATIONS (LOCATION)',
                    'MUTATIONS (TYPE)', 'MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 'DEPOSITED (DATE)', 
                    'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
@@ -160,9 +160,9 @@ class PDB_interface:
         """
 
         meta_data_categories = ['PDB_ID', 'ENTITY_ID', 'ENTITY_DESCRIPTION', 'CHAIN_ID', 'DATABASE', 'GENE_NAME', 'ACCESS', 
-                                'PDB_SEQ', 'UNIPROT_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 'MOLECULAR_WEIGHT',
-                                'EXPERIMENT_TYPE', 'RESOLUTION', 'CANNONICAL_REF_SEQ', 'PDB_SEQ_BEG_POSITION', 
-                                'CANNONICAL_SEQ_BEG_POSITION', 'REF_SEQ_LENGTH', 'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 
+                                'PDB_SEQ', 'REF_SEQ', 'CHAIN_LENGTH', 'POLYMER_TYPE', 'MACROMOLECULAR_TYPE', 'MOLECULAR_WEIGHT',
+                                'EXPERIMENT_TYPE', 'RESOLUTION', 'PDB_REF_SEQ', 'PDB_SEQ_BEG_POSITION', 
+                                'REF_SEQ_BEG_POSITION', 'REF_SEQ_LENGTH', 'SPECIES', 'MUTATIONS/MODS (Y/N)', 'MUTATIONS/MODS (#)', 
                                 'MUTATIONS (LOCATION)', 'MUTATIONS (TYPE)','MODIFICATIONS (LOCATION)', 'MODIFICATIONS (TYPE)', 
                                 'DEPOSITED (DATE)', 'DEPOSITED (AUTHORS)', 'TITLE', 'DOI', 'PUBMED_ID']
 
@@ -428,7 +428,7 @@ class PDB_interface:
                     return PDB_SEQ
                 except KeyError:
                     return 'not found'
-            elif (attribute == 'UNIPROT_SEQ'):
+            elif (attribute == 'REF_SEQ'):
                 try:
                     uniprot_entity_dict = self.overall_uniprot_dict[polymer_entity_id]
                     SEQ = ''
@@ -496,7 +496,7 @@ class PDB_interface:
             #         return SEQ[beg_number:end_number]
             #     except KeyError:
             #         return 'not found'
-            elif (attribute == 'CANNONICAL_REF_SEQ'):
+            elif (attribute == 'PDB_REF_SEQ'):
                 try:
                     SEQ = ''
                     if len(polymer_entity_dict) > 3:
@@ -531,7 +531,7 @@ class PDB_interface:
                     return str(middle2['entity_beg_seq_id'])
                 except KeyError:
                     return 'not found'
-            elif (attribute == 'CANNONICAL_SEQ_BEG_POSITION'):
+            elif (attribute == 'REF_SEQ_BEG_POSITION'):
                 try:
                     if len(polymer_entity_dict) > 3:
                         entity_align = polymer_entity_dict['rcsb_polymer_entity_align']

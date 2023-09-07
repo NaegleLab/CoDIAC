@@ -404,8 +404,8 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
 
     for index, row in struct_df.iterrows():
         uniprot_id = row['ACCESS']
-        struct_seq = row['CANNONICAL_REF_SEQ']
-        ref_seq_pos_start = row['CANNONICAL_SEQ_BEG_POSITION']
+        struct_seq = row['PDB_REF_SEQ']
+        ref_seq_pos_start = row['REF_SEQ_BEG_POSITION']
         pdb_seq_pos_start  = row['PDB_SEQ_BEG_POSITION']
         ref_length = row['REF_SEQ_LENGTH']
         if verbose:
