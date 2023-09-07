@@ -297,22 +297,54 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         If True, uses the Intepro domain information, otherwise use Uniprot
     Returns
     -------
+    gene_name: str
+        The gene name found in the Uniprot Reference (reports N/A (Not Found in Reference) if this is not a domain-containing sequence found in the reference)
+    struct_seq_ref_spanning: str
+        ?
+    rangeStr: str
+        A string that denotes the start-end in the reference that was captured in the experiment. 
+        For example 30-150 indicates amino acids 30 to 150 of the reference appeared in the structure.
+    pos_diff: int
+        The integer offset between the number of the reference and the numbering indicated in the structure file.
+    diffStr: str
+    
+    gaps_ref_to_struct: int
+        Number of insertions in the full range covering the reference that exist in strucutre that are not in reference
+    gaps_struct_to_ref: int
+        Number of insertions in the full range covering the reference that exist in reference that are not in structure
+    domainStr: str
+        A domain information string that follows the following rules
+        Domains are separated by ';'
+        Each domain set is separated by ':' and includes 'name:InterproID:info_string'
+        info_string is ',' separated and has 4 entries 
+            start - start position of domain IN STRUCTURE SEQUENCE NUMBERING
+            end - end position fo the domain IN STRUCTURE SEQUENCE NUMBERING
+            number_variations - number of variant positions (positions that differ between structure and reference) within the domain spanning region
+            number_gaps - number of gaps/insertions within the domain range.
+    structure_arch: str
+        This is an easily readable string of domain names, in the order they appear in the protein from N- to C-terminal that was
+        covered by the experiment. Domains are separated by '|'. For example SH3_domain|SH2|Prot_kinase_dom means that the 
+        structure fully covered the SH3_domain, SH2, and Protein_kinase_dom of a SRC family kinase. 
+    full_domain_arch: str
+        For easy reference, this includes the architecture of the full protein so it can be seen what part of the whole protein
+        was studied in the experiment.
+
 
     """
 
 
-    
-    diffStr = '-1'
-    domainStr = ''
-    gene_name = '-1'
+    diffStr = 'N/A'
+    domainStr = 'N/A'
+    gene_name = 'N/A (Not Found In Reference)'
     pos_diff = 0
-    domainStr = '-1'
-    structure_arch = '-1'
-    full_domain_arch = '-1'
-    
+    domainStr = 'N/A'
+    structure_arch = 'N/A'
+    full_domain_arch = 'N/A'
+
+
     if ref_seq_pos_start == 'not found':
-        rangeStr = 'not found'
-        struct_seq_ref_spanning = 'not found'
+        rangeStr = 'N/A'
+        struct_seq_ref_spanning = 'N/A'
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
     else:
         ref_seq_pos_start = int(ref_seq_pos_start)
@@ -326,6 +358,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     if len(protein_rec.index) < 1 or uniprot_id == 'not found':
         print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
         #return default information here
+    
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
     elif len(protein_rec.index) > 1:
         print("ERROR: Found more than one record for %s in reference"%(uniprot_id))
