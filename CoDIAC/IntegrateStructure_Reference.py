@@ -436,10 +436,10 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
     reference_df = pd.read_csv(ref_file)
 
     for index, row in struct_df.iterrows():
-        uniprot_id = row['ACCESS']
+        uniprot_id = row['database_accession']
         struct_seq = row['PDB_REF_SEQ']
         ref_seq_pos_start = row['REF_SEQ_BEG_POSITION']
-        pdb_seq_pos_start  = row['PDB_SEQ_BEG_POSITION']
+        pdb_seq_pos_start  = row['pdbx_seq_one_letter_code_BEG_POSITION']
         ref_length = row['REF_SEQ_LENGTH']
         if verbose:
             print("Working on %s for protein %s"%(row['PDB_ID'], uniprot_id))

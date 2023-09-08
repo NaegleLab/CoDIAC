@@ -42,10 +42,10 @@ This file contains a myriad of sequences, which arises from the fact that experi
 * ENTITY_ID - ID of the entity on that line (sometimes many entities to one structure)
 * ENTITY_DESCRIPTION - A description of the polymer entity
 * CHAIN_ID - Chain IDs associated with the polymer entity
-* DATABASE - Reference database name (ACCESS column holds the accession number for the entity)
-* GENE_NAME - Gene name associated with the entity
-* ACCESS - Reference database accession code
-* PDB_SEQ - Sequence of protein or nucleic acid polymer that corresponds with the entity
+* database_name - Reference database name (database_accession column holds the accession number for the entity)
+* rcsb_gene_name - Gene name associated with the entity
+* database_accession - Reference database accession code
+* pdbx_seq_one_letter_code - Sequence of protein or nucleic acid polymer that corresponds with the entity
 * UNIPROT_SEQ - Protein sequence data for canonical protein sequence (refers to the protein sequence found through UniProt)
 * CHAIN_LENGTH - The monomer length of the sample sequence.
 * POLYMER_TYPE - A coarse-grained polymer entity type.
@@ -54,7 +54,7 @@ This file contains a myriad of sequences, which arises from the fact that experi
 * EXPERIMENT_TYPE - The category of experimental method(s) used to determine the structure entry.
 * RESOLUTION - Combined estimates of experimental resolution contributing to the refined structural model.Resolution reported in "refine.ls_d_res_high" is used for X-RAY DIFFRACTION, FIBER DIFFRACTION, POWDER DIFFRACTION, ELECTRON CRYSTALLOGRAPHY, and NEUTRON DIFFRACTION as identified in "refine.pdbx_refine_id". Resolution reported in "em_3d_reconstruction.resolution" is used for ELECTRON MICROSCOPY. The best value corresponding to "em_3d_reconstruction.resolution_method" == "FSC 0.143 CUT-OFF" is used, if available. If not, the best "em_3d_reconstruction.resolution" value is used. For structures that are not obtained from diffraction-based methods, the resolution values in "refine.ls_d_res_high" are ignored. Multiple values are reported only if multiple methods are used in the structure determination.
 * PDB_REF_SEQ - truncated part of UNIPROT_SEQ that aligns with the PDB entity’s sequence (aligned canonical sequence)
-* PDB_SEQ_BEG_POSITION - points to the position in the entity sequence that aligns with the canonical sequence
+* pdbx_seq_one_letter_code_BEG_POSITION - points to the position in the entity sequence that aligns with the canonical sequence
 * REF_SEQ_BEG_POSITION - points to the position in the canonical sequence that aligns with the entity sequence
 * REF_SEQ_LENGTH - length of the aligned regions between the entity and canonical sequences
 * SPECIES - Scientific name of the organism from which the gene originates
@@ -71,9 +71,9 @@ This file contains a myriad of sequences, which arises from the fact that experi
 * PUBMED_ID - the Pubmed ID for a paper of interest. 
 ### Summary and description of PDB sequences
 * PDB_REF_SEQ is the sequence that was experimentally created, it has been corrected to remove the three letter code of a modification and it has variants that were experimentally used. This sequence will still include non-reference information, like tags or epitopes. In the PDB files, this whole sequence will start at position 1 and go to the end of the sequence. In order to access locations as they relate, you would use the following.
-    * PDB_SEQ_BEG_POSITION (**PDB structure numbering**) - this is the position (ones-based counting) in the REF_SEQ and the PDB_SEQ where the reference sequences begins to be expressed. 
+    * pdbx_seq_one_letter_code_BEG_POSITION (**PDB structure numbering**) - this is the position (ones-based counting) in the REF_SEQ and the pdbx_seq_one_letter_code where the reference sequences begins to be expressed. 
     * REF_SEQ_BEG_POSITION (**Reference numbering**)- this is the position in the reference sequence where the experimental position picks up. 
-    * The end of the structure sequence that matches the reference can be found by PDB_SEQ_BEG_POSITION + REF_SEQ_LENGTH
+    * The end of the structure sequence that matches the reference can be found by pdbx_seq_one_letter_code_BEG_POSITION + REF_SEQ_LENGTH
 ![Example visualization by using alignment of the three sequences in PDB Reference File and how sequence positions are labeled](example_fasta_annot_PDB-01.png)
 
 ## Integrated PDB Reference File

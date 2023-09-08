@@ -110,8 +110,8 @@ class PDBClass:
         protein_domain_arch: str
             the full protein domain architectures
         """
-        self.database_name = row['DATABASE']
-        self.acc = row['ACCESS']
+        self.database_name = row['database_name']
+        self.acc = row['database_accession']
         self.chain_list = self.return_chain_list(row)
         self.structure_seq = row['struct/ref sequence']
         self.entity_macroType = row['MACROMOLECULAR_TYPE']
