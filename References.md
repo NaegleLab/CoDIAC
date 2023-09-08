@@ -77,9 +77,9 @@ This file contains a myriad of sequences, which arises from the fact that experi
 ![Example visualization by using alignment of the three sequences in PDB Reference File and how sequence positions are labeled](example_fasta_annot_PDB-01.png)
 
 ## Integrated PDB Reference File
-Given PDB structures and all the sequence information about them (**PDB Reference File**), we use the **Uniprot Reference File**, which defines domains of interest to annotate PDB experiments in order to find structures that include the domain of interest. 
+Given PDB structures and all the sequence information about them (**PDB Reference File**), we use the **Uniprot Reference File**, which defines domains of interest to annotate PDB experiments in order to find structures that include the domain of interest. Since the PDB file will contain additional proteins (e.g. ligands or complexes that do not have the domain of interest), these rows of the PDB file will not match information in the reference file. This will be denoted by N/A.
 The columns that are integrated from the Uniprot reference, appended to the PDB Reference File to produce the Integrated PDB Reference File are:
-* gene name - the gene name as defined in the Uniprot Reference 
+* gene name - the gene name as defined in the Uniprot Reference. If this is a sequence not in the Reference file, this will state **N/A (Not Found In Reference)** If this occurs, the remaining fields will also state N/A.
 * struct/ref sequence - this is the structure sequence experimentally made that spans just the Uniprot (integrated) reference. 
 * reference range - this is the numbering in the structure sequence space of where the struct/ref sequence exists. 
 * pos diff - number of total variants found between structure and reference.
