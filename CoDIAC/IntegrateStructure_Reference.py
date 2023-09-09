@@ -437,10 +437,10 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
 
     for index, row in struct_df.iterrows():
         uniprot_id = row['database_accession']
-        struct_seq = row['PDB_REF_SEQ']
-        ref_seq_pos_start = row['REF_SEQ_BEG_POSITION']
-        pdb_seq_pos_start  = row['pdbx_seq_one_letter_code_BEG_POSITION']
-        ref_length = row['REF_SEQ_LENGTH']
+        struct_seq = row['pdbx_seq_one_letter_code_can']
+        ref_seq_pos_start = row['ref_beg_seq_id']
+        pdb_seq_pos_start  = row['entity_beg_seq_id']
+        ref_length = row['aligned_regions_length']
         if verbose:
             print("Working on %s for protein %s"%(row['PDB_ID'], uniprot_id))
         information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length, INTERPRO)

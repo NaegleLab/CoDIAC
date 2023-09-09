@@ -44,8 +44,8 @@ class PDBEntitiesClass:
 
         for index, row in sub_df.iterrows():
             entity_id = int(row['ENTITY_ID'])
-            resolution = row['RESOLUTION']
-            method = row['EXPERIMENT_TYPE']
+            resolution = row['resolution_combined']
+            method = row['experimental_method']
             pdbclass = PDBClass(row)
             self.pdb_dict[entity_id] = pdbclass
 
@@ -114,8 +114,8 @@ class PDBClass:
         self.acc = row['database_accession']
         self.chain_list = self.return_chain_list(row)
         self.structure_seq = row['struct/ref sequence']
-        self.entity_macroType = row['MACROMOLECULAR_TYPE']
-        self.species = row['SPECIES']
+        self.entity_macroType = row['macromolecular_type']
+        self.species = row['pdbx_gene_src_scientific_name']
         self.PDB_ID = row['PDB_ID']
         self.Entity_ID = row['ENTITY_ID']
         self.ref_seq = row['UNIPROT_SEQ']
