@@ -1,18 +1,15 @@
 import requests
 import pandas as pd
-import csv
 import os
-import errno
 
-
-COLUMNS = ['PDB_ID', 'ENTITY_ID','pdbx_description', 'CHAIN_ID', 'database_name', 'rcsb_gene_name', 
-            'database_accession', 'pdbx_seq_one_letter_code', 'rcsb_uniprot_protein_sequence', 'rcsb_sample_sequence_length', 'rcsb_entity_polymer_type', 'macromolecular_type', 
-            'molecular_weight', 'experimental_method', 'resolution_combined', 'pdbx_seq_one_letter_code_can', 
-            'entity_beg_seq_id', 'ref_beg_seq_id','aligned_regions_length',
-            'pdbx_gene_src_scientific_name', 'mutations exist (Y/N)','rcsb_mutation_count','mutations locations',
-            'pdbx_mutation joined','modifications locations','modifications','deposit_date', 
-            'audit_author_name', 'title','pdbx_database_id_doi','pdbx_database_id_pub_med']
-
+COLUMNS = ['PDB_ID', 'ENTITY_ID', 'CHAIN_ID', 'pdbx_description',  'rcsb_gene_name', 'pdbx_gene_src_scientific_name',
+            'pdbx_seq_one_letter_code', 'pdbx_seq_one_letter_code_can', 'rcsb_sample_sequence_length',
+            'modifications locations','modifications',  'rcsb_entity_polymer_type', 'macromolecular_type', 
+            'database_name', 'database_accession', 
+            'rcsb_uniprot_protein_sequence',  'entity_beg_seq_id', 'ref_beg_seq_id','aligned_regions_length',
+            'mutations exist (Y/N)','rcsb_mutation_count','mutations locations', 'pdbx_mutation joined',
+            'molecular_weight', 'experimental_method', 'resolution_combined', 
+            'deposit_date', 'audit_author_name', 'title','pdbx_database_id_doi','pdbx_database_id_pub_med']
 
 class PDB_interface:
     """
