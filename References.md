@@ -40,35 +40,37 @@ This produces PDB_file, which we will refer to as the **PDB Reference File**.
 This file contains a myriad of sequences, which arises from the fact that experimental structures typically can include purification or detection tags (non-native protein sequence), fractions of the protein of interest, and variants of proteins, compared to the current reference. Hence, we compile all of these as we setup to understand how an experimental structure captures information about the current uniprot sequences. 
 * PDB_ID - PDB identifier of the structure
 * ENTITY_ID - ID of the entity on that line (sometimes many entities to one structure)
-* pdbx_description - A description of the polymer entity
 * CHAIN_ID - Chain IDs associated with the polymer entity
-* database_name - Reference database name (database_accession column holds the accession number for the entity)
+* pdbx_description - A description of the polymer entity
 * rcsb_gene_name - Gene name associated with the entity
-* database_accession - Reference database accession code
+* pdbx_gene_src_scientific_name - Scientific name of the organism from which the gene originates
 * pdbx_seq_one_letter_code - Sequence of protein or nucleic acid polymer that corresponds with the entity
-* rcsb_uniprot_protein_sequence - Protein sequence data for canonical protein sequence (refers to the protein sequence found through UniProt)
+* **pdbx_seq_one_letter_code_can** - this is the one letter code of the structure sequence. This is what we use in integration to align with generated reference file.
 * rcsb_sample_sequence_length - The monomer length of the sample sequence.
+* modifications locations - a semicolon-separated list of positions (in structure-based numbering) where modifications (MODRES) exist in the structure sequence.
+* modifications - a semicolon-separated list that includes the controlled PTM vocabulary of PDB and the position. For example `PTR-5` indicates phosphotyrosine at position 5 in the structure sequence. To find the meaning of a MODRES search: ```https://www.rcsb.org/ligand/PTR```, replace PTR with the code of interest. 
 * rcsb_entity_polymer_type - A coarse-grained polymer entity type.
 * macromolecular_type - type of polymer
-* molecular_weight - The molecular mass (KDa) of polymer and non-polymer entities (exclusive of solvent) in the deposited structure entry
-* experimental_method - The category of experimental method(s) used to determine the structure entry.
-* resolution_combined - Combined estimates of experimental resolution contributing to the refined structural model.Resolution reported in "refine.ls_d_res_high" is used for X-RAY DIFFRACTION, FIBER DIFFRACTION, POWDER DIFFRACTION, ELECTRON CRYSTALLOGRAPHY, and NEUTRON DIFFRACTION as identified in "refine.pdbx_refine_id". Resolution reported in "em_3d_reconstruction.resolution" is used for ELECTRON MICROSCOPY. The best value corresponding to "em_3d_reconstruction.resolution_method" == "FSC 0.143 CUT-OFF" is used, if available. If not, the best "em_3d_reconstruction.resolution" value is used. For structures that are not obtained from diffraction-based methods, the resolution values in "refine.ls_d_res_high" are ignored. Multiple values are reported only if multiple methods are used in the structure determination.
-* **pdbx_seq_one_letter_code_can** - this is the one letter code of the structure sequence. This is what we use in integration to align with generated reference file.
+* database_name - Reference database name (database_accession column holds the accession number for the entity)
+* database_accession - Reference database accession code
+* rcsb_uniprot_protein_sequence - Protein sequence data for canonical protein sequence (refers to the protein sequence found through UniProt)
 * entity_beg_seq_id - points to the position in the entity sequence that aligns with the canonical sequence
 * ref_beg_seq_id - points to the position in the canonical sequence that aligns with the entity sequence
 * aligned_regions_length - length of the aligned regions between the entity and canonical sequences
-* pdbx_gene_src_scientific_name - Scientific name of the organism from which the gene originates
 * mutations exist - Tells us if there are any mutations present in the entity sequence
 * rcsb_mutation_count - Number of mutations present in the entity sequence
 * mutations locations - a semicolon-separated list of positions (in reference numbering) where variants exist in the structure sequence, relative to the reference sequence.
 * pdbx_mutation joined - a comma-separated list of mutations, where aa1POSaa2 indicates aa1 at POS is mutated to aa2. For example V314R, indicates V314 in reference is an R in structure.
-* modifications locations - a semicolon-separated list of positions (in structure-based numbering) where modifications (MODRES) exist in the structure sequence.
-* modifications - a semicolon-separated list that includes the controlled PTM vocabulary of PDB and the position. For example `PTR-5` indicates phosphotyrosine at position 5 in the structure sequence. To find the meaning of a MODRES search: ```https://www.rcsb.org/ligand/PTR```, replace PTR with the code of interest. 
+* molecular_weight - The molecular mass (KDa) of polymer and non-polymer entities (exclusive of solvent) in the deposited structure entry
+* experimental_method - The category of experimental method(s) used to determine the structure entry.
+* resolution_combined - Combined estimates of experimental resolution contributing to the refined structural model.Resolution reported in "refine.ls_d_res_high" is used for X-RAY DIFFRACTION, FIBER DIFFRACTION, POWDER DIFFRACTION, ELECTRON CRYSTALLOGRAPHY, and NEUTRON DIFFRACTION as identified in "refine.pdbx_refine_id". Resolution reported in "em_3d_reconstruction.resolution" is used for ELECTRON MICROSCOPY. The best value corresponding to "em_3d_reconstruction.resolution_method" == "FSC 0.143 CUT-OFF" is used, if available. If not, the best "em_3d_reconstruction.resolution" value is used. For structures that are not obtained from diffraction-based methods, the resolution values in "refine.ls_d_res_high" are ignored. Multiple values are reported only if multiple methods are used in the structure determination.
 * deposit_date - The date of initial deposition
 * audit_author_name - Names of authors of this data block
 * title - The title of this citation
 * pdbx_database_id_doi - Document Object Identifier used by doi.org to uniquely specify bibliographic entry
 * pdbx_database_id_pub_med - the Pubmed ID for a paper of interest. 
+
+
 ### Summary and description of PDB sequences
 * pdbx_seq_one_letter_code_can is the sequence that was experimentally created, it has been corrected to remove the three letter code of a modification and it has variants that were experimentally used. This sequence will still include non-reference information, like tags or epitopes. In the PDB files, this whole sequence will start at position 1 and go to the end of the sequence. In order to access locations as they relate, you would use the following.
     * entity_beg_seq_id (**PDB structure numbering**) - this is the position (ones-based counting) in the REF_SEQ and the pdbx_seq_one_letter_code where the reference sequences begins to be expressed. 
