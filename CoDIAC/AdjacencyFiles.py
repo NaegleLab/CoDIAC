@@ -111,33 +111,38 @@ def ProcessArpeggio(input_file_path, outfile_path):
                             inplace=True)
 
         df.to_csv(outfile,sep='\t',encoding='utf-8',index=False)
-        print('CM generated for {PDB}'.format(PDB = PDB_ID))
+        print('Adjacency File generated for {PDB}'.format(PDB = PDB_ID))
         
         
-def BinaryFeatures(PDB_ID, PATH):
+def BinaryFeatures(PDB_ID, PATH, translate_resid=False):
     ''' Produces an adjacency file for intra and inter protein contacts that are also represented as binary features
     Parameters
     ----------
         PDB_ID : str
             Input a PDB ID
         PATH : str
-            Path to write the output file '''
+            Path to write the output file 
+        translate_resid : bool
+            whether to update structure sequence residue positions to the ones in the Uniprot Reference'''
     
     OUTFILE = PATH+'/'+PDB_ID+'_BF.txt'
-    interpro_Adj = Interprotein_AdjFile(PDB_ID, PATH)
-    intrapro_Adj = Intraprotein_AdjFile(PDB_ID, PATH)
+    interpro_Adj = Interprotein_AdjFile(PDB_ID, PATH, translate_resid)
+    intrapro_Adj = Intraprotein_AdjFile(PDB_ID, PATH, translate_resid)
     df = pd.concat([intrapro_Adj, interpro_Adj]) 
     df.to_csv(OUTFILE, index=None, sep='\t', mode='w') 
+    print('Adjacency File with Binary features generated for', PDB_ID)
     
     
-def Intraprotein_AdjFile(PDB_ID, PATH):
+def Intraprotein_AdjFile(PDB_ID, PATH, translate_resid=False):
     ''' Produces adjacency file for only Intraprotein contacts along with binary features
     Parameters
     ----------
         PDB_ID : str
             Input a PDB ID
         PATH : str
-            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for intraprotein '''
+            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for intraprotein 
+        translate_resid : bool
+            whether to update structure sequence residue positions to the ones in the Uniprot Reference'''
     
     INPUTFILE = PATH+'/'+PDB_ID+'.txt'
     #OUTFILE = PATH+'/'+PDB_ID+'/'+PDB_ID+'_intra.txt'
@@ -151,10 +156,14 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
     #join chain and residue number column values to use as identifier for updating the residue numbers if required
     df['map1'] = df['Chain1'].astype(str)+(df['ResNum1']).astype(str)
     df['map2'] = df['Chain2'].astype(str)+(df['ResNum2']).astype(str)
-    
+        
     #update residue numbers if needed
-    if DBREF(PDB_ID)[1].values():
-        dict_resnums = (DBREF(PDB_ID)[1])
+    if translate_resid == True:
+        if ResID_from_DBREF(PDB_ID)[1].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID)[1])
+    if translate_resid == False:
+        if ResID_from_DBREF(PDB_ID)[2].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID)[2])
          
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
@@ -229,14 +238,16 @@ def Intraprotein_AdjFile(PDB_ID, PATH):
     #df4.to_csv(OUTFILE, index=None, sep='\t', mode='w')
     return(df4)
 
-def Interprotein_AdjFile(PDB_ID,PATH):
+def Interprotein_AdjFile(PDB_ID,PATH, translate_resid=False):
     ''' Produces adjacency file for only Interprotein contacts along with binary features
     Parameters
     ----------
         PDB_ID : str
             Input a PDB ID
         PATH : str
-            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for interprotein '''
+            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for interprotein 
+        translate_resid : bool
+            whether to update structure sequence residue positions to the ones in the Uniprot Reference '''
     
     INPUTFILE = PATH+'/'+PDB_ID+'.txt'
     #OUTFILE = PATH+'/'+PDB_ID+'/'+PDB_ID+'_inter.txt'
@@ -252,8 +263,12 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     df['map2'] = df['Chain2'].astype(str)+(df['ResNum2']).astype(str)
     
     #update residue numbers if needed
-    if DBREF(PDB_ID)[1].values():
-        dict_resnums = (DBREF(PDB_ID)[1])
+    if translate_resid == True:
+        if ResID_from_DBREF(PDB_ID)[1].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID)[1])
+    if translate_resid == False:
+        if ResID_from_DBREF(PDB_ID)[2].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID)[2])
          
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
@@ -335,7 +350,7 @@ def Interprotein_AdjFile(PDB_ID,PATH):
     return(df4)
     
     
-def DBREF(PDB_ID):
+def ResID_from_DBREF(PDB_ID):
     ''' This function uses the DBREF record from PDB header to find differences in residue numbers between PDB and reference (such as Uniprot) If PDB legacy formats are unavailable, we make use of the mmCif headers and extract the same information 
     
     Parameters
@@ -347,9 +362,12 @@ def DBREF(PDB_ID):
     -------
         dbref_dict : dict
             Dictionary with chains as keys and list of sequence start and end residue numbers for both databases as values
-        dict_new_id : dict
-            Dictionary whose keys are chain and residue number and its values are updated residue number. 
-            Upon finding differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict '''
+        dict_upd_id : dict
+            Dictionary whose keys are chain and residue number of the residues and its values are updated residue number. 
+            Upon finding differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict 
+        dict_id : dict
+            Dictionary whose keys are chain and residue number of the residues and its values are residue number in the structure sequence(PDB). 
+            '''
     
     dbref_dict={}
 
@@ -396,29 +414,39 @@ def DBREF(PDB_ID):
             l.append(int(df.iloc[i,5]))
             dbref_dict[df.iloc[i,0]] = l 
     
-    dict_new_id = {}
+    dict_id = {}
+    for k,v in dbref_dict.items():
+        sequence_length = v[3] - v[2] +1
+        index = 0
+        for i in range(sequence_length):
+            value = v[0]+index
+            key = k + str(value)
+            dict_id[key] = value
+            index +=1
+    
+    dict_upd_id = {}
     for k, v in dbref_dict.items():
 
         if v[0] == v[2] and v[1] == v[3]:
             sequence_length = v[3] - v[2] +1
-            print('No difference in residue numbers in chain',k) 
+#             print('No difference in residue numbers in chain',k) 
             index = 0
             for i in range(sequence_length):
                 value = v[0]+index
                 key = k + str(value)
-                dict_new_id[key] = v[2]+index
+                dict_upd_id[key] = v[2]+index
                 index +=1
         else:
-            print('Difference in residue numbers in chain',k)
+#             print('Difference in residue numbers in chain',k)
             sequence_length = v[3] - v[2] +1
             index = 0
             for i in range(sequence_length):
                 value = v[0]+index
                 key = k + str(value)
-                dict_new_id[key] = v[2]+index
+                dict_upd_id[key] = v[2]+index
                 index +=1
                     
-    return(dbref_dict, dict_new_id)
+    return(dbref_dict, dict_upd_id, dict_id)
 
 
 def intraprotein_threshold(chain_entity_dict, entity):
