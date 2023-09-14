@@ -448,16 +448,16 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
             print("Working on %s for protein %s"%(row['PDB_ID'], uniprot_id))
         information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length, INTERPRO)
         gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
-        struct_df.loc[index,'gene name'] = gene_name
-        struct_df.loc[index, 'struct/ref sequence'] = struct_seq_ref_spanning
-        struct_df.loc[index, 'reference range'] = rangeStr
-        struct_df.loc[index, 'pos diff'] = pos_diff
-        struct_df.loc[index, 'Gaps Ref:Struct'] = gaps_ref_to_struct
-        struct_df.loc[index, 'Gaps Struct:Ref'] = gaps_struct_to_ref
-        struct_df.loc[index, 'ref variants'] = diffStr
-        struct_df.loc[index, 'domains'] = domainStr
-        struct_df.loc[index, 'struct domain architecture'] = structure_arch
-        struct_df.loc[index, 'protein domain architecture'] = full_domain_arch
+        struct_df.loc[index,'ref:gene name'] = gene_name
+        struct_df.loc[index, 'ref:struct/ref sequence'] = struct_seq_ref_spanning
+        struct_df.loc[index, 'ref:reference range'] = rangeStr
+        struct_df.loc[index, 'ref:start position offset'] = pos_diff
+        struct_df.loc[index, 'Gaps ref:struct'] = gaps_ref_to_struct
+        struct_df.loc[index, 'Gaps struct:ref'] = gaps_struct_to_ref
+        struct_df.loc[index, 'ref:variants'] = diffStr
+        struct_df.loc[index, 'ref:domains'] = domainStr
+        struct_df.loc[index, 'ref:struct domain architecture'] = structure_arch
+        struct_df.loc[index, 'ref:protein domain architecture'] = full_domain_arch
     struct_df.to_csv(out_file, index=False)
     return struct_df
 
