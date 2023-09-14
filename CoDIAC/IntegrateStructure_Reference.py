@@ -342,9 +342,12 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     full_domain_arch = 'N/A'
 
 
-    if ref_seq_pos_start == 'not found':
-        rangeStr = 'N/A'
-        struct_seq_ref_spanning = 'N/A'
+    if ref_seq_pos_start == 'not found': 
+        # if not found, then we will set the ref_struct range and position
+
+        rangeStr = '1-'+str(len(struct_seq)) #set the range starting from start to end
+        
+        struct_seq_ref_spanning = struct_seq #what it is based on existing.
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
     else:
         ref_seq_pos_start = int(ref_seq_pos_start)
