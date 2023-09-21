@@ -10,6 +10,26 @@ import urllib.request
 from Bio.PDB import PDBList
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 
+AA_dict = {"ALA":'A',
+                  "ARG":'R',
+                  "ASN":'N',
+                  "ASP":'D',
+                  "CYS":'C',
+                  "GLU":'E',
+                  "GLN":'Q',
+                  "GLY":'G',
+                  "HIS":'H',
+                  "ILE":'I',
+                  "LEU":'L',
+                  "LYS":'K',
+                  "MET":'M',
+                  "PHE":'F',
+                  "PRO":'P',
+                  "SER":'S',
+                  "THR":'T',
+                  "TRP":'W',
+                  "TYR":'Y',
+                  "VAL":'V'}
 
 def ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = False):
         ''' This function generates a contactmap text file.
@@ -113,27 +133,6 @@ def ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = 
                                                 break
 
         df = pd.read_csv(outfile,  sep='\t')
-
-        AA_dict = {"ALA":'A',
-                  "ARG":'R',
-                  "ASN":'N',
-                  "ASP":'D',
-                  "CYS":'C',
-                  "GLU":'E',
-                  "GLN":'Q',
-                  "GLY":'G',
-                  "HIS":'H',
-                  "ILE":'I',
-                  "LEU":'L',
-                  "LYS":'K',
-                  "MET":'M',
-                  "PHE":'F',
-                  "PRO":'P',
-                  "SER":'S',
-                  "THR":'T',
-                  "TRP":'W',
-                  "TYR":'Y',
-                  "VAL":'V'}
 
         df.replace({"Res1": AA_dict},inplace=True)
         df.replace({"Res2": AA_dict},inplace=True)
@@ -575,3 +574,42 @@ def entity_for_chain(PDB_ID):
 
     return(chain_entity_dict, chainlist)
 
+
+def makePTM_dict(pdb_ref_file, cif_file_path):
+    '''Creates a dictionary of PTMs that are present in the structures of the PDB Reference file. This dictionary is used as PTM_CONTACT_DICT in contactMap globals class. 
+    
+    Parameters
+    ----------
+        pdb_ref_file : str
+            Path to input the PDB reference file
+        cif_file_path : str
+            Path to find the cif files
+            
+    Returns
+    -------
+        ptm_dict : dict
+            dictionary with PTMs and their one letter code of amino acid
+            '''
+        
+    ptm_dict = {}
+    df = pd.read_csv(pdb_ref_file)
+    for i in range(len(df)):
+        PDB_ID = df.iloc[i,0]
+        cif_file = cif_file_path+PDB_ID+'.cif'
+        cif_info = MMCIF2Dict(cif_file)
+#         print(PDB_ID)
+
+        if '_pdbx_struct_mod_residue.auth_comp_id' in cif_info:
+            length_of_dict = len(cif_info['_pdbx_struct_mod_residue.auth_comp_id'])
+            for j in range(length_of_dict):
+                mod_res = cif_info['_pdbx_struct_mod_residue.auth_comp_id'][j]
+                mod_res_parent = cif_info['_pdbx_struct_mod_residue.parent_comp_id'][j]
+                ptm_dict[mod_res] = mod_res_parent
+                tmp_dict[mod_res] = mod_res_parent
+       
+        
+    for mod_res, mod_res_parent in ptm_dict.items():
+        if mod_res_parent in AA_dict.keys():
+            ptm_dict[mod_res] = AA_dict[mod_res_parent]
+            
+    return ptm_dict
