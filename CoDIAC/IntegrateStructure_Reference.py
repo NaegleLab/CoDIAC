@@ -477,7 +477,7 @@ def filter_structure_file(appended_structure_file, Interpro_ID, filtered_structu
     for name, group in PDB_df.groupby('PDB_ID'):
         total_PDBs+=1
         for index, row in group.iterrows():
-            if isinstance(row['domains'], str) and Interpro_ID in row['domains']:
+            if isinstance(row['ref:domains'], str) and Interpro_ID in row['ref:domains']:
                 filtered_PDB_list.append(name)
     PDB_df_sub = PDB_df[PDB_df['PDB_ID'].isin(filtered_PDB_list)]
     PDB_df_sub.to_csv(filtered_structure_file, index=False)
