@@ -15,7 +15,25 @@ class globals:
     global PTM_CONTACT_DICT 
     #to look up a ligand code replace the <> with intention in this URL
     # https://www.rcsb.org/ligand/<ALY>
-    PTM_CONTACT_DICT = {'PTR':'Y', 'MSE':'S', 'SEP':'S', 'CAS':'C', 'ALY':'K'}
+    
+    #PTM_CONTACT_DICT created using AdjacencyFiles.makePTM_dict
+    PTM_CONTACT_DICT = {'PTR': 'Y',
+                         'CAS': 'C',
+                         'SEP': 'S',
+                         '1PA': 'F',
+                         'PM3': 'F',
+                         'CME': 'C',
+                         'FTY': 'Y',
+                         'PTH': 'Y',
+                         'CSO': 'C',
+                         'ALY': 'K',
+                         'MSE': 'M',
+                         'SLZ': 'K',
+                         'PTM': 'Y',
+                         '1AC': 'A',
+                         '02K': 'A',
+                         'CCS': 'C',
+                         'TPO': 'T'}
     #FYQ, AYI, YEN are synthetic pTYR sequences that act as inhibitors, have to decide what to do about that.
     global MOLECULES_TO_REMOVE
     MOLECULES_TO_REMOVE = ['HOH', 'SO4', 'NBS', 'CSO', 'MN', 'MG', 'ZN', 'MYR', 'P16', 'GOL', 'QUE', 'CA', 'ANP', 'EDO', 'DVT', 'CL', 'PO4', 'FMT', 'ACE', 'CAT', '1N1', 'VSH', 'PB']
