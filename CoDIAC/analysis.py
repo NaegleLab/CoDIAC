@@ -224,6 +224,46 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=True)
 
+
+def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_ann_file, reference_fastafile):
+    df = pd.read_csv(pdb_ann_file)
+    domain = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['domains']] ).values.item()
+    uniprot_id = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['database_accession']] ).values.item()
+    gene = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['gene name']] ).values.item()
+    domainlist = domain.split(';')
+    DOI = []
+    for i in range(len(domainlist)):
+        domain_name, IPR, ranges = domainlist[i].split(':')
+        
+        if domain_of_interest in domain_name:
+            print(domain_name)
+            DOI.append(domainlist[i])
+            print(domainlist[i], i)
+        
+    for j in range(len(DOI)):
+        DOI_domain, DOI_IPR, DOI_range = DOI[j].split(':')
+        start, end, gap, mutations = DOI_range.split(',')
+        
+        if int(start) == ROI_start and int(end) == ROI_end:
+            index = j+1
+            header = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)+'|'+DOI_IPR+'|'+start+'|'+end
+
+    fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
+    for fasta in fasta_seq:
+        name, sequence = fasta.id, str(fasta.seq)
+        ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+        if name == header:
+            fasta_header = header+'|'+PDB_ID
+
+        else:
+            if ref_uniprot_id == uniprot_id and ref_gene == gene:
+                if ROI_start in range(int(ref_start)-5, int(ref_start)+5) and ROI_end in range(int(ref_end)-5, int(ref_end)+5):
+#                 if ROI_start == int(ref_start) and ROI_end == int(ref_end):
+                    fasta_header = name+'|'+PDB_ID
+
+    return fasta_header                                
+                                
+                                
 def similarityScore(aligned_sequences_list):
     score = 0
     len_sequence = len(aligned_sequences_list[0])
