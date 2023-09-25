@@ -19,6 +19,30 @@ def get_gene(pdb_ann_file, entity_id, PDB_ID):
 
 def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='PTR', mutation='N', 
                       domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
+    '''Generates contact features that are present across canonical interfaces (between a domain and it sligand partner)
+    
+    Parameters
+    ----------
+        pdb_ann_file : str
+            PDB reference file with all PDB structures annotated and filtered based on the domain of interest
+        ADJFILES_PATH : str
+            path to fetch adjacency files
+        error_structures_list : list
+            list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
+        PTM : str
+            PTM that binds to our domain of interest
+        mutation : str
+            fetches native and mutant structures
+        domain_of_interest : str
+            the domain of interest
+        SH2_file : str
+            name of fasta and feature files for the domain of interest
+        PTM_file : str
+            name of fasta and feature files for the ligand entities with PTMs on it
+            
+    Returns
+    -------
+        Fasta and feature files with canonical interface contact features'''
     
     main = pd.read_csv(pdb_ann_file)
 
@@ -51,13 +75,13 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
 
                                 print(name, SH2_entity, lig_entity)
                                 pdbClass = entities.pdb_dict[lig_entity]
-                                dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, PATH, lig_entity)
-                                dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, PATH, SH2_entity)
+                                dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
+                                dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
 
                                 cm_aligned = dict_of_lig['cm_aligned']
                                 SH2_gene = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[0]
                                 lig_gene = get_gene(pdb_ann_file, lig_entity, PDB_ID)[0]
-                                uid = get_gene(SH2_entity, PDB_ID)[1]
+                                uid = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[1]
 
                                 for res in cm_aligned.transDict:
                                     if res in cm_aligned.resNums:
@@ -67,12 +91,12 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
 
                                             from_dict = dict_of_lig
                                             to_dict = dict_of_SH2
-                                            adjList, arr = contactMap.return_interChain_adj(PATH, from_dict, to_dict)
-                                            adjList_alt, arr_alt = contactMap.return_interChain_adj(PATH, to_dict, from_dict)
+                                            adjList, arr = contactMap.return_interChain_adj(ADJFILES_PATH, from_dict, to_dict)
+                                            adjList_alt, arr_alt = contactMap.return_interChain_adj(ADJFILES_PATH, to_dict, from_dict)
 
                                             domains = dict_of_SH2['pdb_class'].domains
                                             for domain_num in domains:
-                                                if PTM in str(domains[domain_num]):
+                                                if domain_of_interest in str(domains[domain_num]):
 
                                                     dom_header = list(domains[domain_num].keys())[0]
                                                     SH2_start, SH2_stop, muts, gaps = domains[domain_num][dom_header]
@@ -109,16 +133,36 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
 
 def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mutation = 'nan', DOMAIN = 'SH2', 
                          filename='SH2_NC'):
-
+    '''Generates contact features that are present across non-canonical interfaces (between two domains part of teh same protein) 
+    
+    Parameters
+    ----------
+        pdb_ann_file : str
+            PDB reference file with all PDB structures annotated and filtered based on the domain of interest
+        ADJFILES_PATH : str
+            path to fetch adjacency files
+        error_structures_list : list
+            list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
+        mutation : str
+            fetches native and mutant structures
+        DOMAIN : str
+            the domain of interest
+        filename : str
+            name of fasta and feature files 
+        
+    Returns
+    -------
+        Fasta and feature files with non-canonical interface contact features'''
+    
     ann = pd.read_csv(pdb_ann_file)
 
     for index, row in ann.iterrows():
 
         PDB_ID = row['PDB_ID']
-        gene = str(row['gene name'])
+        gene = str(row['ref:gene name'])
         entity_id = row['ENTITY_ID']
-        mutation = str(row['ref variants'])
-        domain = str(row['domains'])
+        mutation = str(row['ref:ref variants'])
+        domain = str(row['ref:domains'])
         parse_domain = domain.split(';')
         species = str(row['pdbx_gene_src_scientific_name'])
         uniprot_ID = str(row['database_accession'])
