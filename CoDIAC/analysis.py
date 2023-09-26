@@ -4,20 +4,7 @@ import pandas as pd
 import numpy as np
 from Bio import SeqIO
 
-def get_gene(pdb_ann_file, entity_id, PDB_ID):
-    
-    df = pd.read_csv(pdb_ann_file)
-    sub_df = df[df['PDB_ID']==PDB_ID]
-
-    for index, row in sub_df.iterrows():
-        genename = row['gene name']
-        entity = (row['ENTITY_ID'])
-        uniprot_id = row['database_accession']
-        if entity == entity_id:
-            return(genename, uniprot_id)
-        
-
-def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='PTR', mutation='N', 
+def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, PTM='PTR', mutation=False, 
                       domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
     '''Generates contact features that are present across canonical interfaces (between a domain and it sligand partner)
     
@@ -27,12 +14,14 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
             PDB reference file with all PDB structures annotated and filtered based on the domain of interest
         ADJFILES_PATH : str
             path to fetch adjacency files
+        reference_fastafile : str
+            fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
         error_structures_list : list
             list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
         PTM : str
             PTM that binds to our domain of interest
-        mutation : str
-            fetches native and mutant structures
+        mutation : boolean
+            fetches native/mutant structures. Default set to retrieve native structures
         domain_of_interest : str
             the domain of interest
         SH2_file : str
@@ -45,43 +34,43 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
         Fasta and feature files with canonical interface contact features'''
     
     main = pd.read_csv(pdb_ann_file)
-
+    list_of_uniprotids=[]
     for name, group in main.groupby('PDB_ID'):
         PDB_ID = name
-        if PDB_ID not in error:
+        if PDB_ID not in error_structures_list:
 
             for index, row in group.iterrows():
-#                 mutation = str(row['pdbx_mutation joined'])
-                mutation_exist = str(row['mutations exist (Y/N)'])
+                uniprot_ID = row['database_accession']
                 
-                if mutation_exist == mutation:
+                if isinstance(row['modifications'], str):
+                    transDict = PDBHelper.return_PTM_dict(row['modifications'])
+                    for res in transDict:
+                        if PTM in transDict[res]:
 
-                    if isinstance(row['modifications'], str):
-                        transDict = PDBHelper.return_PTM_dict(row['modifications'])
-                        for res in transDict:
-                            if PTM in transDict[res]:
+                            entities = PDBHelper.PDBEntitiesClass(main, PDB_ID)
+                            for entity in entities.pdb_dict.keys():
+                                domains = entities.pdb_dict[entity].domains
+                                for domain_num in domains:
+                                    if domain_of_interest in domains[domain_num]:
+                                        SH2_entity = entity 
+                                        check_mutation = (pd.isnull(main.loc[index, 'ref:variants']))
 
-                                entities = PDBHelper.PDBEntitiesClass(main, PDB_ID)
-                                for entity in entities.pdb_dict.keys():
-                                    domains = entities.pdb_dict[entity].domains
-                                    for domain_num in domains:
-                                        if domain_of_interest in domains[domain_num]:
-                                            SH2_entity = entity 
-
-                                    transDict = entities.pdb_dict[entity].transDict
-                                    for res in transDict:
-                                        if PTM in transDict[res]:
-                                            lig_entity = entity
-
+                                transDict = entities.pdb_dict[entity].transDict
+                                for res in transDict:
+                                    if PTM in transDict[res]:
+                                        lig_entity = entity
+                                        
+                            if check_mutation != mutation:
+                                list_of_uniprotids.append(uniprot_ID)
                                 print(name, SH2_entity, lig_entity)
                                 pdbClass = entities.pdb_dict[lig_entity]
                                 dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
                                 dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
 
                                 cm_aligned = dict_of_lig['cm_aligned']
-                                SH2_gene = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[0]
-                                lig_gene = get_gene(pdb_ann_file, lig_entity, PDB_ID)[0]
-                                uid = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[1]
+#                                 SH2_gene = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[0]
+#                                 lig_gene = get_gene(pdb_ann_file, lig_entity, PDB_ID)[0]
+#                                 uid = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[1]
 
                                 for res in cm_aligned.transDict:
                                     if res in cm_aligned.resNums:
@@ -106,8 +95,8 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
                                                                      res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
                                                                      SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue())
 
-        #                                             fasta_header = uid+'|'+PDB_ID+'|'+str(res)+'|'+'SH2:'+str(SH2_start)+':'+str(SH2_stop)
-                                                    fasta_header = uid+'|'+str(SH2_gene)+'|'+str(res)+'|'+'SH2:'+str(SH2_start)+':'+str(SH2_stop)+'|'+PDB_ID
+        #                                             
+                                                    fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|'+PDB_ID
 
 
                                                     if lig_entity == SH2_entity:
@@ -130,8 +119,19 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, error_structures_list, PTM='P
                                                                  res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
                                                                  SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
                                                                 fasta_header,'SH2', 'SH2_file', threshold=1, append=True )
+                                    
+    inputfile = PTM_file+'.fasta'
+    with open(inputfile, 'a') as file:
+        for query_uniprotid in set(list_of_uniprotids):
+            fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
+            for fasta in fasta_seq:
+                name, sequence = fasta.id, str(fasta.seq)
+                ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+                if query_uniprotid == ref_uniprot_id:
+                    file.write('>'+name+'\n'+sequence+'\n')
+                    
 
-def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mutation = 'nan', DOMAIN = 'SH2', 
+def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, mutation = False, DOMAIN = 'SH2', 
                          filename='SH2_NC'):
     '''Generates contact features that are present across non-canonical interfaces (between two domains part of teh same protein) 
     
@@ -141,10 +141,12 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
             PDB reference file with all PDB structures annotated and filtered based on the domain of interest
         ADJFILES_PATH : str
             path to fetch adjacency files
+        reference_fastafile : str
+            fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
         error_structures_list : list
             list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
-        mutation : str
-            fetches native and mutant structures
+        mutation : boolean
+            fetches native/mutant structures. Default set to retrieve native structures
         DOMAIN : str
             the domain of interest
         filename : str
@@ -155,18 +157,18 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
         Fasta and feature files with non-canonical interface contact features'''
     
     ann = pd.read_csv(pdb_ann_file)
-
+    list_of_uniprotids = []
     for index, row in ann.iterrows():
 
         PDB_ID = row['PDB_ID']
         gene = str(row['ref:gene name'])
         entity_id = row['ENTITY_ID']
-        mutation = str(row['ref:ref variants'])
         domain = str(row['ref:domains'])
         parse_domain = domain.split(';')
         species = str(row['pdbx_gene_src_scientific_name'])
         uniprot_ID = str(row['database_accession'])
-
+        check_mutation = (pd.isnull(ann.loc[index, 'ref:variants']))
+        
         print('------',PDB_ID,'------')
 
         if PDB_ID not in error_structures_list:
@@ -177,13 +179,16 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
 
             if species != 'not found':
 
-                if mutation == 'nan':
+                if check_mutation != mutation:
+                    print('mutation',row['ref:variants'])
 
                     if gene != 'N/A (Not Found In Reference)':
 
                         if domain != 'nan' and len(parse_domain) >1:
 
                             caligned = contactMap.translate_chainMap_to_RefSeq(chain, pdbClass)
+                            list_of_uniprotids.append(uniprot_ID)
+
                             dom_names = []
                             SH2_dom = []
                             other_dom = []
@@ -195,28 +200,30 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                 else:
                                     other_dom.append(i)
 
-#                           'SH2 = 1 and other domains >=1'
+    #                           'SH2 = 1 and other domains >=1'
                             if len(SH2_dom) == 1 and len(other_dom) >= 1:
-            
+
                                 header_1, IPR, ROI_1 = SH2_dom[0].split(':')
                                 ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
                                 for val in other_dom:
                                     header_2, IPR, ROI_2 = val.split(':')
                                     ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                    fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+    #                                     fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                    fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
                                     feature_header = header_2
                                     caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                      fasta_header, feature_header,filename, append=True, 
                                                                        use_ref_seq_aligned=True)
 
-#                           'SH2 > 1 and other domains = 0'
+    #                           'SH2 > 1 and other domains = 0'
                             if len(SH2_dom) > 1 and len(other_dom) == 0:
-                              
+
                                 header_1, IPR,ROI_1 = SH2_dom[0].split(':')
                                 header_2, IPR,ROI_2 = SH2_dom[1].split(':')
                                 ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
                                 ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
+    #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
@@ -226,15 +233,16 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                 header_2, IPR, ROI_2 = SH2_dom[0].split(':')
                                 ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
                                 ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
+    #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=True)
 
-#                           'SH2 > 1 and other domains > 0'
+    #                           'SH2 > 1 and other domains > 0'
                             if len(SH2_dom) > 1 and len(other_dom) > 0:
-                                
+
                                 for val1 in SH2_dom:
                                     header_1, IPR, ROI_1 = val1.split(':')
                                     ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
@@ -242,7 +250,8 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                     for val2 in other_dom:
                                         header_2, IPR, ROI_2 = val2.split(':')
                                         ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                        fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                        fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
+    #                                         fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                         feature_header = header_2
                                         caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
@@ -252,7 +261,8 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                 header_2, IPR, ROI_2 = SH2_dom[1].split(':')
                                 ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
                                 ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
+    #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
@@ -262,18 +272,49 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH,  error_structures_list, mu
                                 header_2, IPR, ROI_2 = SH2_dom[0].split(':')
                                 ROI_10, ROI_11, gap_1, mut_1 = ROI_1.split(',')
                                 ROI_20, ROI_21, gap_2, mut_2 = ROI_2.split(',')
-                                fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
+                                fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
+    #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
-                                                                 fasta_header, feature_header,filename, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                 fasta_header, feature_header,filename, append=True, use_ref_seq_aligned=True)
 
+
+    inputfile = filename+'.fasta'
+    with open(inputfile, 'a') as file:
+        for query_uniprotid in set(list_of_uniprotids):
+            fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
+            for fasta in fasta_seq:
+                name, sequence = fasta.id, str(fasta.seq)
+                ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+                if query_uniprotid == ref_uniprot_id:
+                    file.write('>'+name+'\n'+sequence+'\n')
 
 def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_ann_file, reference_fastafile):
+    '''makes a fasta header to include all the fields present in reference fasta header for a specific uniprot ID.
+    
+    Parameters
+    ----------
+        PDB_ID : str
+        entity_id : int
+            entity of the doamin of interest
+        ROI_start : int
+            starting residue of domain of interest
+        ROI_end : int
+            last residue of the domain of interest
+        domain_of_interest : str
+        pdb_ann_file : str
+            PDB reference file with all PDB structures annotated and filtered based on the domain of interest
+        reference_fastafile : str
+            fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
+            
+    Returns
+    -------
+        returns a reference fasta header for a specific PDB ID and domain of interest in that structure'''
+    
     df = pd.read_csv(pdb_ann_file)
-    domain = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['domains']] ).values.item()
+    domain = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:domains']] ).values.item()
     uniprot_id = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['database_accession']] ).values.item()
-    gene = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['gene name']] ).values.item()
+    gene = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:gene name']] ).values.item()
     domainlist = domain.split(';')
     DOI = []
     for i in range(len(domainlist)):
@@ -309,6 +350,8 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
                                 
                                 
 def similarityScore(aligned_sequences_list):
+    '''finds a similarity score percent for a group of sequences '''
+    
     score = 0
     len_sequence = len(aligned_sequences_list[0])
     for seq_len in range(0,len_sequence):
