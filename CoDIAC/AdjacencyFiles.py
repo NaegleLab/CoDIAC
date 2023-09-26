@@ -65,17 +65,16 @@ def ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = 
 
             HETATMS_dict = {}
 
-            het_res = pdb_info['_pdbx_nonpoly_scheme.pdb_mon_id']
-            het_res_id = pdb_info['_pdbx_nonpoly_scheme.pdb_seq_num']
-            mod_res = pdb_info['_pdbx_struct_mod_residue.auth_comp_id']
-            mod_res_id = pdb_info['_pdbx_struct_mod_residue.auth_seq_id']
+            if '_pdbx_nonpoly_scheme.pdb_mon_id' in pdb_info.keys():
+                het_res = pdb_info['_pdbx_nonpoly_scheme.pdb_mon_id']
+                het_res_id = pdb_info['_pdbx_nonpoly_scheme.pdb_seq_num']
 
-            for key in het_res_id:
-                for value in het_res:
-                    HETATMS_dict[int(key)] = value
-                    het_res.remove(value)
-                    break
-        
+                for key in het_res_id:
+                    for value in het_res:
+                        HETATMS_dict[int(key)] = value
+                        het_res.remove(value)
+                        break
+
         if small_molecule == True:
             HETATMS_dict = {}
             
