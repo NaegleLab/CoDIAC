@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from Bio import SeqIO
 
-def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, PTM='PTR', mutation=False, 
+def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq = True, PTM='PTR', mutation=False, 
                       domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
     '''Generates contact features that are present across canonical interfaces (between a domain and it sligand partner)
     
@@ -20,6 +20,8 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
             list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
         PTM : str
             PTM that binds to our domain of interest
+        append_refSeq : boolean
+            appending reference sequences to the fasta output file
         mutation : boolean
             fetches native/mutant structures. Default set to retrieve native structures
         domain_of_interest : str
@@ -125,19 +127,19 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                     
                                                     
                                                   
-                                    
-    inputfile = PTM_file+'.fasta'
-    with open(inputfile, 'a') as file:
-        for query_uniprotid in set(list_of_uniprotids):
-            fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
-            for fasta in fasta_seq:
-                name, sequence = fasta.id, str(fasta.seq)
-                ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
-                if query_uniprotid == ref_uniprot_id:
-                    file.write('>'+name+'\n'+sequence+'\n')
-                    
+    if append_refSeq:                                
+        inputfile = PTM_file+'.fasta'
+        with open(inputfile, 'a') as file:
+            for query_uniprotid in set(list_of_uniprotids):
+                fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
+                for fasta in fasta_seq:
+                    name, sequence = fasta.id, str(fasta.seq)
+                    ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+                    if query_uniprotid == ref_uniprot_id:
+                        file.write('>'+name+'\n'+sequence+'\n')
 
-def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, mutation = False, DOMAIN = 'SH2', 
+
+def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq=True, mutation = False, DOMAIN = 'SH2', 
                          filename='SH2_NC'):
     '''Generates contact features that are present across non-canonical interfaces (between two domains part of teh same protein) 
     
@@ -151,6 +153,8 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
             fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
         error_structures_list : list
             list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
+        append_refSeq : boolean
+            appending reference sequences to the fasta output file
         mutation : boolean
             fetches native/mutant structures. Default set to retrieve native structures
         DOMAIN : str
@@ -284,16 +288,16 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, use_ref_seq_aligned=True)
 
-
-    inputfile = filename+'.fasta'
-    with open(inputfile, 'a') as file:
-        for query_uniprotid in set(list_of_uniprotids):
-            fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
-            for fasta in fasta_seq:
-                name, sequence = fasta.id, str(fasta.seq)
-                ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
-                if query_uniprotid == ref_uniprot_id:
-                    file.write('>'+name+'\n'+sequence+'\n')
+    if append_refSeq:
+        inputfile = filename+'.fasta'
+        with open(inputfile, 'a') as file:
+            for query_uniprotid in set(list_of_uniprotids):
+                fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
+                for fasta in fasta_seq:
+                    name, sequence = fasta.id, str(fasta.seq)
+                    ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+                    if query_uniprotid == ref_uniprot_id:
+                        file.write('>'+name+'\n'+sequence+'\n')
 
 def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_ann_file, reference_fastafile):
     '''makes a fasta header to include all the fields present in reference fasta header for a specific uniprot ID.
