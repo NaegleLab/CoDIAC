@@ -118,7 +118,7 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                                     contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
                                                                  res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
                                                                  SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
-                                                                fasta_header,'SH2', 'SH2_file', threshold=1, append=True )
+                                                                fasta_header,'SH2', SH2_file, threshold=1, append=True )
                                     
     inputfile = PTM_file+'.fasta'
     with open(inputfile, 'a') as file:
