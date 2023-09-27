@@ -68,9 +68,6 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                 dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
 
                                 cm_aligned = dict_of_lig['cm_aligned']
-#                                 SH2_gene = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[0]
-#                                 lig_gene = get_gene(pdb_ann_file, lig_entity, PDB_ID)[0]
-#                                 uid = get_gene(pdb_ann_file, SH2_entity, PDB_ID)[1]
 
                                 for res in cm_aligned.transDict:
                                     if res in cm_aligned.resNums:
@@ -108,17 +105,26 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                                         cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
                                                                  fasta_header, 'SH2',SH2_file, append=True, 
                                                                     use_ref_seq_aligned=True)
-
-                                                    contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
-                                                        SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                        res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
-                                                        fasta_header,'pTyr', PTM_file, threshold=1, append=True)
-
-
+                            
+                                                    if hasattr(to_dict['cm_aligned'], 'refseq'):
+                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
+                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+                                                    else:
+                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
+                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+                                                    
+                                                    
                                                     contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
                                                                  res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
                                                                  SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
                                                                 fasta_header,'SH2', SH2_file, threshold=1, append=True )
+                                    
+                                                    
+                                                  
                                     
     inputfile = PTM_file+'.fasta'
     with open(inputfile, 'a') as file:
@@ -321,9 +327,7 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
         domain_name, IPR, ranges = domainlist[i].split(':')
         
         if domain_of_interest in domain_name:
-            print(domain_name)
             DOI.append(domainlist[i])
-            print(domainlist[i], i)
         
     for j in range(len(DOI)):
         DOI_domain, DOI_IPR, DOI_range = DOI[j].split(':')
@@ -338,13 +342,13 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
         name, sequence = fasta.id, str(fasta.seq)
         ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
         if name == header:
-            fasta_header = header+'|'+PDB_ID
+            fasta_header = header
 
         else:
             if ref_uniprot_id == uniprot_id and ref_gene == gene:
                 if ROI_start in range(int(ref_start)-5, int(ref_start)+5) and ROI_end in range(int(ref_end)-5, int(ref_end)+5):
 #                 if ROI_start == int(ref_start) and ROI_end == int(ref_end):
-                    fasta_header = name+'|'+PDB_ID
+                    fasta_header = name
 
     return fasta_header                                
                                 
