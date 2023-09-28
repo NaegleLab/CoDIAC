@@ -110,25 +110,26 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                                         cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
                                                                  fasta_header, 'SH2',SH2_file, append=True, 
                                                                     use_ref_seq_aligned=True)
-                            
-                                                    if hasattr(to_dict['cm_aligned'], 'refseq'):
-                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
-                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
-                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
-                                                    else:
-                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
-                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
-                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
                                                     
-                                                    
-                                                    contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
-                                                                 res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
-                                                                 SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
-                                                                fasta_header,'SH2', SH2_file, threshold=1, append=True )
-                                    
-                                                    
+                                                    if lig_entity != SH2_entity:
+                                                        if hasattr(to_dict['cm_aligned'], 'refseq'):
+                                                            contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
+                                                                SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                                res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                                fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+                                                        else:
+                                                            contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
+                                                                SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                                res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                                fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+
+
+                                                        contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
+                                                                     res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
+                                                                     SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
+                                                                    fasta_header,'SH2', SH2_file, threshold=1, append=True )
+
+
                                                   
     if append_refSeq:                                
         inputfile = PTM_file+'.fasta'
