@@ -42,7 +42,6 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
         if PDB_ID not in error_structures_list:
 
             for index, row in group.iterrows():
-                uniprot_ID = row['database_accession']
                 
                 if isinstance(row['modifications'], str):
                     transDict = PDBHelper.return_PTM_dict(row['modifications'])
@@ -56,14 +55,17 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                     if domain_of_interest in domains[domain_num]:
                                         SH2_entity = entity 
                                         check_mutation = (pd.isnull(main.loc[index, 'ref:variants']))
-
+                                        df2 = main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID )]
+                                        uniprot_id = df2['database_accession'].values.tolist()
+                                        list_of_uniprotids.append(uniprot_id[0])
+                                        
                                 transDict = entities.pdb_dict[entity].transDict
                                 for res in transDict:
                                     if PTM in transDict[res]:
                                         lig_entity = entity
                                         
                             if check_mutation != mutation:
-                                list_of_uniprotids.append(uniprot_ID)
+                                
                                 print(name, SH2_entity, lig_entity)
                                 pdbClass = entities.pdb_dict[lig_entity]
                                 dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
@@ -478,12 +480,15 @@ def makeFeatureFile_alignedSeq(fasta_file, fasta_aln_file, input_featurefile, ou
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30):
     
+    alignment_similarity = 85
+    feature_cutoff = 30
     fasta_seq = SeqIO.parse(open(fasta_unaligned), 'fasta')
     identifier_list = []
     for fasta in fasta_seq:
         name, sequence = fasta.id, str(fasta.seq)
-        uid, gene, dom1, dom2, pdb = name.split('|')
-        identifier = gene+'|'+dom1+'|'+dom2
+
+        uid, gene, dom1, index, IPR, start, end, dom2,pdb = name.split('|')
+        identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
         if identifier not in identifier_list:
             identifier_list.append(identifier)
 
@@ -494,6 +499,7 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
         fasta_seq = SeqIO.parse(open(fasta_aligned), 'fasta')
         for fasta in fasta_seq:
             name, sequence = fasta.id, str(fasta.seq)
+
             if i in name:
                 tmp_list.append(sequence)
 
@@ -508,16 +514,14 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                 line = line.split('\t')
                 features = int(line[3])
                 header = str(line[1])
-                uniprot, gene, domain_1, domain_2, PDB = header.split('|')
-                search_header = gene+'|'+domain_1+'|'+domain_2
-                if i in search_header:
+                uid, gene, dom1, index, IPR, start, end, dom2,pdb = header.split('|')
+                if i in header:
                     tmp_features.append(features)
                     if header not in tmp_headers:
                         tmp_headers.append(header)
-                        feature_header = domain_2
-                        header_with_uniprot = uniprot+'|'+gene+'|'+domain_1+'|'+domain_2
+                        feature_header = dom2
+                        header_for_reference = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end
 
-    #     print(i, tmp_headers, feature_header)
         tmp_write = []
         with open(output_features,'a') as file:
             for fea in tmp_features:
@@ -526,5 +530,5 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                 if fea_percent > feature_cutoff:
                     if fea not in tmp_write:
                         tmp_write.append(fea)
-                        file.write(feature_header+'\t'+header_with_uniprot+'\t-1\t'+str(fea)+'\t'+str(fea)+'\t'+feature_header+'\n')
+                        file.write(feature_header+'\t'+header_for_reference+'\t-1\t'+str(fea)+'\t'+str(fea)+'\t'+feature_header+'\n')
     print('Created feature file with merged features for aligned seq positions!')
