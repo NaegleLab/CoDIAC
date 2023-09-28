@@ -97,7 +97,7 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                                                      SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue())
 
         #                                             
-                                                    fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|'+PDB_ID
+                                                    fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|lig|'+PDB_ID
 
 
                                                     if lig_entity == SH2_entity:
@@ -480,18 +480,16 @@ def makeFeatureFile_alignedSeq(fasta_file, fasta_aln_file, input_featurefile, ou
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30):
     
-    alignment_similarity = 85
-    feature_cutoff = 30
     fasta_seq = SeqIO.parse(open(fasta_unaligned), 'fasta')
     identifier_list = []
     for fasta in fasta_seq:
         name, sequence = fasta.id, str(fasta.seq)
-
-        uid, gene, dom1, index, IPR, start, end, dom2,pdb = name.split('|')
-        identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
-        if identifier not in identifier_list:
-            identifier_list.append(identifier)
-
+        splitname = name.split('|')
+        if len(splitname) > 7:
+            uid, gene, dom1, index, IPR, start, end, dom2,pdb = name.split('|')
+            identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
+            if identifier not in identifier_list:
+                identifier_list.append(identifier)
 
     alnseq_dict = {}
     for i in identifier_list:
@@ -514,13 +512,15 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                 line = line.split('\t')
                 features = int(line[3])
                 header = str(line[1])
-                uid, gene, dom1, index, IPR, start, end, dom2,pdb = header.split('|')
-                if i in header:
-                    tmp_features.append(features)
-                    if header not in tmp_headers:
-                        tmp_headers.append(header)
-                        feature_header = dom2
-                        header_for_reference = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end
+                splitname = header.split('|')
+                if len(splitname) > 7:
+                    uid, gene, dom1, index, IPR, start, end, dom2,pdb = header.split('|')
+                    if i in header:
+                        tmp_features.append(features)
+                        if header not in tmp_headers:
+                            tmp_headers.append(header)
+                            feature_header = dom2
+                            header_for_reference = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end
 
         tmp_write = []
         with open(output_features,'a') as file:
