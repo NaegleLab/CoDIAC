@@ -3,6 +3,7 @@ from CoDIAC import pTyrLigand_helpers as pTyr_helpers
 import pandas as pd
 import numpy as np
 from Bio import SeqIO
+import os
 
 def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq = True, PTM='PTR', mutation=False, 
                       domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
@@ -301,6 +302,28 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                     if query_uniprotid == ref_uniprot_id:
                         file.write('>'+name+'\n'+sequence+'\n')
 
+
+def make_mergedFeatureFiles(fasta_unaligned,fasta_aligned,feaFile_unaligned,feaFile_aligned,
+                            feaFile_merge_aligned,feaFile_merge_unaligned):
+    
+    makeFeatureFile_updateSeqPos(fasta_unaligned, fasta_aligned, feaFile_unaligned, feaFile_aligned)
+    mergedFeatures(fasta_unaligned, fasta_aligned, feaFile_aligned, feaFile_merge_aligned, 
+                       alignment_similarity = 85, feature_cutoff = 30)
+    makeFeatureFile_updateSeqPos(fasta_aligned, fasta_unaligned, feaFile_merge_aligned, feaFile_merge_unaligned)
+    
+    if os.path.exists(feaFile_aligned):
+        os.remove(feaFile_aligned)
+    else:
+        print("The file does not exist")
+        
+    if os.path.exists(feaFile_merge_aligned):
+        os.remove(feaFile_merge_aligned)
+    else:
+        print("The file does not exist")
+
+
+
+                        
 def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_ann_file, reference_fastafile):
     '''makes a fasta header to include all the fields present in reference fasta header for a specific uniprot ID.
     
@@ -432,7 +455,7 @@ def pair_ref_aln(sequence1, sequence2, length_of_domain):
         
     return(matrix_AA_ID)
 
-def makeFeatureFile_alignedSeq(fasta_file, fasta_aln_file, input_featurefile, output_featurefile):
+def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, output_featurefile):
     dict_ref_header_seq = {}
     dict_aln_header_seq = {}
 
@@ -475,7 +498,7 @@ def makeFeatureFile_alignedSeq(fasta_file, fasta_aln_file, input_featurefile, ou
                             if int(unaln_val) == (feature_1):
 #                                 print(key, unaln_val, aln_val)
                                 file.write(feature_header+"\t"+str(header)+"\t-1\t"+str(aln_val)+"\t"+str(aln_val)+'\t'+str(feature_header)+'\n')
-    print('Created feature file for aligned fasta sequences!')
+#     print('Created feature file for aligned fasta sequences!')
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30):
@@ -531,4 +554,4 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                     if fea not in tmp_write:
                         tmp_write.append(fea)
                         file.write(feature_header+'\t'+header_for_reference+'\t-1\t'+str(fea)+'\t'+str(fea)+'\t'+feature_header+'\n')
-    print('Created feature file with merged features for aligned seq positions!')
+    print('Created feature file with merged features!')
