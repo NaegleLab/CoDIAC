@@ -44,8 +44,8 @@ class PDBEntitiesClass:
 
         for index, row in sub_df.iterrows():
             entity_id = int(row['ENTITY_ID'])
-            resolution = row['RESOLUTION']
-            method = row['EXPERIMENT_TYPE']
+            resolution = row['resolution_combined']
+            method = row['experimental_method']
             pdbclass = PDBClass(row)
             self.pdb_dict[entity_id] = pdbclass
 
@@ -110,23 +110,23 @@ class PDBClass:
         protein_domain_arch: str
             the full protein domain architectures
         """
-        self.database_name = row['DATABASE']
-        self.acc = row['ACCESS']
+        self.database_name = row['database_name']
+        self.acc = row['database_accession']
         self.chain_list = self.return_chain_list(row)
-        self.structure_seq = row['struct/ref sequence']
-        self.entity_macroType = row['MACROMOLECULAR_TYPE']
-        self.species = row['SPECIES']
+        self.structure_seq = row['ref:struct/ref sequence']
+        self.entity_macroType = row['macromolecular_type']
+        self.species = row['pdbx_gene_src_scientific_name']
         self.PDB_ID = row['PDB_ID']
         self.Entity_ID = row['ENTITY_ID']
-        self.ref_seq = row['UNIPROT_SEQ']
-        self.gene_name = row['gene name']
-        ref_sequence_positions = row['reference range']
+        self.ref_seq = row['rcsb_uniprot_protein_sequence']
+        self.gene_name = row['ref:gene name']
+        ref_sequence_positions = row['ref:reference range']
         
         if ref_sequence_positions != 'not found':
             ref_pos_list = ref_sequence_positions.split('-')
             self.ref_seq_positions = [int(ref_pos_list[0]), int(ref_pos_list[1])]
 
-        domains = row['domains']
+        domains = row['ref:domains']
         domain_dict = {}
         if domains != '-1':
             if isinstance(domains, str):
@@ -160,17 +160,17 @@ class PDBClass:
 #         else:
 #             self.domains_of_interest = {}
 
-        self.struct_domain_arch = row['struct domain architecture']
+        self.struct_domain_arch = row['ref:struct domain architecture']
 
-        self.protein_domain_arch = row['protein domain architecture']
-        self.ref_seq_mutated = row['struct/ref sequence']
+        self.protein_domain_arch = row['ref:protein domain architecture']
+        self.ref_seq_mutated = row['ref:struct/ref sequence']
 
 #         # BELOW HERE IS if we are working with an annotation file that has been processed for contact mapping
 #         if 'struct seq ext' in row:
 #             self.struct_seq_ext = row['struct seq ext']
 #             self.ERROR_CODE = row['ERROR_CODE']
 #             self.offset = row['offset']
-        PTM_str = row['MODIFICATIONS (TYPE)']
+        PTM_str = row['modifications']
         if isinstance(PTM_str, str):
             self.transDict = return_PTM_dict(PTM_str)
         else:
