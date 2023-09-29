@@ -425,8 +425,8 @@ def ResID_from_DBREF(PDB_ID):
                     dbref_dict[chain] = list_attributes
     else:
         i = PDBList()
-        file = i.retrieve_pdb_file(PDB_ID, pdir ='/Users/adk9hq/Documents/Research_UVA/CM_project/',file_format='mmCif')
-        p = MMCIF2Dict("/Users/adk9hq/Documents/Research_UVA/CM_project/"+\
+        file = i.retrieve_pdb_file(PDB_ID, pdir ='Data/AdjacencyFiles/',file_format='mmCif')
+        p = MMCIF2Dict("Data/AdjacencyFiles/"+\
                     PDB_ID+'.cif')
 
         df = pd.DataFrame()
