@@ -201,6 +201,11 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                         if domain != 'nan' and len(parse_domain) >1:
 
                             caligned = contactMap.translate_chainMap_to_RefSeq(chain, pdbClass)
+                            if hasattr(caligned, 'refseq'):
+                                value = True
+                            else:
+                                value = False
+                                
                             list_of_uniprotids.append(uniprot_ID)
 
                             dom_names = []
@@ -227,7 +232,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                     feature_header = header_2
                                     caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                      fasta_header, feature_header,filename, append=True, 
-                                                                       use_ref_seq_aligned=True)
+                                                                       use_ref_seq_aligned=value)
 
     #                           'SH2 > 1 and other domains = 0'
                             if len(SH2_dom) > 1 and len(other_dom) == 0:
@@ -241,7 +246,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
 
                                 header_1, IPR, ROI_1 = SH2_dom[1].split(':')
                                 header_2, IPR, ROI_2 = SH2_dom[0].split(':')
@@ -252,7 +257,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
 
     #                           'SH2 > 1 and other domains > 0'
                             if len(SH2_dom) > 1 and len(other_dom) > 0:
@@ -269,7 +274,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                         feature_header = header_2
                                         caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
 
                                 header_1, IPR, ROI_1 = SH2_dom[0].split(':')
                                 header_2, IPR, ROI_2 = SH2_dom[1].split(':')
@@ -280,7 +285,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
                                                                  fasta_header, feature_header,filename, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
 
                                 header_1, IPR, ROI_1 = SH2_dom[1].split(':')
                                 header_2, IPR, ROI_2 = SH2_dom[0].split(':')
@@ -290,7 +295,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
     #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
                                 caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
-                                                                 fasta_header, feature_header,filename, append=True, use_ref_seq_aligned=True)
+                                                                 fasta_header, feature_header,filename, append=True, use_ref_seq_aligned=value)
 
     if append_refSeq:
         inputfile = filename+'.fasta'
