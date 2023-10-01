@@ -73,6 +73,10 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                 dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
 
                                 cm_aligned = dict_of_lig['cm_aligned']
+                                if hasattr(cm_aligned, 'refseq'):
+                                    value = True
+                                else:
+                                    value = False
 
                                 for res in cm_aligned.transDict:
                                     if res in cm_aligned.resNums:
@@ -105,11 +109,11 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
 
                                                         cm_aligned.print_fasta_feature_files(SH2_start, SH2_stop, res_start, res_end,
                                                                  fasta_header, 'pTyr',PTM_file, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
 
                                                         cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
                                                                  fasta_header, 'SH2',SH2_file, append=True, 
-                                                                    use_ref_seq_aligned=True)
+                                                                    use_ref_seq_aligned=value)
                                                     
                                                     if lig_entity != SH2_entity:
                                                         if hasattr(to_dict['cm_aligned'], 'refseq'):
