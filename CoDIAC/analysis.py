@@ -40,14 +40,18 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
     list_of_uniprotids=[]
     for name, group in main.groupby('PDB_ID'):
         PDB_ID = name
+        print(PDB_ID)
+
         if PDB_ID not in error_structures_list:
 
             for index, row in group.iterrows():
-                
+
                 if isinstance(row['modifications'], str):
+                    
                     transDict = PDBHelper.return_PTM_dict(row['modifications'])
                     for res in transDict:
                         if PTM in transDict[res]:
+                            lig_entity = row['ENTITY_ID']                             
 
                             entities = PDBHelper.PDBEntitiesClass(main, PDB_ID)
                             for entity in entities.pdb_dict.keys():
@@ -58,80 +62,78 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                         check_mutation = (pd.isnull(main.loc[index, 'ref:variants']))
                                         df2 = main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID )]
                                         uniprot_id = df2['database_accession'].values.tolist()
-                                        list_of_uniprotids.append(uniprot_id[0])
-                                        
-                                transDict = entities.pdb_dict[entity].transDict
-                                for res in transDict:
-                                    if PTM in transDict[res]:
-                                        lig_entity = entity
-                                        
-                            if check_mutation != mutation:
-                                
-                                print(name, SH2_entity, lig_entity)
-                                pdbClass = entities.pdb_dict[lig_entity]
-                                dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
-                                dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
-
-                                cm_aligned = dict_of_lig['cm_aligned']
-                                if hasattr(cm_aligned, 'refseq'):
-                                    value = True
-                                else:
-                                    value = False
-
-                                for res in cm_aligned.transDict:
-                                    if res in cm_aligned.resNums:
-                                        if PTM in cm_aligned.transDict[res]: #print the aligned sequence
-                                            res_start, res_end, aligned_str, tick_labels = pTyr_helpers.return_pos_of_interest(
-                                                cm_aligned.resNums, cm_aligned.structSeq, res, n_term_num=5, c_term_num=5, PTR_value = 'y')
-
-                                            from_dict = dict_of_lig
-                                            to_dict = dict_of_SH2
-                                            adjList, arr = contactMap.return_interChain_adj(ADJFILES_PATH, from_dict, to_dict)
-                                            adjList_alt, arr_alt = contactMap.return_interChain_adj(ADJFILES_PATH, to_dict, from_dict)
-
-                                            domains = dict_of_SH2['pdb_class'].domains
-                                            for domain_num in domains:
-                                                if domain_of_interest in str(domains[domain_num]):
-
-                                                    dom_header = list(domains[domain_num].keys())[0]
-                                                    SH2_start, SH2_stop, muts, gaps = domains[domain_num][dom_header]
 
 
-                                                    arr_sub, list_aa_from_sub, list_to_aa_sub = contactMap.return_arr_subset_by_ROI(arr, 
-                                                                     res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
-                                                                     SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue())
+                    if PTM in transDict.values():
+                        if check_mutation != mutation:
+                            list_of_uniprotids.append(uniprot_id[0])
 
-        #                                             
-                                                    fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|lig|'+PDB_ID
+                            pdbClass = entities.pdb_dict[lig_entity]
+                            dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
+                            dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
+
+                            cm_aligned = dict_of_lig['cm_aligned']
+                            if hasattr(cm_aligned, 'refseq'):
+                                value = True
+                            else:
+                                value = False
+
+                            for res in cm_aligned.transDict:
+                                if res in cm_aligned.resNums:
+                                    if PTM in cm_aligned.transDict[res]: #print the aligned sequence
+                                        res_start, res_end, aligned_str, tick_labels = pTyr_helpers.return_pos_of_interest(
+                                            cm_aligned.resNums, cm_aligned.structSeq, res, n_term_num=5, c_term_num=5, PTR_value = 'y')
+
+                                        from_dict = dict_of_lig
+                                        to_dict = dict_of_SH2
+                                        adjList, arr = contactMap.return_interChain_adj(ADJFILES_PATH, from_dict, to_dict)
+                                        adjList_alt, arr_alt = contactMap.return_interChain_adj(ADJFILES_PATH, to_dict, from_dict)
+
+                                        domains = dict_of_SH2['pdb_class'].domains
+                                        for domain_num in domains:
+                                            if domain_of_interest in str(domains[domain_num]):
+
+                                                dom_header = list(domains[domain_num].keys())[0]
+                                                SH2_start, SH2_stop, muts, gaps = domains[domain_num][dom_header]
 
 
-                                                    if lig_entity == SH2_entity:
+                                                arr_sub, list_aa_from_sub, list_to_aa_sub = contactMap.return_arr_subset_by_ROI(arr, 
+                                                                 res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
+                                                                 SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue())
 
-                                                        cm_aligned.print_fasta_feature_files(SH2_start, SH2_stop, res_start, res_end,
-                                                                 fasta_header, 'pTyr',PTM_file, append=True, 
-                                                                    use_ref_seq_aligned=value)
-
-                                                        cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
-                                                                 fasta_header, 'SH2',SH2_file, append=True, 
-                                                                    use_ref_seq_aligned=value)
-                                                    
-                                                    if lig_entity != SH2_entity:
-                                                        if hasattr(to_dict['cm_aligned'], 'refseq'):
-                                                            contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
-                                                                SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                                res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
-                                                                fasta_header,'pTyr', PTM_file, threshold=1, append=True)
-                                                        else:
-                                                            contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
-                                                                SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                                res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
-                                                                fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+                #                                             
+                                                fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|lig_'+str(res)+'|'+PDB_ID
 
 
-                                                        contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
-                                                                     res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
-                                                                     SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
-                                                                    fasta_header,'SH2', SH2_file, threshold=1, append=True )
+                                                if lig_entity == SH2_entity:
+
+
+                                                    cm_aligned.print_fasta_feature_files(SH2_start, SH2_stop, res_start, res_end,
+                                                             fasta_header, 'pTyr',PTM_file, append=True, 
+                                                                use_ref_seq_aligned=value)
+
+                                                    cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
+                                                             fasta_header, 'SH2',SH2_file, append=True, 
+                                                                use_ref_seq_aligned=value)
+
+
+                                                if lig_entity != SH2_entity:
+                                                    if hasattr(to_dict['cm_aligned'], 'refseq'):
+                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
+                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+                                                    else:
+                                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
+                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            fasta_header,'pTyr', PTM_file, threshold=1, append=True)
+
+
+                                                    contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
+                                                                 res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
+                                                                 SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
+                                                                fasta_header,'SH2', SH2_file, threshold=1, append=True )
 
 
                                                   
@@ -314,11 +316,11 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
 
 
 def make_mergedFeatureFiles(fasta_unaligned,fasta_aligned,feaFile_unaligned,feaFile_aligned,
-                            feaFile_merge_aligned,feaFile_merge_unaligned):
+                            feaFile_merge_aligned,feaFile_merge_unaligned, interface='NonCanonical'):
     
     makeFeatureFile_updateSeqPos(fasta_unaligned, fasta_aligned, feaFile_unaligned, feaFile_aligned)
     mergedFeatures(fasta_unaligned, fasta_aligned, feaFile_aligned, feaFile_merge_aligned, 
-                       alignment_similarity = 85, feature_cutoff = 30)
+                       alignment_similarity = 85, feature_cutoff = 30, interface=interface)
     makeFeatureFile_updateSeqPos(fasta_aligned, fasta_unaligned, feaFile_merge_aligned, feaFile_merge_unaligned)
     
     if os.path.exists(feaFile_aligned):
@@ -392,7 +394,7 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
     return fasta_header                                
                                 
                                 
-def similarityScore(aligned_sequences_list):
+def identityScore(aligned_sequences_list):
     '''finds a similarity score percent for a group of sequences '''
     
     score = 0
@@ -511,7 +513,7 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
 #     print('Created feature file for aligned fasta sequences!')
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
-                   alignment_similarity = 85, feature_cutoff = 30):
+                   alignment_similarity = 85, feature_cutoff = 30, interface = 'NonCanonical'):
     
     fasta_seq = SeqIO.parse(open(fasta_unaligned), 'fasta')
     identifier_list = []
@@ -520,7 +522,10 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
         splitname = name.split('|')
         if len(splitname) > 7:
             uid, gene, dom1, index, IPR, start, end, dom2,pdb = name.split('|')
-            identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
+            if interface == 'NonCanonical':
+                identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
+            if interface == 'Canonical':
+                identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|lig'
             if identifier not in identifier_list:
                 identifier_list.append(identifier)
 
@@ -535,7 +540,7 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                 tmp_list.append(sequence)
 
         alnseq_dict[i] = tmp_list
-        percent = similarityScore(tmp_list)
+        percent = identityScore(tmp_list)
 
         tmp_features = []
         tmp_headers = []
@@ -552,7 +557,10 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                         tmp_features.append(features)
                         if header not in tmp_headers:
                             tmp_headers.append(header)
-                            feature_header = dom2
+                            if interface == 'NonCanonical':
+                                feature_header = dom2
+                            if interface == 'Canonical':
+                                feature_header = 'lig'
                             header_for_reference = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end
 
         tmp_write = []
