@@ -59,7 +59,8 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                 for domain_num in domains:
                                     if domain_of_interest in domains[domain_num]:
                                         SH2_entity = entity 
-                                        check_mutation = (pd.isnull(main.loc[index, 'ref:variants']))
+                                        get_mutation = (pd.isnull(main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID ), 'ref:variants']))
+                                        check_mutation = get_mutation.values.tolist()
                                         df2 = main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID )]
                                         uniprot_id = df2['database_accession'].values.tolist()
 
