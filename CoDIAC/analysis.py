@@ -65,6 +65,11 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                                         uniprot_id = df2['database_accession'].values.tolist()
 
 
+                    transDict_stripped = []
+                    for i in transDict.values():
+                        i = i.strip()
+                        transDict_stripped.append(i)
+                    
                     if PTM in transDict.values():
                         if check_mutation != mutation:
                             list_of_uniprotids.append(uniprot_id[0])
