@@ -139,6 +139,74 @@ def makeRefFile(Uniprot_IDs, outputFile):
     #now add the InterPro Domains.
     #InterProDomain.appendRefFile(outputfile, outputfile)
 
+def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_offset=0):
+    """
+    Given a Uniprot Reference File of proteins, which contain Interpro domain annotations, create a dictionary 
+    with keys that are feasta headers for each domain of interest and the value is the domain sequence
+    The n_term and c_term offsets will  build a small padding in case of domain boundary issues (default are 0, but can be set to lengths up to 20)
+    This is a common function that can be used to call from different tools so that the domain boundaries, if extended, 
+    are consistent across different aspects. 
+
+    Parameters
+    ----------
+    reference_csv : string
+        File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
+    Interpro_ID: string 
+        Interpro ID - for example in a reference line such as 
+        SH3_domain:IPR001452:82:143;SH2:IPR000980:147:246;Prot_kinase_dom:IPR000719:271:524
+        the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
+    n_term_offset: int
+        Number of amino acids to extend in the n-term direction (up to start of protein)
+    c_term_offset: int
+        Number of amino acids to extend in the c-term direction (up to end of protein)
+    
+    Returns
+    -------
+    domain_dict: dict
+        key: fasta header in the format '>uniprot_ID|domain_name|domain_number|InterproID|domain_start|domain_end'
+        value: sequence of the domain
+    
+    """
+    if n_term_offset < 0 or n_term_offset > 20:
+        print("ERROR: resetting n_term_offset to a default number, should be between 0 and 20")
+        n_term_offset = 5
+    if c_term_offset < 0 or c_term_offset> 20:
+        print("ERROR: resetting c_term_offset to a default number, should be between 0 and 20")
+        c_term_offset = 5
+    print("n offset is %d and c offset is %d"%(n_term_offset, c_term_offset))
+
+    domain_dict = {}
+    domainRef = pd.read_csv(reference_csv)
+    for row_index, row in domainRef.iterrows(): #for each protein in the reference
+        domains = row['Interpro Domains']
+        domainsArr = domains.split(';')
+        uniprot_id = row['UniProt ID']
+        gene_name = row['Gene']
+        seq = row['Ref Sequence']
+        species = row['Species']
+        #since there could be more than one value of array 
+        domainNum = 0
+        for index in range(0, len(domainsArr)):
+            domainVals = domainsArr[index]
+            domain_name, interpro, start, end = domainVals.split(':')
+
+            if interpro == Interpro_ID:
+                domainNum+=1
+                new_start = int(start) - n_term_offset
+                if new_start < 1:
+                    new_start = 1 
+                    print("NOTICE: %s n-term offset capped at start of protein"%(ID))
+                new_end = int(end) + c_term_offset
+                if new_end > len(seq):
+                    new_end = len(seq)
+                    print("NOTICE: %s c-term offset capped at end of protein"%(ID))
+                domain_seq = seq[new_start-1:new_end-1] #0 based indexing for python access of protein indexes
+                #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
+                #print("DEBUG: >%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
+                header = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end)
+                domain_dict[header] = domain_seq
+    return domain_dict
+
 def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offset=0, c_term_offset=0, APPEND=False):
     """
     Given a Uniprot Reference File of proteins, which contain Interpro domain annotations, create a fasta 
@@ -167,57 +235,25 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
     
     Returns
     -------
-    No returns, prints a fasta file as described above. Fasta headers will be 
-    '>uniprot_ID|domain_name|domain_number|InterproID|domain_start|domain_end
+    domain_fasta_dict: dict
+        As described in make_domain_fasta_dict - headers are fasta headers and values are the domain sequence
+        Also writes to output_file
 
     """
-    if n_term_offset < 0 or n_term_offset > 20:
-        print("ERROR: resetting n_term_offset to a default number, should be between 0 and 20")
-        n_term_offset = 5
-    if c_term_offset < 0 or c_term_offset> 20:
-        print("ERROR: resetting c_term_offset to a default number, should be between 0 and 20")
-        c_term_offset = 5
-    print("n offset is %d and c offset is %d"%(n_term_offset, c_term_offset))
+
+    domain_fasta_dict = make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_offset=0)
 
     if not APPEND:
         f = open(output_file, "w")
     else:
         f= open(output_file, "a")
-
-    domainRef = pd.read_csv(reference_csv)
-    for row_index, row in domainRef.iterrows(): #for each protein in the reference
-        domains = row['Interpro Domains']
-        domainsArr = domains.split(';')
-        uniprot_id = row['UniProt ID']
-        gene_name = row['Gene']
-        seq = row['Ref Sequence']
-        species = row['Species']
-        #since there could be more than one value of array 
-        domainNum = 0
-        for index in range(0, len(domainsArr)):
-            domainVals = domainsArr[index]
-            domain_name, interpro, start, end = domainVals.split(':')
-
-            if interpro == Interpro_ID:
-                domainNum+=1
-                new_start = int(start) - n_term_offset
-                if new_start < 1:
-                    new_start = 1 
-                    print("NOTICE: %s n-term offset capped at start of protein"%(ID))
-                new_end = int(end) + c_term_offset
-                if new_end > len(seq):
-                    new_end = len(seq)
-                    print("NOTICE: %s c-term offset capped at end of protein"%(ID))
-                domain_seq = seq[new_start-1:new_end-1] #0 based indexing for python access of protein indexes
-                #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
-                #print("DEBUG: >%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
-                f.write(">%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
-                f.write(domain_seq+"\n")
-        #if EDIT:
-        #    domainRef.at[row_index, 'domains_edited'] = ";".join(domainsArr)
-
+    
+    for header in domain_fasta_dict:
+        f.write(header+"\n")
+        f.write(domain_fasta_dict[header]+"\n")
+        #header in format (">%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
     f.close()
-    #domainRef.to_csv(domainRefOutputFile)
+    return domain_fasta_dict
 
 
 def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
@@ -295,6 +331,7 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
         df = pd.DataFrame(header_trans_dict.items(), columns=['short', 'full'])
         df.to_csv(mapping_file)
         print("Created files: %s and %s"%(output_fasta, mapping_file))
+        return output_fasta, mapping_file
 
 def translate_fasta_back(fasta_file, header_trans_file, output_fasta):
     """
