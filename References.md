@@ -92,3 +92,60 @@ The columns that are integrated from the Uniprot reference, appended to the PDB 
 For example: `SH2:IPR000980:46,156,0,3;SOCS_box:IPR001496:151,197,0,0` for stucture 7M6T of uniprot reference O14508 indicates the structure spanned the SH2 domain and the SOCS_box and in the structure file the SH2 domain can be found starting at 46 and ends at 156 and there are 3 variants, no insertions (no variants, no insertions within the SOCS_box domain).
 * ref:struct domain architecture - This is an easily readable string of domain names, in the order they appear in the protein from N- to C-terminal that was covered by the experiment. Domains are separated by '|'. For example SH3_domain|SH2|Prot_kinase_dom means that the structure fully covered the SH3_domain, SH2, and Protein_kinase_dom of a SRC family kinase. 
 * ref:protein domain architecture - For easy reference, this includes the architecture of the full protein so it can be seen what part of the whole protein was studied in the experiment.
+
+# Adjacency Files 
+We first extract interatomic contacts within protein structures (mmCIF structure files that can be downloaded using ```CoDIAC.PDB.download_cifFile(PDB_list, PATH)```) using Arpeggio (https://github.com/harryjubb/arpeggio.git). Arpeggio produces .json files that stores the interatomic contacts which we make use of to generate Adjacency files. 
+
+Adjacency File : CoDIAC generated Adjacency files are .txt files that is a processed version of the .json files to incorporate datatypes of our interest. 
+
+Adjacency files generated using ```CoDIAC.AdjacencyFiles.ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = False)``` filters non-covalent interactions *_('aromatic','carbonyl','hbond','hydrophobic','ionic','polar','vdw','vdw_clash','weak_hbond','weak_polar','xbond')_* that are at a distance < 5A between the residue atoms present within and across protein entities. ```CoDIAC.AdjacencyFiles.ProcessArpeggio``` allows the user to decide whether or not to include the entity’s interactions with the small molecules if present in the protein complexes. The Adjacency file encodes the residue positions found in mmCIF file. 
+
+Downstream analysis using the CoDIAC pipeline utilizes Adjacency files that represents contacts as binary features. This binarized version of the adjacency files are generated using ```CoDIAC.AdjacencyFiles.BinaryFeatures(PDB_ID, PATH, translate_resid=False)``` which also allows the user to either translate the residue positions to match the UniProt reference sequence positioning or not. You may want to be cautious about translating residue positions to avoid overlap of position numbers between entities and small molecules.  
+
+## Binary Features
+CoDIAC’s binary representation of contacts here is to consolidate the contact data across several chains of a polypeptide sequence that are present in protein structures. If a contact is identified for a specific residue pair within existing chains of the same entity, we represent that contact as a binary feature ‘1’ only if it occurs in >=25% of those chains (**intraprotein_threshold**). For proteins with multiple entities, we identify contacts present between residues present on different entities. Sometimes different entities of a protein structure complex have unequal number of chains and the contact pair between residues on different entities represent replicates of the complex. We represent the contact as ‘1’ if this occurs in >=50% (**interprotein_threshold**) of the replicates and ‘0’ otherwise. 
+
+All the thresholds and contact types can be tailored to user’s requirements within this pipeline. 
+We create individual folders for each structure we wish to analyze using CoDIAC and move the respective adjacency files into that folder. 
+
+## Adjacency File column definitions
+#### ```*.txt Adjacency files (chain is the key identifier here)```
+* PDB : PDB ID of the protein structure
+* Chain1/2 : the two interacting chain IDs
+* Res1/2 : one letter code of the amino acid residue on Chain1 and 2 respectively
+* ResNum1/2 : amino acid residue position on Chain1 and 2 respectively
+* Atoms : pair of atoms that are interacting
+* Distance : the interatomic distance calculated using Arpeggio
+* Contact_type : a list of type of interactions between the atoms 
+#### ```*_BF.txt Adjacency files (entity is the key identifier)```
+* PDB : PDB ID of the protein structure
+* ResNum1/2 : amino acid residue position on Entity1 and 2 respectively
+* Res1/2 : one letter code of the amino acid residue on Entity1 and 2 respectively
+* Entity1/2 : entities of PDB protein structure
+* Binary_Feature : ‘1’ if the contact satisfies the intra/inter-protein threshold otherwise ‘0’
+
+# ContactMap generation
+CoDIAC generates contactmaps (interacting residue pairs found on the regions of interest) for each protein structure using the contact data from Adjacency Files. The contacts/features extracted at intra/inter protein interfaces are printed to feature files that can be viewed using Jalview. 
+
+```CoDIAC.contactMap``` retrieves structural information about the experimental structures from the **Integrated PDB reference file** and the **Adjacency files**.
+1. ```PDBHelper.PDBEntitiesClass``` annotates the PDB structure with the information from the integrated PDB reference file.
+2. ```CoDIAC.contactMap.construct``` stores an entity’s structural information such as PDB_ID, entity, adjacencyDict, aaRes, arr, structSeq, resNums, transDict, and unmodeled_dict which is extracted from binarized adjacency file of the structure.
+   
+### Intra-protein contacts
+An entity object (from ```CoDIAC.contactMap.construct```) is used to create an entitymap using ```CoDIAC.contactMap.translate_chainMap_to_RefSeq(entity, pdbClass)``` that outputs an aligned entitymap array with updated residue positions to reference sequence positions for a **single entity** of the protein complex. If you chose to not align the structure sequence with reference while generating the adjacency files, CoDIAC can update the residue positions at this point. This is useful when there is an overlap of residue positions between entities.
+
+### Inter-protein contacts
+An inter-protein interface could be found between a protein domain and its ligand partners where these two are two different entities of the PDB structure in the integrated PDB reference file and we aim to identify the contacting residues between their interfaces. 
+
+```CoDIAC.contactMap.return_single_chain_dict``` creates a dictionary for an individual entity that stores, entity ID, PDB_ID and the entitymap. We can create such dictionaries for every entity and ```CoDIAC.contactMap.return_interChain_adj``` maps the dictionaries between **two entities** and outputs a new dictionary and an array with the contacts between the two entities. 
+
+### Useful utilities for contactmaps
+1. ```CoDIAC.PDBHelper.PDBEntitiesClass``` is used to extract PTM positions on a specific entity of a PDB structure. 
+
+2. The aligned entitymap arrays with intra/inter protein contacts is used as an input to generate feature and fasta files using ```CoDIAC.contactMap.print_fasta_feature_files(contact_arr, seq, featureStart, featureEnd, feature_minRes, contactFromStart, contactFromEnd, contact_minRes, fastaHeader, contactLabel, outputFileBase, threshold = 1, append = True, color = '117733', use_ref_seq_aligned=True)``` and one can also visualize the contact maps using ```CoDIAC.contactMap.generateAnnotatedHeatMap(contact_arr, rowStart, rowEnd, rowMinRes, colStart, colEnd, colMinRes, rowTickLabels, colTickLabels, remove_no_contacts=True, text_annotate = 'on')```. 
+
+3. ```PTM_CONTACT_DICT``` that comprises of all the PTMs and their one-letter code of these modified residues that are present across all the given PDB structures recorded in the integrated PDB reference file is created using ```CoDIAC.AdjacencyFiles.makePTM_dict``` and this is globally initialized manually in the ```CoDIAC.contactMap```.
+
+4. ```CoDIAC.analysis.NonCanonicalFeatures``` and ```CoDIAC.analysis.CanonicalFeatures``` assigns the start and end positions of the region of interests (protein domains/ligands) and iterates over all the possible intraprotein interfaces across all the structures present in the PDB reference file.
+  
+6. To collapse features (default >30%) across multiple PDB structures for a given interface, ```CoDIAC.analysis.NonCanonicalFeatures``` and ```CoDIAC.analysis.CanonicalFeatures``` uses the reference fasta file with specific header format (created using the *_key_array_order= ['uniprot', 'gene', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']_* and ```CoDIAC.UniProt.translate_fasta_to_new_headers(fasta_long_header_file, fasta_file, key_array_order))``` to append the reference sequences to the fasta files while generating the intraprotein contacts. You can also chose to not append these reference sequences if downstream processing is intended to be performed using a different approach.
