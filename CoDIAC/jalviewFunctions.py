@@ -249,7 +249,10 @@ def return_feature_ann_dict(aln, feature_dict):
 
     seq_translation_dict = {}
     for seq_id in feature_dict.keys():
-        seq_translation_dict[seq_id] = aln.get_gapped_seq(seq_id).gap_maps()[0] #first argument is the key of the original sequence, value is the gapped position
+        if seq_id in aln.names:
+            seq_translation_dict[seq_id] = aln.get_gapped_seq(seq_id).gap_maps()[0] #first argument is the key of the original sequence, value is the gapped position
+        else:
+            print("ERROR: %s of features not found in alignment"%(seq_id))
     #remember this gap_map is 0-based counting, but feature_dict are 1-based counting
 
     num_positions = len(aln)
@@ -282,7 +285,7 @@ def return_unique_feature_colors(features):
     color_idx = 0
     #first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors
     for seq_id in features:
-        print(color_idx)
+        #print(color_idx)
         for pos in features[seq_id]:
             for feature in features[seq_id][pos]:
                 if feature not in feature_color_dict:
@@ -302,7 +305,7 @@ def return_unique_integrated_feature_colors(features):
     color_idx = 0
     #first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors
     for seq_id in features:
-        print(color_idx)
+        #print(color_idx)
         for pos in features[seq_id]:
             for feature in features[seq_id][pos]:
                 if feature not in feature_color_dict:
@@ -375,7 +378,7 @@ def combine_feature_files(output_file, feature_file_list):
     feature_combined = feature_dict_arr[0]
     for i in range(1,len(feature_dict_arr)):
         feature_combined = combine_feature_sets(feature_combined, feature_dict_arr[i])
-    feature_color_dict = return_unique_integrated_feature_colors(feature_combined, feature_colors_list_of_dicts)
+    feature_color_dict = return_unique_integrated_feature_colors(feature_combined)
     print_jalview_feature_file(feature_combined, feature_color_dict, output_file)
     print("Created %s"%(output_file))
     return feature_combined, feature_color_dict
