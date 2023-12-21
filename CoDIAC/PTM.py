@@ -55,9 +55,9 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
         print("Directory for target files does not exist, please create it.")
         return ptm_feature_file_list
 
-    #write the fasta into the directory
-    fasta_output_file = feature_dir + Interpro_ID + '.fasta'
-    domain_dict = UniProt.print_domain_fasta_file(uniprot_ref_file, Interpro_ID, fasta_output_file, n_term_offset, c_term_offset, APPEND=False)
+    #write the fasta into the directory - this actually doesn't make sense, it's the wrong headers if mappingDict is incorrect
+    #fasta_output_file = feature_dir + Interpro_ID + '.fasta'
+    domain_dict = UniProt.make_domain_fasta_dict(uniprot_ref_file, Interpro_ID, n_term_offset, c_term_offset)
 
     # get the mapping dictionary
     mapping_dict = {}
@@ -105,7 +105,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
         write_PTM_feature_file(ptm_type, color, ptm_dict_temp, ptm_feature_file)
         ptm_feature_file_list.append(ptm_feature_file)
 
-    return ptm_feature_file_list, fasta_output_file, ptm_count_dict, ptm_feature_dict, mapping_dict
+    return ptm_feature_file_list, ptm_count_dict, ptm_feature_dict, mapping_dict
 
 def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
     """

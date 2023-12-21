@@ -208,8 +208,7 @@ def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_o
     return domain_dict
 
 def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offset=0, c_term_offset=0, APPEND=False):
-    """
-    Given a Uniprot Reference File of proteins, which contain Interpro domain annotations, create a fasta 
+    '''Given a Uniprot Reference File of proteins, which contain Interpro domain annotations, create a fasta 
     file of the domains of interest found in the reference file. The n_term and c_term offsets will 
     build a small padding in case of domain boundary issues (default are 0, but can be set to lengths up to 20)
     
@@ -239,7 +238,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
         As described in make_domain_fasta_dict - headers are fasta headers and values are the domain sequence
         Also writes to output_file
 
-    """
+    '''
 
     domain_fasta_dict = make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_offset=0)
 
