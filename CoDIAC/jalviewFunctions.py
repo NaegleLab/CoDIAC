@@ -447,22 +447,25 @@ def domain_specific_fastafile(uniprot_reference_file, global_alignment_fasta_fil
             tmp_genes = arch_gene_dict[entry]
             genes_with_domain.extend(tmp_genes)
 
-    #edit the domain of interest string to make it useful for printing the output file name
-    domain_of_interest_edit = check_string(domain_of_interest)
-    output_file = output_path+domain_of_interest_edit+'.fasta'
-    
-    with open(output_file, 'w') as file:
-        tmp_headers = []
-        for gene in genes_with_domain:
-            ref_fastafile = SeqIO.parse(open(global_alignment_fasta_file), 'fasta')
-            for fasta in ref_fastafile:
-                name, sequence = fasta.id, str(fasta.seq)
-                if gene in name:
-                    if name not in tmp_headers:
-                        tmp_headers.append(name)
-                        file.write('>'+name+'\n'+sequence+'\n')
-    print('%s specific Fasta file created!'%domain_of_interest_edit) 
-    
+    if domain_of_interest in domains_list:
+        #edit the domain of interest string to make it useful for printing the output file name
+        domain_of_interest_edit = check_string(domain_of_interest)
+        output_file = output_path+domain_of_interest_edit+'.fasta'
+        
+        with open(output_file, 'w') as file:
+            tmp_headers = []
+            for gene in genes_with_domain:
+                ref_fastafile = SeqIO.parse(open(global_alignment_fasta_file), 'fasta')
+                for fasta in ref_fastafile:
+                    name, sequence = fasta.id, str(fasta.seq)
+                    if gene in name:
+                        if name not in tmp_headers:
+                            tmp_headers.append(name)
+                            file.write('>'+name+'\n'+sequence+'\n')
+        print('%s specific Fasta file created!'%domain_of_interest_edit) 
+    else:
+        print('%s not found!'%domain_of_interest)
+        
 def domain_specific_feafile(input_feafile, output_path, domain_of_interest):
     """ Generates a domain specific feature file. Features found across an interface (domain of interest and domain being analyzed) are extracted and printed to a new feature file. 
     
