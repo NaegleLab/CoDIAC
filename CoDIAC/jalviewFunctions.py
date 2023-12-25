@@ -383,4 +383,105 @@ def combine_feature_files(output_file, feature_file_list):
     print("Created %s"%(output_file))
     return feature_combined, feature_color_dict
     
+def get_unique_domains(dom_architecture_list):
+    """
+    Given a Domain architecture list, returns all unique domains present across the protein domain architectures
+    """
+    domain_list = []
+    for arch in dom_architecture_list:
+        split_arch = arch.split('|')
+        for domain in split_arch:
+            if domain not in domain_list:
+                domain_list.append(domain)
+    return domain_list
+
+def check_string(string):
+    """ Checks for invalid strings for file names"""
+    invalid = '<>:"/\?* '
+    for char in invalid:
+        string = string.replace(char, '_')
+    return(string)
+
+def domain_specific_fastafile(uniprot_reference_file, global_alignment_fasta_file, output_path, domain_of_interest):
+    """ Generates a domain specific fasta file. Fasta sequences of all the genes whose protein domain architectures contain our domain of interest are extracted and printed to a new fasta file. 
     
+    Parameters
+    ----------
+        uniprot_reference_file : str
+            input the Uniprot reference file that is created using CoDIAC.UniProt.makeRefFile
+        global_alignment_fasta_file : str
+            input a fasta file with all reference sequences that can be created using CoDIAC.UniProt.print_domain_fasta_file (aligned or unaligned fasta files can be used) 
+        output_path : str
+            provide the path to save the file
+        domain_of_interest : str
+            specific domain of interest
+    Returns
+    -------
+        Returns a fasta file with sequences that contain the domain of interest"""
+    
+    df = pd.read_csv(uniprot_reference_file)
+    unique_archs = df['Interpro Domain Architecture'].unique().tolist()
+    domains_list = get_unique_domains(unique_archs)
+
+    #create a dictionary that holds all the full protein architectures that contain out domain of interest
+    domain_specific_dict = {}
+    for domain_1 in domains_list:
+        tmp_domain = []
+        for domain_2 in unique_archs:
+            if domain_1 in domain_2:
+                tmp_domain.append(domain_2)             
+        domain_specific_dict[domain_1] = tmp_domain
+        
+    #create a dictionary with genes that belong to a specific protein domain architecture
+    arch_gene_dict = {}
+    for arch in unique_archs:
+        genes_list = (df.loc[df['Interpro Domain Architecture'] == arch, ['Gene']])['Gene'].tolist()
+        arch_gene_dict[arch] = genes_list
+
+    #generate a list of genes that contain the domain of interest
+    if domain_of_interest in domains_list:
+        dom_in_arch_list = domain_specific_dict[domain_of_interest]
+        genes_with_domain = []
+        for entry in dom_in_arch_list:
+            tmp_genes = arch_gene_dict[entry]
+            genes_with_domain.extend(tmp_genes)
+
+    #edit the domain of interest string to make it useful for printing the output file name
+    domain_of_interest_edit = check_string(domain_of_interest)
+    output_file = output_path+domain_of_interest_edit+'.fasta'
+    
+    with open(output_file, 'w') as file:
+        tmp_headers = []
+        for gene in genes_with_domain:
+            ref_fastafile = SeqIO.parse(open(global_alignment_fasta_file), 'fasta')
+            for fasta in ref_fastafile:
+                name, sequence = fasta.id, str(fasta.seq)
+                if gene in name:
+                    if name not in tmp_headers:
+                        tmp_headers.append(name)
+                        file.write('>'+name+'\n'+sequence+'\n')
+    print('%s specific Fasta file created!'%domain_of_interest_edit) 
+    
+def domain_specific_feafile(input_feafile, output_path, domain_of_interest):
+    """ Generates a domain specific feature file. Features found across an interface (domain of interest and domain being analyzed) are extracted and printed to a new feature file. 
+    
+    Parameters
+    ----------
+        input_feafile : str
+            input a feature file whose description hold the domain information is used as input to filter domain specific features
+        output_path : str
+            provide the path to save the file
+        domain_of_interest : str
+            specific domain of interest
+    Returns
+    -------
+        Returns a feature file with features found across a specific domain interface  """
+    
+    domain_of_interest_edit = check_string(domain_of_interest)
+    
+    df = pd.read_csv(input_feafile, sep='\t')
+    df.columns = ['DOC_1','Header', 'i', 'fea1', 'fea2','DOC_2']
+    df_filter = df.loc[df['DOC_1'] == domain_of_interest]      
+    output_file = ouput_path+domain_of_interest_edit+'.fea'
+    df_filter.to_csv(output_file, sep='\t', index=False, header=False)  
+    print('%s specific Feature file created!'%domain_of_interest_edit)
