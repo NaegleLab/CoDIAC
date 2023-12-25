@@ -464,7 +464,7 @@ def domain_specific_fastafile(uniprot_reference_file, global_alignment_fasta_fil
                             file.write('>'+name+'\n'+sequence+'\n')
         print('%s specific Fasta file created!'%domain_of_interest_edit) 
     else:
-        print('%s not found!'%domain_of_interest)
+        print('ERROR: %s not found!'%domain_of_interest)
         
 def domain_specific_feafile(input_feafile, output_path, domain_of_interest):
     """ Generates a domain specific feature file. Features found across an interface (domain of interest and domain being analyzed) are extracted and printed to a new feature file. 
