@@ -4,6 +4,7 @@ from cogent3 import load_aligned_seqs
 
 import pandas as pd
 import numpy as np
+import random
 
 import sys
 
@@ -478,10 +479,22 @@ def domain_specific_feafile(input_feafile, output_path, domain_of_interest):
         Returns a feature file with features found across a specific domain interface  """
     
     domain_of_interest_edit = check_string(domain_of_interest)
+    output_file = ouput_path+domain_of_interest_edit+'.fea'
     
+    #setting a color for the domain specific features (chosing them randomly from the COLORS list gloabbly defined
+    color = random.choice(COLORS)
+    df_color = pd.DataFrame({'domain_of_interest':[domain_of_interest],
+                             'feature_color': [color]})
+
+    #filter domain specific features
     df = pd.read_csv(input_feafile, sep='\t')
     df.columns = ['DOC_1','Header', 'i', 'fea1', 'fea2','DOC_2']
-    df_filter = df.loc[df['DOC_1'] == domain_of_interest]      
-    output_file = ouput_path+domain_of_interest_edit+'.fea'
-    df_filter.to_csv(output_file, sep='\t', index=False, header=False)  
-    print('%s specific Feature file created!'%domain_of_interest_edit)
+    df_filter = df.loc[df['DOC_1'] == domain_of_interest]  
+    
+    if len(df_filter) == 0:
+        print('No features found!')
+    else:
+        df_color.to_csv(output_file, sep='\t', index=False, header=False)
+        df_filter.to_csv(output_file, mode='a', sep='\t', index=False, header=False)  
+        print('%s specific Feature file created!'%domain_of_interest_edit)
+        
