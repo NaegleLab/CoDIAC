@@ -218,7 +218,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
         File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
     Interpro_ID: string 
         Interpro ID - for example in a reference line such as 
-        SH3_domain:IPR001452:82:143;SH2:IPR000980:147:246;Prot_kinase_dom:IPR000719:271:524
+        SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
         the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
     output_file: string
         location of output fasta. Fasta headers will be uniprot_ID|InterproID|domain_name|domain_number|domain_start|domain_end
@@ -271,6 +271,23 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
     key_array_order ['uniprot', 'gene', 'start', 'end']
 
     This will print the new fasta file at output_fasta and a mapping file, using the base of the output_fasta with _mapping.csv 
+
+    Parameters
+    ----------
+    fasta_file: str
+        location of input fasta file to translate
+    output_fasta: str
+        location to print the output fasta, using the longer headers
+    key_array_order: list
+        List of strings that includes the order and the values to keep from the possible values
+        ['uniprot', 'gene', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
+    
+    Returns
+    -------
+    output_fasta: str
+        Confirmation of location of output file
+    mapping_file: str
+        Location of the mapping file created. This uses the same base name as the output_fasta and adds _mapping.csv
 
     """
     possible_values = ['uniprot', 'gene', 'species', 'domain_name', 'domain_num', 'Interpro_ID', 'start', 'end']
@@ -335,11 +352,22 @@ def translate_fasta_to_new_headers(fasta_file, output_fasta, key_array_order):
 def translate_fasta_back(fasta_file, header_trans_file, output_fasta):
     """
     Assuming that you have a fasta_file with shortened headers and would like to move those back 
-    to the long form names, found in the mapping file created by translate_fasta_to_new_headers
+    to the long form names, found in the mapping file (header_trans_file) created by translate_fasta_to_new_headers
     Use this function to print at the output_fasta location the fasta file with long headers. You would do this assuming 
     you wish to preserve a change, such as through alignment, of the shortened headers.
 
-    No returns, prints by non-append to output_fasta
+    Parameters
+    ----------
+    fasta_file: str
+        location of input fasta file to translate
+    header_trans_file: str
+        location that stores the header translation (as written in translate_fasta_to_new_headers)
+    output_fasta: str
+        location to print the output fasta, using the longer headers
+    
+    Returns
+    -------
+        No returns, prints by non-append to output_fasta
     """
     
     #read in the header_translation
