@@ -10,6 +10,15 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     Given an InterPro_ID, fetch all the records (or only reviewed records)
     for all species or for a specific taxonomy. 
 
+    Examples:
+    Examples, use this module like this, the first being a more restrictive human with reviewed, versus all 
+    records associated within an Interpro ID:
+
+    .. code-block:: python
+    
+        fetch_uniprotids('IPR000980', REVIEWED=True, species='Homo sapiens') # human proteins with reviewed records
+        fetch_uniprotids('IPR000980', REVIEWED=False, species='all') #all species records, reviewed and unreviewed
+
     Parameters
     ----------
     interpro_ID: str
@@ -30,12 +39,7 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
         points to an inner dict that keeps track of the database source 'reviewed' or 'unreviewed'
         and has lists of the uniprot IDs found for that species under that database source.
 
-    Examples:
-    fetch_uniprotids('IPR000980', REVIEWED=True, species='Homo sapiens')
-    will fetch uniprot ids for human only that are reviewed
 
-    fetch_uniprotids('IPR000980', REVIEWED=False, species='all')
-    Will fetch all uniprot ids with any record of that interpro id
     """
 
     count_data = 0
