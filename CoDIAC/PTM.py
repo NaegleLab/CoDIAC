@@ -20,7 +20,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
     ----------
     Interpro_ID: string 
         Interpro ID - for example in a reference line such as 
-        SH3_domain:IPR001452:82:143;SH2:IPR000980:147:246;Prot_kinase_dom:IPR000719:271:524
+        SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
         the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
     uniprot_reference_file: string
         File location that contains the reference of interest (like produced from Uniprot.makeRefFile)

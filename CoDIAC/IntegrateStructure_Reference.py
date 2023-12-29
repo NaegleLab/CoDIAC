@@ -468,7 +468,18 @@ def filter_structure_file(appended_structure_file, Interpro_ID, filtered_structu
     Interpro_ID of interest. 
 
     Prints the filtered structure file to filtered_structure_file
-    
+
+    Parameters
+    ----------
+    appended_structure_file: str
+        location of the UniProt reference file that also has been appended using InterPro.appendRefFile to add
+        interpro structures. 
+    Interpro_ID: str
+        Interpro ID (controlled Interpro ID database identifier)
+    filtered_structure_file: str
+        location to write the output file to - all the same column fields, but reducing the rows to only those
+        that contain an Interpro_ID of interest. 
+
     """
 
     PDB_df = pd.read_csv(appended_structure_file)
