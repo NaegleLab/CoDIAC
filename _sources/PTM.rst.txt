@@ -1,0 +1,4 @@
+PTMS via ProteomeScout
+----------------------
+.. automodule:: CoDIAC.PTM
+    :members: write_PTM_features

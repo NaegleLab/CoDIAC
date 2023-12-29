@@ -1,0 +1,5 @@
+UniProt
+-------
+
+.. automodule:: CoDIAC.UniProt
+    :members: makeRefFile, print_domain_fasta_file, translate_fasta_to_new_headers, translate_fasta_back

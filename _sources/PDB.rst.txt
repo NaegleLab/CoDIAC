@@ -1,0 +1,5 @@
+PDB
+---
+
+.. automodule:: CoDIAC.PDB
+    :members: generateStructureRefFile_fromUniprotFile

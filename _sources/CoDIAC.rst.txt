@@ -1,0 +1,56 @@
+CoDIAC
+=============================
+
+Overview
+--------
+
+.. figure:: img/overview.png
+    :class: with-border
+
+    An overview of the key aspects of CoDIAC. The modules and pipeline for :ref:`setting up the reference files<reference>`.
+    The :ref:`structure analysis modules<structure>` that fetch all structure files (whether PDB of AlphaFold) from the 
+    reference file, convert to adjacency files of contacts, and allow for region of interest contact analysis
+    between domains (intraprotein) or between a protein and a ligand (interprotein). Additional layers, such as 
+    other annotations of proteins and domains :ref:`PTM and Mutations<annotation>` allow fetching on the reference file of PTMs and mutations within the regions of interest
+    and the :ref:`Jalview tools<jalview>` allow for the integration of any feature types and calculation of annotation tracks 
+    for visualization.
+
+.. _reference:
+
+Reference Setup
+---------------
+.. toctree::
+	:maxdepth: 2
+	:caption: Contents:
+
+    UniProt
+    PDB
+    InterPro
+    IntegrateStructure_Reference
+
+.. _structure:
+
+Structure Analysis
+------------------
+
+.. _annotations:
+
+Annotation tools
+----------------
+.. toctree::
+	:maxdepth: 2
+	:caption: Contents: 
+    
+    PTM
+
+.. _jalview:
+
+Jalview tools
+-------------
+.. toctree::
+	:maxdepth: 2
+	:caption: Contents: 
+    
+    jalview
+
+

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Integrate the Structure and Reference files &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
+    
+    <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PTMS via ProteomeScout" href="PTM.html" />
+    <link rel="prev" title="InterPro" href="InterPro.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTMS via ProteomeScout"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="InterPro.html" title="InterPro"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Integrate the Structure and Reference files</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-CoDIAC.IntegrateStructure_Reference">
+<span id="integrate-the-structure-and-reference-files"></span><h1>Integrate the Structure and Reference files<a class="headerlink" href="#module-CoDIAC.IntegrateStructure_Reference" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.IntegrateStructure_Reference.</span></span><span class="sig-name descname"><span class="pre">add_reference_info_to_struct_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struct_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">INTERPRO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/IntegrateStructure_Reference.html#add_reference_info_to_struct_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file" title="Link to this definition">¶</a></dt>
+<dd><p>Given a PDB meta structure file and a Uniprot reference, integrate the two pieces to add information from reference</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>struct_file: str</strong></dt><dd><p>Name of structure reference file</p>
+</dd>
+<dt><strong>ref_file: str</strong></dt><dd><p>Name of reference file</p>
+</dd>
+<dt><strong>out_file: str</strong></dt><dd><p>name of output file to write</p>
+</dd>
+<dt><strong>INTERPRO: boolean</strong></dt><dd><p>If True, uses Interpro, otherwise appends Uniprot from reference file. 
+Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming
+conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest.</p>
+</dd>
+<dt><strong>verbose: boolean</strong></dt><dd><p>Print information about processing. Default is Falses.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>out_struct: pandas dataframe</dt><dd><p>the appended dataframe of the structure (also written to out_file)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.IntegrateStructure_Reference.filter_structure_file">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.IntegrateStructure_Reference.</span></span><span class="sig-name descname"><span class="pre">filter_structure_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">appended_structure_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Interpro_ID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_structure_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/IntegrateStructure_Reference.html#filter_structure_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.IntegrateStructure_Reference.filter_structure_file" title="Link to this definition">¶</a></dt>
+<dd><p>Given an annotated structure file, keep only structures that have at least one chain that contain the 
+Interpro_ID of interest.</p>
+<p>Prints the filtered structure file to filtered_structure_file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>appended_structure_file: str</strong></dt><dd><p>location of the UniProt reference file that also has been appended using InterPro.appendRefFile to add
+interpro structures.</p>
+</dd>
+<dt><strong>Interpro_ID: str</strong></dt><dd><p>Interpro ID (controlled Interpro ID database identifier)</p>
+</dd>
+<dt><strong>filtered_structure_file: str</strong></dt><dd><p>location to write the output file to - all the same column fields, but reducing the rows to only those
+that contain an Interpro_ID of interest.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Integrate the Structure and Reference files</a><ul>
+<li><a class="reference internal" href="#CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file"><code class="docutils literal notranslate"><span class="pre">add_reference_info_to_struct_file()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.IntegrateStructure_Reference.filter_structure_file"><code class="docutils literal notranslate"><span class="pre">filter_structure_file()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="InterPro.html"
+                          title="previous chapter">InterPro</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="PTM.html"
+                          title="next chapter">PTMS via ProteomeScout</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/IntegrateStructure_Reference.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTMS via ProteomeScout"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="InterPro.html" title="InterPro"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Integrate the Structure and Reference files</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.PTM &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.PTM</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.PTM</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">IntegrateStructure_Reference</span><span class="p">,</span> <span class="n">UniProt</span><span class="p">,</span> <span class="n">proteomeScoutAPI</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span> 
+
+<span class="n">package_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="n">PROTEOMESCOUT_DATA</span> <span class="o">=</span> <span class="n">package_directory</span> <span class="o">+</span> <span class="s1">&#39;/data/proteomescout_everything_20190701/data.tsv&#39;</span>
+<span class="n">PTM_API</span> <span class="o">=</span> <span class="n">proteomeScoutAPI</span><span class="o">.</span><span class="n">ProteomeScoutAPI</span><span class="p">(</span><span class="n">PROTEOMESCOUT_DATA</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="write_PTM_features">
+<a class="viewcode-back" href="../../PTM.html#CoDIAC.PTM.write_PTM_features">[docs]</a>
+<span class="k">def</span> <span class="nf">write_PTM_features</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">uniprot_ref_file</span><span class="p">,</span> <span class="n">feature_dir</span><span class="p">,</span> <span class="n">mapping_file</span> <span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">num_PTM_threshold</span> <span class="o">=</span> <span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Writes all PTM features from ProteomeScout on Interpro domains from a uniprot reference file, if there are more</span>
+<span class="sd">    than num_PTM_threshold that occur across all domains of that type in the reference. Returns the ptm_count_dict for reference</span>
+<span class="sd">    and the feature dict that is generated to write the files. Files are named Interpro_ID_&lt;PTM_Type&gt;.fea</span>
+<span class="sd">    and the reference fasta is also generated so that it is clear the features are attached to that </span>
+<span class="sd">    particular run of the domains. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Interpro_ID: string </span>
+<span class="sd">        Interpro ID - for example in a reference line such as </span>
+<span class="sd">        SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524</span>
+<span class="sd">        the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980</span>
+<span class="sd">    uniprot_reference_file: string</span>
+<span class="sd">        File location that contains the reference of interest (like produced from Uniprot.makeRefFile)</span>
+<span class="sd">    feature_dir: string</span>
+<span class="sd">        Feature Directory to place files in</span>
+<span class="sd">    mapping_file: string</span>
+<span class="sd">        A CSV file location, if wanted, that holds a translation of the long header into a shorter header</span>
+<span class="sd">        If this is an empty string, then it will not attempt mapping</span>
+<span class="sd">    n_term_offset: int</span>
+<span class="sd">        Number of amino acids to extend in the n-term direction (up to start of protein)</span>
+<span class="sd">    c_term_offset: int</span>
+<span class="sd">        Number of amino acids to extend in the c-term direction (up to end of protein)</span>
+<span class="sd">    gap_threshold: float</span>
+<span class="sd">        fraction gap allowed before dispanding with PTM translation from ProteomeScout</span>
+<span class="sd">    num_PTM_threshold: int</span>
+<span class="sd">        Number of PTMs in all domains of a type required to generate a feature file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    file_list: list</span>
+<span class="sd">        List of files generated as features</span>
+<span class="sd">    ptm_count_dict: dict</span>
+<span class="sd">        keys are the modification type and values are total number encountered</span>
+<span class="sd">    domain_feature_dict: dict of dicts</span>
+<span class="sd">        keys are the fasta headers </span>
+<span class="sd">        Inner dict keys are the modification types and the values of this is a list of zero-based positions. </span>
+
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ptm_feature_file_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">feature_dir</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Directory for target files does not exist, please create it.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ptm_feature_file_list</span>
+
+    <span class="c1">#write the fasta into the directory - this actually doesn&#39;t make sense, it&#39;s the wrong headers if mappingDict is incorrect</span>
+    <span class="c1">#fasta_output_file = feature_dir + Interpro_ID + &#39;.fasta&#39;</span>
+    <span class="n">domain_dict</span> <span class="o">=</span> <span class="n">UniProt</span><span class="o">.</span><span class="n">make_domain_fasta_dict</span><span class="p">(</span><span class="n">uniprot_ref_file</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="p">)</span>
+
+    <span class="c1"># get the mapping dictionary</span>
+    <span class="n">mapping_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">mapping_file</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
+            <span class="n">mapping_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1">#test if the mapping file looks correct</span>
+        <span class="n">mapping_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">mapping_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;short&#39;</span> <span class="ow">in</span> <span class="n">mapping_df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="s1">&#39;full&#39;</span> <span class="ow">in</span> <span class="n">mapping_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">mapping_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                <span class="n">long_header</span> <span class="o">=</span> <span class="s1">&#39;&gt;&#39;</span><span class="o">+</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;full&#39;</span><span class="p">]</span>
+                <span class="n">short</span> <span class="o">=</span> <span class="s1">&#39;&gt;&#39;</span><span class="o">+</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span>
+                <span class="n">mapping_dict</span><span class="p">[</span><span class="n">long_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">short</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: Mapping file is not correctly shapped, skipping mapping&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
+                <span class="n">mapping_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span>
+
+
+    <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;3546b5&#39;</span>
+    <span class="n">ptm_count_dict</span><span class="p">,</span> <span class="n">ptm_feature_dict</span> <span class="o">=</span> <span class="n">get_Interpro_PTMs</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">uniprot_ref_file</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num_PTM_threshold</span> <span class="o">&lt;=</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">num_PTM_threshold</span> <span class="o">=</span> <span class="mi">1</span> 
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: Resetting the PTM number threshold to 1, this value is an int and should be greater than 0&quot;</span><span class="p">)</span>
+
+    <span class="n">ptm_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ptm_type</span> <span class="ow">in</span> <span class="n">ptm_count_dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ptm_count_dict</span><span class="p">[</span><span class="n">ptm_type</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">num_PTM_threshold</span><span class="p">:</span>
+            <span class="n">ptm_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ptm_type</span><span class="p">)</span>
+
+    <span class="c1"># for each feature type, create the feature file, printing features for each protein that has them. </span>
+    <span class="k">for</span> <span class="n">ptm_type</span> <span class="ow">in</span> <span class="n">ptm_list</span><span class="p">:</span>
+        <span class="n">ptm_dict_temp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ptm_feature_file</span> <span class="o">=</span> <span class="n">feature_dir</span> <span class="o">+</span> <span class="n">Interpro_ID</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">ptm_type</span> <span class="o">+</span> <span class="s1">&#39;.fea&#39;</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">ptm_feature_dict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ptm_type</span> <span class="ow">in</span> <span class="n">ptm_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">mapping_dict</span><span class="p">:</span>
+                    <span class="n">short_header</span> <span class="o">=</span> <span class="n">mapping_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="c1">#if a mapping file was passed then we&#39;ll use it, unless that header had no map</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DID not find short header for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+                    <span class="n">short_header</span> <span class="o">=</span> <span class="n">header</span>
+                <span class="n">ptm_dict_temp</span><span class="p">[</span><span class="n">short_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">ptm_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">][</span><span class="n">ptm_type</span><span class="p">]</span>
+        <span class="n">write_PTM_feature_file</span><span class="p">(</span><span class="n">ptm_type</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">ptm_dict_temp</span><span class="p">,</span> <span class="n">ptm_feature_file</span><span class="p">)</span>
+        <span class="n">ptm_feature_file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ptm_feature_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ptm_feature_file_list</span><span class="p">,</span> <span class="n">ptm_count_dict</span><span class="p">,</span> <span class="n">ptm_feature_dict</span><span class="p">,</span> <span class="n">mapping_dict</span></div>
+
+
+<span class="k">def</span> <span class="nf">translate_PTMs</span><span class="p">(</span><span class="n">uniprot_ID</span><span class="p">,</span> <span class="n">uniprot_seq</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an Uniprot ID and a uniprot sequence, return PTMs on the uniprot sequence positions. Uses the pairwise alignment</span>
+<span class="sd">    of proteomescout sequence to the uniprot sequence to build a position map and translates PTMs into </span>
+<span class="sd">    the uniprot reference positions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    uniprot_ID: str</span>
+<span class="sd">        Uniprot ID</span>
+<span class="sd">    uniprot_seq: str</span>
+<span class="sd">        Uniprot sequence</span>
+<span class="sd">    gap_threshold: float</span>
+<span class="sd">        Allowed gap fraction before considering too poor an alignment</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    errors: string</span>
+<span class="sd">        A string error description if there was an issue with alignment or </span>
+<span class="sd">    translated_PTMs: tuples of PTMs</span>
+<span class="sd">        tuples described by (pos, aa, mod_type)</span>
+<span class="sd">        position is in ones-based counting in the uniprot sequence</span>
+<span class="sd">    failed_PTMs: tuples</span>
+<span class="sd">        Keeps track of PTMs that did not translate and the reason</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">proteomescout_seq</span> <span class="o">=</span> <span class="n">PTM_API</span><span class="o">.</span><span class="n">get_sequence</span><span class="p">(</span><span class="n">uniprot_ID</span><span class="p">)</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">proteomescout_seq</span> <span class="o">==</span> <span class="s1">&#39;-1&#39;</span><span class="p">:</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;Error: ProteomeScout record not found by </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_ID</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="n">aln</span><span class="p">,</span> <span class="n">struct_sequence_ref_spanning</span><span class="p">,</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">from_end</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffList</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span> <span class="o">=</span> <span class="n">IntegrateStructure_Reference</span><span class="o">.</span><span class="n">return_mapping_between_sequences</span><span class="p">(</span><span class="n">proteomescout_seq</span><span class="p">,</span> <span class="n">uniprot_seq</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniprot_seq</span><span class="p">))</span>
+    <span class="n">PTMs</span> <span class="o">=</span> <span class="n">PTM_API</span><span class="o">.</span><span class="n">get_PTMs</span><span class="p">(</span><span class="n">uniprot_ID</span><span class="p">)</span>
+    <span class="c1">#mapToRef = aln.get_gapped_seq(&#39;reference&#39;).gap_maps()[1]</span>
+    <span class="n">map_to_ref</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="s1">&#39;structure&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">numGaps</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">seqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">count_gaps</span><span class="p">()</span>
+
+    <span class="c1">#check that the alignment is of sufficient quality</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">numGaps</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">uniprot_seq</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">gap_threshold</span><span class="p">):</span>
+        <span class="n">errors</span> <span class="o">=</span> <span class="s2">&quot;Error: Percent gap too large </span><span class="si">%s</span><span class="s2">, has </span><span class="si">%0.2f</span><span class="s2"> percent gap&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_ID</span><span class="p">,</span> <span class="n">numGaps</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">uniprot_seq</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">errors</span><span class="p">,</span> <span class="p">[],</span> <span class="p">[]</span>
+
+    <span class="n">structure_aln</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_degapped_relative_to</span><span class="p">(</span><span class="s1">&#39;structure&#39;</span><span class="p">)</span>
+    <span class="n">aa_list</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">structure_aln</span><span class="p">)</span>
+    <span class="n">translated_PTMs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">failed_PTMs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">proteomescout_ind</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">uniprot_ind</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">a_PTM</span> <span class="ow">in</span> <span class="n">PTMs</span><span class="p">:</span>
+        <span class="n">pos</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ptm_type</span> <span class="o">=</span> <span class="n">a_PTM</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="c1">#this is ones-based counted</span>
+        <span class="k">if</span> <span class="n">aa_list</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">proteomescout_ind</span><span class="p">]</span><span class="o">!=</span><span class="n">aa</span><span class="p">:</span>
+            <span class="c1">#print(&quot;error: proteomescout position is %s not %s&quot;%(aa_list[int(pos)-1][proteomescout_ind], aa))</span>
+            <span class="n">failed_PTMs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pos</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ptm_type</span><span class="p">,</span> <span class="s1">&#39;proteomescout issue, non-matching amino acid&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">aa_list</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">uniprot_ind</span><span class="p">]</span><span class="o">!=</span><span class="n">aa</span><span class="p">:</span>
+                <span class="c1">#print(&quot;Skipping %s, proteomescout and uniprot don&#39;t match&quot;%(pos))</span>
+                <span class="n">failed_PTMs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pos</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ptm_type</span><span class="p">,</span> <span class="s1">&#39;different amino acid&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pos_translated</span> <span class="o">=</span> <span class="n">map_to_ref</span><span class="p">[</span><span class="n">pos</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+                <span class="n">translated_PTMs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">pos_translated</span><span class="p">),</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ptm_type</span><span class="p">))</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="n">translated_PTMs</span><span class="p">,</span> <span class="n">failed_PTMs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_Interpro_PTMs</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an uniprot reference file and a particular InterproID of interest, get all the PTMs that exist</span>
+<span class="sd">    within the domains in the uniprot reference file that have that interpro ID. </span>
+<span class="sd">    Creates a dictionary count of all PTMs encoungered across all domains of that type in the file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Interpro_ID: string </span>
+<span class="sd">        Interpro ID - for example in a reference line such as </span>
+<span class="sd">        SH3_domain:IPR001452:82:143;SH2:IPR000980:147:246;Prot_kinase_dom:IPR000719:271:524</span>
+<span class="sd">        the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980</span>
+<span class="sd">    uniprot_reference_file: string</span>
+<span class="sd">        File location that contains the reference of interest (like produced from Uniprot.makeRefFile)</span>
+<span class="sd">    n_term_offset: int</span>
+<span class="sd">        Number of amino acids to extend in the n-term direction (up to start of protein)</span>
+<span class="sd">    c_term_offset: int</span>
+<span class="sd">        Number of amino acids to extend in the c-term direction (up to end of protein)</span>
+<span class="sd">    gap_threshold: float</span>
+<span class="sd">        fraction gap allowed before dispanding with </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ptm_count_dict: dict</span>
+<span class="sd">        keys are the modification type and values are total number encountered</span>
+<span class="sd">    domain_feature_dict: dict of dicts</span>
+<span class="sd">        keys are the fasta headers </span>
+<span class="sd">        Inner dict keys are the modification types and the values of this is a list of zero-based positions. </span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uniprot_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">)</span>
+    <span class="n">domain_fasta_dict</span> <span class="o">=</span> <span class="n">UniProt</span><span class="o">.</span><span class="n">make_domain_fasta_dict</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gap_threshold</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">gap_threshold</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">gap_threshold</span> <span class="o">=</span> <span class="mf">0.7</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Gap threshold a number between 0 and 1, setting to default of 0.7&quot;</span><span class="p">)</span>
+
+    <span class="n">ptm_domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">translated_PTMs_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">failed_PTMs_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">errors_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">uniprot_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Ref Sequence&#39;</span><span class="p">]</span>
+        <span class="n">uniprot_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span>
+        <span class="n">domains</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Interpro Domains&#39;</span><span class="p">]</span>
+        <span class="n">errors_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">],</span> <span class="n">translated_PTMs_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">],</span> <span class="n">failed_PTMs_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">translate_PTMs</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="p">)</span>
+
+        <span class="c1">#Writing/printing a report of global issues encountered.</span>
+        <span class="k">if</span> <span class="n">errors_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">errors_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">failed_PTMs_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">failed_PTMs_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">])</span>
+
+    <span class="c1"># Next, walk through each fasta sequence, and find the translated IDs, if they exist in the domains of interest. </span>
+    <span class="n">domain_feature_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">domain_fasta_dict</span><span class="p">:</span>
+        <span class="n">domain_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">header_temp</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+        <span class="n">u_id_from_header</span><span class="p">,</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">,</span> <span class="n">domainNum</span><span class="p">,</span> <span class="n">IP_id_from_header</span><span class="p">,</span> <span class="n">start_from_header</span><span class="p">,</span> <span class="n">end_from_header</span> <span class="o">=</span> <span class="n">header_temp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+        <span class="n">translated_PTMs</span> <span class="o">=</span> <span class="n">translated_PTMs_dict</span><span class="p">[</span><span class="n">u_id_from_header</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">translated_PTMs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a_PTM</span> <span class="ow">in</span> <span class="n">translated_PTMs</span><span class="p">:</span>
+                <span class="n">pos</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">ptm_type</span> <span class="o">=</span> <span class="n">a_PTM</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_from_header</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pos</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_from_header</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">ptm_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ptm_domain_dict</span><span class="p">:</span>
+                            <span class="n">ptm_domain_dict</span><span class="p">[</span><span class="n">ptm_type</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">ptm_domain_dict</span><span class="p">[</span><span class="n">ptm_type</span><span class="p">]</span> <span class="o">+=</span><span class="mi">1</span>
+                        <span class="n">dom_pos</span> <span class="o">=</span> <span class="n">pos</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">start_from_header</span><span class="p">)</span> <span class="c1">#this is now a zero-based counting</span>
+                        <span class="k">if</span> <span class="n">ptm_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">domain_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]:</span>
+                            <span class="n">domain_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">][</span><span class="n">ptm_type</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="c1"># try:</span>
+                        <span class="c1">#     if domain_fasta_dict[header][dom_pos] != aa:</span>
+                        <span class="c1">#         print(&quot;ERROR: trying to place a feature in domain for %s at %d for domain number %d&quot;%(u_id_from_header, dom_pos, domainNum))</span>
+                        <span class="c1">#         #uni_seq = uniprot_df[uniprot_df[&#39;UniProt ID&#39;]==u_id_from_header][&#39;Ref Sequence&#39;]</span>
+                        <span class="c1">#         #print(&quot;aa should be %s and in the full protein it is %s&quot;%(aa, uni_seq[pos-1]))</span>
+                        <span class="c1"># except:</span>
+                        <span class="c1">#     print(&quot;Exception: feature is %d and length of domain is %d for %s&quot;%(dom_pos, len(domain_fasta_dict[header]), header))</span>
+
+                        <span class="n">domain_feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">][</span><span class="n">ptm_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dom_pos</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="c1">#one&#39;s based position for the features</span>
+    
+
+    <span class="c1"># elif translated_PTMs:</span>
+    <span class="c1">#     for domain in domains.split(&#39;;&#39;):</span>
+    <span class="c1">#         domain_name, IP_id, start, stop = domain.split(&#39;:&#39;)</span>
+    <span class="c1">#         if IP_id == Interpro_ID:</span>
+    <span class="c1">#             for a_PTM in translated_PTMs:</span>
+    <span class="c1">#                 pos, aa, ptm_type = a_PTM</span>
+    <span class="c1">#                 if pos &gt;= start and pos &lt;= stop:</span>
+    <span class="c1">#                     if ptm_type not in ptm_domain_dict:</span>
+    <span class="c1">#                         ptm_domain_dict[ptm_type] = 0</span>
+    <span class="c1">#                     ptm_domain_dict[ptm_type] +=1</span>
+    <span class="k">return</span> <span class="n">ptm_domain_dict</span><span class="p">,</span> <span class="n">domain_feature_dict</span>
+            
+<span class="k">def</span> <span class="nf">write_PTM_feature_file</span><span class="p">(</span><span class="n">PTM_name</span><span class="p">,</span> <span class="n">PTM_color</span><span class="p">,</span> <span class="n">feature_dict</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a PTM that should be named &#39;PTM_name&#39; and the color it should be assigned</span>
+<span class="sd">    write a Jalview compatible feature file that sets that feature name and color and then</span>
+<span class="sd">    prints for every header in feature_dict the positions of that feature type to output_file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    PTM_name: string</span>
+<span class="sd">        Feature name</span>
+<span class="sd">    PTM_color: string</span>
+<span class="sd">        Color string (compatible with Jalview conventions) for the color to assigne for a feature</span>
+<span class="sd">    feature_dict: dict</span>
+<span class="sd">        Has keys equal to the headers to be used and values is a list of positions to print as features</span>
+<span class="sd">    output_file: string</span>
+<span class="sd">        file that will be written.. overwrites an existing file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">PTM_name</span><span class="p">,</span> <span class="n">PTM_color</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">feature_pos</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]:</span>
+                <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">PTM_name</span><span class="p">,</span> <span class="n">header</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">),</span> <span class="n">feature_pos</span><span class="p">,</span> <span class="n">feature_pos</span><span class="p">,</span> <span class="n">PTM_name</span><span class="p">))</span>
+    <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.PTM</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+Overview
+=============
+Comprehensive Domain Interaction Analysis of Contacts (CoDIAC)
+
+CoDIAC is a pipeline designed to allow for the comprehensive and easy analysis of contacts that exist for a particular domain. We use Interpro as the controlled vocabulary of a domain and domain boundaries and fetch all structures associated with this domain. We then fetch the structure information and integrate it with a defined reference, allowing for the identification of structures containing domains of interest for downstream analysis based on contact mapping (an AlphaFold equivalent is also provided). Contacts created as features of interest can then be translated onto a common reference and our Jalview tools allow for the integration of different features together for visualization and counting. 
+
+Key steps
+
+
+1. Generate domain-centric resources
+2. Use the filtered PDB reference file to fetch relevant structures
+    - First fetch the PDB files
+    - Process the files to produce adjacency files
+3. Extract contacts based on domain boundaries and interactions with other elements in the structure. 
+4. Integrate features extracted from analysis by translating onto a common reference and using our Jalview-based integration tools.

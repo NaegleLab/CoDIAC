@@ -1,0 +1,5 @@
+Integrate the Structure and Reference files
+-------------------------------------------
+
+.. automodule:: CoDIAC.IntegrateStructure_Reference
+    :members: add_reference_info_to_struct_file, filter_structure_file

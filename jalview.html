@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Jalview Tools &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
+    
+    <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="PTMS via ProteomeScout" href="PTM.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTMS via ProteomeScout"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Jalview Tools</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-CoDIAC.jalviewFunctions">
+<span id="jalview-tools"></span><h1>Jalview Tools<a class="headerlink" href="#module-CoDIAC.jalviewFunctions" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.jalviewFunctions.combine_feature_files">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.jalviewFunctions.</span></span><span class="sig-name descname"><span class="pre">combine_feature_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_file_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/jalviewFunctions.html#combine_feature_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.jalviewFunctions.combine_feature_files" title="Link to this definition">¶</a></dt>
+<dd><p>Given a list of feature files, combine them and print the new feature file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.jalviewFunctions.print_ann_file">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.jalviewFunctions.</span></span><span class="sig-name descname"><span class="pre">print_ann_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotation_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/jalviewFunctions.html#print_ann_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.jalviewFunctions.print_ann_file" title="Link to this definition">¶</a></dt>
+<dd><p>Given feature annotations, such as created by return_feature_ann_dict, print a Jalview Annotation file with bargraphs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>feature_file: string</strong></dt><dd><p>location of feature file to convert into an annotation track file</p>
+</dd>
+<dt><strong>alignment_file: str</strong></dt><dd><p>location of the alignment file to base the annotation track file for</p>
+</dd>
+<dt><strong>annotation_file: str</strong></dt><dd><p>This is the name of the file to output the annotation tracks to, it will be overwritten</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"></dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Jalview Tools</a><ul>
+<li><a class="reference internal" href="#CoDIAC.jalviewFunctions.combine_feature_files"><code class="docutils literal notranslate"><span class="pre">combine_feature_files()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.jalviewFunctions.print_ann_file"><code class="docutils literal notranslate"><span class="pre">print_ann_file()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="PTM.html"
+                          title="previous chapter">PTMS via ProteomeScout</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/jalview.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTMS via ProteomeScout"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Jalview Tools</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

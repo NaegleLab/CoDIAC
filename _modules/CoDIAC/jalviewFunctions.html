@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.jalviewFunctions &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.jalviewFunctions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.jalviewFunctions</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">Bio</span> <span class="kn">import</span> <span class="n">SeqIO</span>
+
+<span class="kn">from</span> <span class="nn">cogent3</span> <span class="kn">import</span> <span class="n">load_aligned_seqs</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to integrate feature files, create annotation tracks, etc.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">COLORS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;332288&#39;</span><span class="p">,</span> <span class="s1">&#39;117733&#39;</span><span class="p">,</span> <span class="s1">&#39;44AA99&#39;</span><span class="p">,</span> <span class="s1">&#39;88CCEE&#39;</span><span class="p">,</span> <span class="s1">&#39;DDCC77&#39;</span><span class="p">,</span> <span class="s1">&#39;CC6677&#39;</span><span class="p">,</span> <span class="s1">&#39;AA4499&#39;</span><span class="p">,</span> <span class="s1">&#39;882255&#39;</span><span class="p">]</span> <span class="c1">#Paul Tol library for color blindness</span>
+
+<span class="k">def</span> <span class="nf">return_features_from_file</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a feature file, this will parse the feature set types and return feature_colors and seq_dict. If a combined feature is encountered,</span>
+<span class="sd">    indicated by a name_feature1:name_feature2 (i.e. colon separated files), then we add these individual features to the list of </span>
+<span class="sd">    features observed</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file : str</span>
+<span class="sd">        Name of feature file</span>
+
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    feature_colors: dict</span>
+<span class="sd">        keys are the feature names and values are the color values from the feature file</span>
+<span class="sd">    seq_dict: dict</span>
+<span class="sd">        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position</span>
+<span class="sd">        and values equal to a list of features set for that feature.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">feature_colors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">seq_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="c1">#check if the line is a preamble for a feature or a feature line</span>
+        <span class="n">line_arr</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line_arr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">feature_colors</span><span class="p">[</span><span class="n">line_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">line_arr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">line_arr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">feature_desc</span><span class="p">,</span> <span class="n">seq_id</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">feature</span> <span class="o">=</span> <span class="n">line_arr</span>
+            <span class="k">if</span> <span class="n">seq_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seq_dict</span><span class="p">:</span>
+                <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1">#now check if that position already has an entry </span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+                <span class="c1">#if feature is a colon separated, then add all the features of that type to seq_id</span>
+                <span class="n">feature_set</span> <span class="o">=</span> <span class="n">feature</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">feature_set</span><span class="p">:</span>
+                        <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="o">~</span><span class="nb">len</span><span class="p">(</span><span class="n">line_arr</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipping </span><span class="si">%s</span><span class="s2"> since it does not match a color preamble (2 entries) or a feature line (6 entries)&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">feature_colors</span><span class="p">,</span> <span class="n">seq_dict</span>
+
+<span class="k">def</span> <span class="nf">combine_feature_sets</span><span class="p">(</span><span class="n">feature_dict_1</span><span class="p">,</span> <span class="n">feature_dict_2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given feature file sets and the colors used, combine these into a new feature set,</span>
+<span class="sd">    and creating new features if needed. This sets a combined feature from two files for the same</span>
+<span class="sd">    residue as the longest combination of features. </span>
+<span class="sd">    e.g. of K15 in feature_dict_1 has &#39;N6-acetyllysine:Ubiquitination&#39; and in feature_dict_2 it is &#39;Methylation&#39;,</span>
+<span class="sd">    the output feature will be &#39;N6-acetyllysine:Ubiquitination:Methylation&#39; and it will have all three individual features, </span>
+<span class="sd">    so that annotation tracks can be created </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_dict_1 : dict</span>
+<span class="sd">        Dict in the form returned by return_features_from_file(file). This is a dictionary of one feature file. </span>
+<span class="sd">        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position</span>
+<span class="sd">        and values equal to a list of features set for that feature.</span>
+<span class="sd">    feature_dict_2: dict</span>
+<span class="sd">        Same as feature_dict_1, but generated from a second feature file</span>
+
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    feature_combined_dict: dict</span>
+<span class="sd">        Same output as input as dict of dictionaries, where the two features have been combined. </span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># feature_lists = list(feature_dict_1.keys()).append(list(feature_dict_2.keys()))</span>
+    <span class="c1"># unique_features = set(feature_lists)</span>
+    <span class="c1"># feature_colors = {}</span>
+    <span class="c1"># for feature in unique_features:</span>
+    <span class="c1">#   feature_colors{feature} = &#39;&#39; #for now, let&#39;s just note that we have a color we need to set.</span>
+
+    <span class="n">feature_combined_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict_1</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># walk through each in feature_dict_1 and if it also exists in dict_2, then combine those feature types into new categories.</span>
+        <span class="c1">#once that is taken care of, do not walk through it in dict_2 separately</span>
+        <span class="k">if</span> <span class="n">seq_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_combined_dict</span><span class="p">:</span>
+            <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1">#add all features from dict_1</span>
+            <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict_1</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+                <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_dict_1</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict_2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict_2</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+                        <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">feature_dict_2</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">])</span>
+                        <span class="c1">#also need to make a new category which is the largest combined names of the two feature dictionaries</span>
+                        <span class="n">longest_feature_1</span> <span class="o">=</span> <span class="n">return_longest_feature</span><span class="p">(</span><span class="n">feature_dict_1</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">])</span>
+                        <span class="n">longest_feature_2</span> <span class="o">=</span> <span class="n">return_longest_feature</span><span class="p">(</span><span class="n">feature_dict_2</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">])</span>
+                        <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">longest_feature_1</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">longest_feature_2</span><span class="p">)</span>
+
+    <span class="c1">#now add features in 2 that did not overlap with positions in 1</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict_2</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">seq_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_combined_dict</span><span class="p">:</span>
+            <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict_2</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+                <span class="n">feature_combined_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_dict_2</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span>
+                    
+
+
+
+    <span class="k">return</span> <span class="n">feature_combined_dict</span>
+
+
+<span class="k">def</span> <span class="nf">print_jalview_feature_file</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">,</span> <span class="n">feature_color_dict</span><span class="p">,</span> <span class="n">feature_file</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    Print all features in a feature_dict to a feature_file, based on the color mapping given in the feature_color_dict</span>
+<span class="sd">    This ensures that the longest combined feature is printed for a residue that has multiple annotations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_dict : dict</span>
+<span class="sd">        Dict in the form returned by return_features_from_file(file) or combine_feature_sets(feature_dict_1, feature_dict_2). </span>
+<span class="sd">        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position</span>
+<span class="sd">        and values equal to a list of features set for that feature.</span>
+<span class="sd">    color_dict: dict</span>
+<span class="sd">        Keys are the features in feature_dict and values are the hex code values to designate in the feature file.</span>
+<span class="sd">    feature_file: str</span>
+<span class="sd">        File name of string, this will be overwritten by default</span>
+<span class="sd">    append: bool</span>
+<span class="sd">        Default false, meaning the feature file will be overwritten. Otherwise, set to true to append new lines to an existing</span>
+<span class="sd">        feature file.</span>
+
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">append</span><span class="p">:</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">feature_file</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">feature_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+
+    <span class="c1">#first write the preamble lines of the colors </span>
+    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">feature_color_dict</span><span class="p">:</span>
+        <span class="n">ff</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">feature_color_dict</span><span class="p">[</span><span class="n">feature</span><span class="p">]))</span>
+
+    <span class="c1">#now write the lines for every feature (have to check if a color has not been given, randomly select from end of color wheel)</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">return_longest_feature</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_color_dict</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: did not find color for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">feature</span><span class="p">))</span>
+            <span class="n">ff</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="s2">-1</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">seq_id</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">feature</span><span class="p">))</span>
+    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">return_unique_features</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a feature_dict, return all unique features.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_dict : dict</span>
+<span class="sd">        Dict in the form returned by return_features_from_file(file) or combine_feature_sets(feature_dict_1, feature_dict_2). </span>
+<span class="sd">        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position</span>
+<span class="sd">        and values equal to a list of features set for that feature.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    features: list</span>
+<span class="sd">        List of unique features</span>
+<span class="sd">    feature_numbers: dict</span>
+<span class="sd">        A dict of features as keys and number of features of that type observed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        <span class="c1">#set the colors</span>
+    <span class="n">feature_unique</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_unique</span><span class="p">:</span>
+                    <span class="n">feature_unique</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">feature_unique</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">+=</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_unique</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">feature_unique</span>
+
+<span class="k">def</span> <span class="nf">return_longest_feature</span><span class="p">(</span><span class="n">feature_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns the longest feature that occurs in a list, according to the most number of : found</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_list: list</span>
+<span class="sd">        list of strings of features</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    longest_feature: str</span>
+<span class="sd">        The longest feature found in feature_list, based on having concatenations with :</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">longest_feature</span> <span class="o">=</span> <span class="n">feature_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+    <span class="c1">#return the feature with the most : and that is the longest feature</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_list</span><span class="p">)</span><span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">feature_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">longest_feature</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">):</span>
+                <span class="n">longest_feature</span> <span class="o">=</span> <span class="n">feature</span>
+    <span class="k">return</span> <span class="n">longest_feature</span>
+
+<span class="k">def</span> <span class="nf">return_feature_ann_dict</span><span class="p">(</span><span class="n">aln</span><span class="p">,</span> <span class="n">feature_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an aligned seqs object and a feature dictionary, this will return a dictionary of numpy dataframes with the number of features</span>
+<span class="sd">    in each sequence, column position. You can look at this for the properties of a feature in a column</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    aln: Cogent3.load_alinged_seqs</span>
+<span class="sd">        Cogent3 sequence alignment object, such as createdg by aln = load_aligned_seqs(alignment_file, moltype=&#39;protein&#39;)</span>
+
+<span class="sd">    feature_dict : dict</span>
+<span class="sd">        Dict in the form returned by return_features_from_file(file)</span>
+<span class="sd">        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position</span>
+<span class="sd">        and values equal to a list of features set for that feature.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    feature_annotations: dict of dataframes</span>
+<span class="sd">        keys are the unique features found in feature_dict and the values are dataframes based on numpy arrays of num_sequences x num_positions_alignment</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">feature_list</span><span class="p">,</span> <span class="n">feature_num</span> <span class="o">=</span> <span class="n">return_unique_features</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">)</span>
+
+    <span class="n">seq_translation_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">aln</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="n">seq_translation_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="n">seq_id</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#first argument is the key of the original sequence, value is the gapped position</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: </span><span class="si">%s</span><span class="s2"> of features not found in alignment&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">seq_id</span><span class="p">))</span>
+    <span class="c1">#remember this gap_map is 0-based counting, but feature_dict are 1-based counting</span>
+
+    <span class="n">num_positions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">aln</span><span class="p">)</span>
+    <span class="n">num_sequences</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">aln</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="c1">#instantiate the numpy arrays</span>
+    <span class="c1">#let&#39;s make it a pandas dataframe</span>
+    <span class="n">feature_annotations</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">feature_list</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">num_sequences</span><span class="p">,</span> <span class="n">num_positions</span><span class="p">]),</span> <span class="n">index</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">aln</span><span class="p">)))</span>
+        <span class="n">feature_annotations</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span>
+    <span class="c1">#now walk through the features and add to the position in the correct dataframe and position.</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">feature_type</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">aln_pos</span> <span class="o">=</span> <span class="n">seq_translation_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">feature_annotations</span><span class="p">[</span><span class="n">feature_type</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">seq_id</span><span class="p">,</span><span class="n">aln_pos</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                <span class="k">except</span><span class="p">:</span> <span class="c1">#in case a feature exists outside the boundary of the alignment, which has happened on occasion</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: cannot map </span><span class="si">%s</span><span class="s2"> to translation dict for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">seq_id</span><span class="p">))</span>
+
+
+    <span class="k">return</span> <span class="n">feature_annotations</span>
+
+<span class="k">def</span> <span class="nf">return_unique_feature_colors</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of features, return a unique set of colors, based on a color wheel set by global COLORS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#set the colors</span>
+    <span class="n">feature_color_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">color_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="c1">#print(color_idx)</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">features</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_color_dict</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">color_idx</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">COLORS</span><span class="p">):</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: not enough colors in jalviewFunctions.COLORS&quot;</span><span class="p">)</span>
+                    <span class="n">feature_color_dict</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">COLORS</span><span class="p">[</span><span class="n">color_idx</span><span class="p">]</span>
+                    <span class="n">color_idx</span> <span class="o">+=</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">feature_color_dict</span>
+
+<span class="k">def</span> <span class="nf">return_unique_integrated_feature_colors</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of features, and the colors  return a unique set of colors, based on a color wheel set by global COLORS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#set the colors</span>
+    <span class="n">feature_color_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">color_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#first get all the unique features, then set the color, walking through the jf.COLORS, which has 7 unique colors</span>
+    <span class="k">for</span> <span class="n">seq_id</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="c1">#print(color_idx)</span>
+        <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">features</span><span class="p">[</span><span class="n">seq_id</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_color_dict</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">color_idx</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">COLORS</span><span class="p">):</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: not enough colors in jalviewFunctions.COLORS&quot;</span><span class="p">)</span>
+                    <span class="n">feature_color_dict</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">COLORS</span><span class="p">[</span><span class="n">color_idx</span><span class="p">]</span>
+                    <span class="n">color_idx</span> <span class="o">+=</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">feature_color_dict</span>
+
+
+<div class="viewcode-block" id="print_ann_file">
+<a class="viewcode-back" href="../../jalview.html#CoDIAC.jalviewFunctions.print_ann_file">[docs]</a>
+<span class="k">def</span> <span class="nf">print_ann_file</span><span class="p">(</span><span class="n">feature_file</span><span class="p">,</span> <span class="n">alignment_file</span><span class="p">,</span> <span class="n">annotation_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given feature annotations, such as created by return_feature_ann_dict, print a Jalview Annotation file with bargraphs. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_file: string</span>
+<span class="sd">        location of feature file to convert into an annotation track file</span>
+<span class="sd">    alignment_file: str</span>
+<span class="sd">        location of the alignment file to base the annotation track file for</span>
+<span class="sd">    annotation_file: str</span>
+<span class="sd">        This is the name of the file to output the annotation tracks to, it will be overwritten</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">feature_colors</span><span class="p">,</span> <span class="n">features</span> <span class="o">=</span> <span class="n">return_features_from_file</span><span class="p">(</span><span class="n">feature_file</span><span class="p">)</span> 
+    <span class="n">aln</span> <span class="o">=</span> <span class="n">load_aligned_seqs</span><span class="p">(</span><span class="n">alignment_file</span><span class="p">,</span> <span class="n">moltype</span><span class="o">=</span><span class="s1">&#39;protein&#39;</span><span class="p">)</span>
+    <span class="n">feature_annotations</span> <span class="o">=</span> <span class="n">return_feature_ann_dict</span><span class="p">(</span><span class="n">aln</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
+
+    <span class="n">af</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">af</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;JALVIEW_ANNOTATION</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1">#use the same colors as loaded from the feature_file</span>
+    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">feature_annotations</span><span class="p">:</span>
+        <span class="n">af</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;BAR_GRAPH</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">feature</span><span class="p">))</span>
+        <span class="n">binValues</span> <span class="o">=</span> <span class="n">feature_annotations</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">binValues</span><span class="p">)):</span>
+            <span class="n">char</span> <span class="o">=</span> <span class="s1">&#39;-,&#39;</span>
+            <span class="k">if</span> <span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">10</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">|&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">elif</span> <span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span> 
+                <span class="n">line</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%d</span><span class="s2">|&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,|&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">binValues</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                <span class="c1">#char=&#39;*,%d&#39;%(int(binValues[i]))</span>
+            
+        <span class="n">af</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">af</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">af</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;COLOUR</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span><span class="n">feature_colors</span><span class="p">[</span><span class="n">feature</span><span class="p">]))</span>
+
+    <span class="n">af</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Wrote annotation track at </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">))</span></div>
+
+    
+<div class="viewcode-block" id="combine_feature_files">
+<a class="viewcode-back" href="../../jalview.html#CoDIAC.jalviewFunctions.combine_feature_files">[docs]</a>
+<span class="k">def</span> <span class="nf">combine_feature_files</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">feature_file_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of feature files, combine them and print the new feature file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">feature_colors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">feature_dict_arr</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">feature_file_list</span><span class="p">:</span>
+        <span class="n">color</span><span class="p">,</span> <span class="n">feature_dict</span> <span class="o">=</span> <span class="n">return_features_from_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">feature_colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">feature_dict_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">)</span>
+    
+    <span class="n">feature_combined</span> <span class="o">=</span> <span class="n">feature_dict_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_dict_arr</span><span class="p">)):</span>
+        <span class="n">feature_combined</span> <span class="o">=</span> <span class="n">combine_feature_sets</span><span class="p">(</span><span class="n">feature_combined</span><span class="p">,</span> <span class="n">feature_dict_arr</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">feature_color_dict</span> <span class="o">=</span> <span class="n">return_unique_integrated_feature_colors</span><span class="p">(</span><span class="n">feature_combined</span><span class="p">)</span>
+    <span class="n">print_jalview_feature_file</span><span class="p">(</span><span class="n">feature_combined</span><span class="p">,</span> <span class="n">feature_color_dict</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Created </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">output_file</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">feature_combined</span><span class="p">,</span> <span class="n">feature_color_dict</span></div>
+
+    
+<span class="k">def</span> <span class="nf">get_unique_domains</span><span class="p">(</span><span class="n">dom_architecture_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a Domain architecture list, returns all unique domains present across the protein domain architectures</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">domain_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">arch</span> <span class="ow">in</span> <span class="n">dom_architecture_list</span><span class="p">:</span>
+        <span class="n">split_arch</span> <span class="o">=</span> <span class="n">arch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">split_arch</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">:</span>
+                <span class="n">domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">domain_list</span>
+
+<span class="k">def</span> <span class="nf">check_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Checks for invalid strings for file names&quot;&quot;&quot;</span>
+    <span class="n">invalid</span> <span class="o">=</span> <span class="s1">&#39;&lt;&gt;:&quot;/\?* &#39;</span>
+    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">invalid</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">domain_specific_fastafile</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">global_alignment_fasta_file</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generates a domain specific fasta file. Fasta sequences of all the genes whose protein domain architectures contain our domain of interest are extracted and printed to a new fasta file. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        uniprot_reference_file : str</span>
+<span class="sd">            input the Uniprot reference file that is created using CoDIAC.UniProt.makeRefFile</span>
+<span class="sd">        global_alignment_fasta_file : str</span>
+<span class="sd">            input a fasta file with all reference sequences that can be created using CoDIAC.UniProt.print_domain_fasta_file (aligned or unaligned fasta files can be used) </span>
+<span class="sd">        output_path : str</span>
+<span class="sd">            provide the path to save the file</span>
+<span class="sd">        domain_of_interest : str</span>
+<span class="sd">            specific domain of interest</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Returns a fasta file with sequences that contain the domain of interest&quot;&quot;&quot;</span>
+    
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">)</span>
+    <span class="n">unique_archs</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">domains_list</span> <span class="o">=</span> <span class="n">get_unique_domains</span><span class="p">(</span><span class="n">unique_archs</span><span class="p">)</span>
+
+    <span class="c1">#create a dictionary that holds all the full protein architectures that contain out domain of interest</span>
+    <span class="n">domain_specific_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">domain_1</span> <span class="ow">in</span> <span class="n">domains_list</span><span class="p">:</span>
+        <span class="n">tmp_domain</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">domain_2</span> <span class="ow">in</span> <span class="n">unique_archs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">domain_1</span> <span class="ow">in</span> <span class="n">domain_2</span><span class="p">:</span>
+                <span class="n">tmp_domain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_2</span><span class="p">)</span>             
+        <span class="n">domain_specific_dict</span><span class="p">[</span><span class="n">domain_1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_domain</span>
+        
+    <span class="c1">#create a dictionary with genes that belong to a specific protein domain architecture</span>
+    <span class="n">arch_gene_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">arch</span> <span class="ow">in</span> <span class="n">unique_archs</span><span class="p">:</span>
+        <span class="n">genes_list</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">arch</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Gene&#39;</span><span class="p">]])[</span><span class="s1">&#39;Gene&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">arch_gene_dict</span><span class="p">[</span><span class="n">arch</span><span class="p">]</span> <span class="o">=</span> <span class="n">genes_list</span>
+
+    <span class="c1">#generate a list of genes that contain the domain of interest</span>
+    <span class="k">if</span> <span class="n">domain_of_interest</span> <span class="ow">in</span> <span class="n">domains_list</span><span class="p">:</span>
+        <span class="n">dom_in_arch_list</span> <span class="o">=</span> <span class="n">domain_specific_dict</span><span class="p">[</span><span class="n">domain_of_interest</span><span class="p">]</span>
+        <span class="n">genes_with_domain</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dom_in_arch_list</span><span class="p">:</span>
+            <span class="n">tmp_genes</span> <span class="o">=</span> <span class="n">arch_gene_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">]</span>
+            <span class="n">genes_with_domain</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tmp_genes</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">domain_of_interest</span> <span class="ow">in</span> <span class="n">domains_list</span><span class="p">:</span>
+        <span class="c1">#edit the domain of interest string to make it useful for printing the output file name</span>
+        <span class="n">domain_of_interest_edit</span> <span class="o">=</span> <span class="n">check_string</span><span class="p">(</span><span class="n">domain_of_interest</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">output_path</span><span class="o">+</span><span class="n">domain_of_interest_edit</span><span class="o">+</span><span class="s1">&#39;.fasta&#39;</span>
+        
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">tmp_headers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">gene</span> <span class="ow">in</span> <span class="n">genes_with_domain</span><span class="p">:</span>
+                <span class="n">ref_fastafile</span> <span class="o">=</span> <span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">global_alignment_fasta_file</span><span class="p">),</span> <span class="s1">&#39;fasta&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">fasta</span> <span class="ow">in</span> <span class="n">ref_fastafile</span><span class="p">:</span>
+                    <span class="n">name</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">fasta</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">gene</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tmp_headers</span><span class="p">:</span>
+                            <span class="n">tmp_headers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">sequence</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> specific Fasta file created!&#39;</span><span class="o">%</span><span class="n">domain_of_interest_edit</span><span class="p">)</span> 
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;ERROR: </span><span class="si">%s</span><span class="s1"> not found!&#39;</span><span class="o">%</span><span class="n">domain_of_interest</span><span class="p">)</span>
+        
+<span class="k">def</span> <span class="nf">domain_specific_feafile</span><span class="p">(</span><span class="n">input_feafile</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generates a domain specific feature file. Features found across an interface (domain of interest and domain being analyzed) are extracted and printed to a new feature file. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        input_feafile : str</span>
+<span class="sd">            input a feature file whose description hold the domain information is used as input to filter domain specific features</span>
+<span class="sd">        output_path : str</span>
+<span class="sd">            provide the path to save the file</span>
+<span class="sd">        domain_of_interest : str</span>
+<span class="sd">            specific domain of interest</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Returns a feature file with features found across a specific domain interface  &quot;&quot;&quot;</span>
+    
+    <span class="n">domain_of_interest_edit</span> <span class="o">=</span> <span class="n">check_string</span><span class="p">(</span><span class="n">domain_of_interest</span><span class="p">)</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="n">ouput_path</span><span class="o">+</span><span class="n">domain_of_interest_edit</span><span class="o">+</span><span class="s1">&#39;.fea&#39;</span>
+    
+    <span class="c1">#setting a color for the domain specific features (chosing them randomly from the COLORS list gloabbly defined</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">COLORS</span><span class="p">)</span>
+    <span class="n">df_color</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;domain_of_interest&#39;</span><span class="p">:[</span><span class="n">domain_of_interest</span><span class="p">],</span>
+                             <span class="s1">&#39;feature_color&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">color</span><span class="p">]})</span>
+
+    <span class="c1">#filter domain specific features</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">input_feafile</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DOC_1&#39;</span><span class="p">,</span><span class="s1">&#39;Header&#39;</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;fea1&#39;</span><span class="p">,</span> <span class="s1">&#39;fea2&#39;</span><span class="p">,</span><span class="s1">&#39;DOC_2&#39;</span><span class="p">]</span>
+    <span class="n">df_filter</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;DOC_1&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">domain_of_interest</span><span class="p">]</span>  
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_filter</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No features found!&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df_color</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">df_filter</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> specific Feature file created!&#39;</span><span class="o">%</span><span class="n">domain_of_interest_edit</span><span class="p">)</span>
+        
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.jalviewFunctions</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

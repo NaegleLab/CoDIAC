@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>CoDIAC &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
+    
+    <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="Examples/Examples.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Examples/Examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="codiac">
+<h1>CoDIAC<a class="headerlink" href="#codiac" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Examples/Examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Examples/Examples.html#demo-notebook-header">Demo Notebook Header</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Dependencies.html">Dependencies (Examples)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Installation.html#pip">Pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Installation.html#conda">Conda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Installation.html#tarball">Tarball</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Installation.html#git">Git</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<figure class="align-default" id="id1">
+<img alt="_images/overview.png" class="with-border" src="_images/overview.png" />
+<figcaption>
+<p><span class="caption-text">An overview of the key aspects of CoDIAC. The modules and pipeline for <a class="reference internal" href="#reference"><span class="std std-ref">setting up the reference files</span></a>.
+The <a class="reference internal" href="#structure"><span class="std std-ref">structure analysis modules</span></a> that fetch all structure files (whether PDB of AlphaFold) from the
+reference file, convert to adjacency files of contacts, and allow for region of interest contact analysis
+between domains (intraprotein) or between a protein and a ligand (interprotein). Additional layers, such as
+other annotations of proteins and domains <a class="reference internal" href="#annotations"><span class="std std-ref">PTM and Mutations</span></a> allow fetching on the reference file of PTMs and mutations within the regions of interest
+and the <a class="reference internal" href="#jalview"><span class="std std-ref">Jalview tools</span></a> allow for the integration of any feature types and calculation of annotation tracks
+for visualization.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="reference-setup">
+<span id="reference"></span><h2>Reference Setup<a class="headerlink" href="#reference-setup" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="UniProt.html">UniProt</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="UniProt.html#CoDIAC.UniProt.makeRefFile"><code class="docutils literal notranslate"><span class="pre">makeRefFile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="UniProt.html#CoDIAC.UniProt.print_domain_fasta_file"><code class="docutils literal notranslate"><span class="pre">print_domain_fasta_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="UniProt.html#CoDIAC.UniProt.translate_fasta_back"><code class="docutils literal notranslate"><span class="pre">translate_fasta_back()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="UniProt.html#CoDIAC.UniProt.translate_fasta_to_new_headers"><code class="docutils literal notranslate"><span class="pre">translate_fasta_to_new_headers()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="PDB.html">PDB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="PDB.html#CoDIAC.PDB.generateStructureRefFile_fromUniprotFile"><code class="docutils literal notranslate"><span class="pre">generateStructureRefFile_fromUniprotFile()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="InterPro.html">InterPro</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="InterPro.html#CoDIAC.InterPro.appendRefFile"><code class="docutils literal notranslate"><span class="pre">appendRefFile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="InterPro.html#CoDIAC.InterPro.fetch_uniprotids"><code class="docutils literal notranslate"><span class="pre">fetch_uniprotids()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="IntegrateStructure_Reference.html">Integrate the Structure and Reference files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="IntegrateStructure_Reference.html#CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file"><code class="docutils literal notranslate"><span class="pre">add_reference_info_to_struct_file()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="IntegrateStructure_Reference.html#CoDIAC.IntegrateStructure_Reference.filter_structure_file"><code class="docutils literal notranslate"><span class="pre">filter_structure_file()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="structure-analysis">
+<span id="structure"></span><h2>Structure Analysis<a class="headerlink" href="#structure-analysis" title="Link to this heading">¶</a></h2>
+</section>
+<section id="annotation-tools">
+<span id="annotations"></span><h2>Annotation tools<a class="headerlink" href="#annotation-tools" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="PTM.html">PTMS via ProteomeScout</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="PTM.html#CoDIAC.PTM.write_PTM_features"><code class="docutils literal notranslate"><span class="pre">write_PTM_features()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="jalview-tools">
+<span id="jalview"></span><h2>Jalview tools<a class="headerlink" href="#jalview-tools" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="jalview.html">Jalview Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="jalview.html#CoDIAC.jalviewFunctions.combine_feature_files"><code class="docutils literal notranslate"><span class="pre">combine_feature_files()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="jalview.html#CoDIAC.jalviewFunctions.print_ann_file"><code class="docutils literal notranslate"><span class="pre">print_ann_file()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="#">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">CoDIAC</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#reference-setup">Reference Setup</a></li>
+<li><a class="reference internal" href="#structure-analysis">Structure Analysis</a></li>
+<li><a class="reference internal" href="#annotation-tools">Annotation tools</a></li>
+<li><a class="reference internal" href="#jalview-tools">Jalview tools</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="Examples/Examples.html"
+                          title="next chapter">Examples</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Examples/Examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

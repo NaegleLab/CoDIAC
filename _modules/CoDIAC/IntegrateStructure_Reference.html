@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.IntegrateStructure_Reference &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.IntegrateStructure_Reference</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.IntegrateStructure_Reference</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">alignmentTools</span>
+<span class="kn">import</span> <span class="nn">bisect</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="k">def</span> <span class="nf">return_mapping_between_sequences</span><span class="p">(</span><span class="n">struct_sequence</span><span class="p">,</span> <span class="n">ref_sequence</span><span class="p">,</span> <span class="n">ref_start</span><span class="p">,</span> <span class="n">pdb_start</span><span class="p">,</span> <span class="n">ref_length</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return information about the pairwise alignment between a structure sequence (mapping from this sequence) </span>
+<span class="sd">    to a reference sequence (to_sequence). Specifically, this assumes that the structure sequence is some shortened </span>
+<span class="sd">    from of the reference and that you would like to understand where it lands in the reference and if that </span>
+<span class="sd">    numbering is similar between structure and reference. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    struct_sequence: str</span>
+<span class="sd">        structure sequence</span>
+<span class="sd">    ref_sequence: str</span>
+<span class="sd">        reference sequence</span>
+<span class="sd">    ref_start: int</span>
+<span class="sd">        the one&#39;s based counting of where the ref_start is documented as being</span>
+<span class="sd">    pdb_start: int </span>
+<span class="sd">        the one&#39;s based counting of where pdb begins matching reference</span>
+<span class="sd">    ref_length: int </span>
+<span class="sd">        the length of the sequence in the experimental structure that matches the reference</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aln: cogent3 alignment object</span>
+<span class="sd">        alignment object with keys &#39;structure&#39; and &#39;reference&#39;</span>
+<span class="sd">    start: int</span>
+<span class="sd">        start position (ones based counting) of where structure starts in the reference</span>
+<span class="sd">    end: int</span>
+<span class="sd">        end position (ones based counting) of where structure ends in the reference</span>
+<span class="sd">    range: str</span>
+<span class="sd">        a printable range of the start-end </span>
+<span class="sd">    pos_diff: int</span>
+<span class="sd">        the difference between structure and reference based counting, according to the ref_start given</span>
+<span class="sd">    diffList: list</span>
+<span class="sd">        a list of mutations denoting aa1POSaa2, aa1 the original amino acid, pos the reference-based numbering, aa2 the mutation</span>
+<span class="sd">    gaps_ref_to_struct: list</span>
+<span class="sd">        a list of gaps from the reference frame of view (i.e. where reference has insertions, relative to structure) </span>
+<span class="sd">    gaps_struct_to_ref:</span>
+<span class="sd">        a list of gaps from the strcture frame of view (i.e. where stucture has insertions, relative to reference)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#pscout here is reference instead</span>
+    <span class="n">fromName</span> <span class="o">=</span> <span class="s1">&#39;structure&#39;</span>
+    <span class="n">toName</span> <span class="o">=</span> <span class="s1">&#39;reference&#39;</span>
+    <span class="n">struct_sequence_ref_spanning</span> <span class="o">=</span> <span class="n">struct_sequence</span><span class="p">[</span><span class="n">pdb_start</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">pdb_start</span><span class="o">+</span><span class="n">ref_length</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">aln</span>  <span class="o">=</span> <span class="n">alignmentTools</span><span class="o">.</span><span class="n">returnAlignment</span><span class="p">(</span><span class="n">struct_sequence_ref_spanning</span><span class="p">,</span> <span class="n">ref_sequence</span><span class="p">,</span> <span class="n">fromName</span><span class="p">,</span> <span class="n">toName</span><span class="p">)</span>
+    <span class="n">mapToRef</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="s1">&#39;structure&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">fromSeqValues</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapToRef</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">from_start</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">fromSeqValues</span><span class="p">)</span>
+    <span class="n">from_end</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">fromSeqValues</span><span class="p">)</span>
+    <span class="c1">#print(&quot;Range is %d to %d&quot;%(from_start, from_end))</span>
+    <span class="nb">range</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">from_start</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">from_end</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">pos_diff</span> <span class="o">=</span> <span class="n">ref_start</span><span class="o">-</span><span class="p">(</span><span class="n">from_start</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="c1">#move from_start to ones-base </span>
+    <span class="n">diffList</span> <span class="o">=</span> <span class="n">alignmentTools</span><span class="o">.</span><span class="n">findDifferencesBetweenPairs</span><span class="p">(</span><span class="n">aln</span><span class="p">,</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">from_end</span><span class="p">,</span> <span class="n">ref_start</span><span class="p">,</span> <span class="n">toName</span><span class="p">,</span> <span class="n">fromName</span><span class="p">)</span>
+
+    <span class="c1">#print(&quot;DEBUG: ref_start=%s, pdb_start=%d, ref_length=%d, length of subseq=%d, from_start_mapped=%d, pos_diff=%d&quot;%(ref_start, pdb_start, ref_length, len(struct_sequence_ref_spanning), from_start, pos_diff))</span>
+    <span class="c1">#print(&quot;DEBUG: fromSeqValues&quot;)</span>
+    <span class="c1">#print(fromSeqValues)</span>
+    <span class="c1">#if diffList:</span>
+        <span class="c1">#print(&quot;Diff between Structure and Reference: %s&quot;%(&#39;;&#39;.join(diffList)))</span>
+
+    <span class="n">gaps_ref_to_struct</span> <span class="o">=</span> <span class="n">aln</span><span class="p">[</span><span class="n">from_start</span><span class="p">:</span><span class="n">from_end</span><span class="p">]</span><span class="o">.</span><span class="n">count_gaps_per_seq</span><span class="p">()[</span><span class="n">fromName</span><span class="p">]</span>
+    <span class="n">gaps_struct_to_ref</span> <span class="o">=</span>  <span class="n">aln</span><span class="p">[</span><span class="n">from_start</span><span class="p">:</span><span class="n">from_end</span><span class="p">]</span><span class="o">.</span><span class="n">count_gaps_per_seq</span><span class="p">()[</span><span class="n">toName</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">aln</span><span class="p">,</span> <span class="n">struct_sequence_ref_spanning</span><span class="p">,</span> <span class="n">from_start</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">from_end</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffList</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span>
+
+
+<span class="k">def</span> <span class="nf">return_domains_tuple</span><span class="p">(</span><span class="n">domain_str</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given the domain string from a reference file, split this into tuples</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain_str: str</span>
+<span class="sd">        domain string that is &#39;;&#39; separated with domain name:start:stop</span>
+<span class="sd">    INTERPRO: boolean</span>
+<span class="sd">        If True, assumes the string to parse is INTERPRO (contains an extra ID), else it&#39;s Uniprot</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    domain_tuple: list</span>
+<span class="sd">        Tuples of [domain name, start, stop] if INTERPRO=False</span>
+<span class="sd">        Tuples of [domain name, Interpro_ID, start, stop] if INTERPRO=True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">domain_list</span> <span class="o">=</span> <span class="n">domain_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+    <span class="n">domain_tuple</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">domain_vals</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
+            <span class="n">domain_name</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">domain_vals</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="n">domain_tuple</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">)])</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">domain_name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">domain_vals</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="n">domain_tuple</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">domain_name</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">)])</span>
+
+    <span class="k">return</span> <span class="n">domain_tuple</span>
+
+<span class="k">def</span> <span class="nf">returnDomainStruct</span><span class="p">(</span><span class="n">aln</span><span class="p">,</span> <span class="n">ref_start</span><span class="p">,</span> <span class="n">ref_stop</span><span class="p">,</span> <span class="n">domains</span><span class="p">,</span> <span class="n">diffList</span><span class="p">,</span> <span class="n">domainExclValue</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a cogent3 alignment, from return_mapping_between_sequences and a list of domains in reference, test whether</span>
+<span class="sd">    the alignment is of good enough quality in the region and return a dictionary of mapped elements. </span>
+<span class="sd">    Domains is a list of tuples in the form of [[]&#39;Name&#39;, &#39;start&#39;, &#39;stop&#39;], [&#39;Name2&#39;, &#39;start&#39;, &#39;stop&#39;], ..], where start and stop</span>
+<span class="sd">    define the region of the domains in the reference sequence space. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    aln: cogent3.make_aligned_seqs</span>
+<span class="sd">        Has two sequences, first entry is name1, aln_seq_1 and other is name2, aln_seq_2</span>
+<span class="sd">    domains: list of tuples</span>
+<span class="sd">        List of domains in format [(&#39;domainName&#39;, &#39;start&#39;, &#39;stop&#39;)] </span>
+<span class="sd">        or [(&#39;domainName&#39;, &#39;InterPro_ID&#39;, &#39;start&#39;, &#39;stop)]</span>
+<span class="sd">        this is relative to the fromName sequence (i.e. name1 or name2 used in alignment creation)</span>
+<span class="sd">    diffList: list</span>
+<span class="sd">        list of mutations in aaPosaa </span>
+<span class="sd">    domainExclValue: int</span>
+<span class="sd">        The window where you would allow a domain to map within this range of the start and stop</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    domainStruct: dict</span>
+<span class="sd">        This dictionary has the name of domainName tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps]</span>
+<span class="sd">        if INTERPRO is detected then the tuple is [Interpro_ID, </span>
+<span class="sd">        toName_sequence_start, toName_sequence_stop, numGaps]</span>
+<span class="sd">        numGaps says how many gaps existed in the alignment. </span>
+<span class="sd">        Returns -1 if the region could not be mapped. It returns an empty dictionary if the alignment did not meet a gap threshold of less than 30%</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ref_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_start</span><span class="p">)</span>
+    <span class="n">ref_stop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_stop</span><span class="p">)</span>
+    <span class="n">fromName</span> <span class="o">=</span> <span class="s1">&#39;structure&#39;</span>
+    <span class="n">toName</span> <span class="o">=</span> <span class="s1">&#39;reference&#39;</span>
+    <span class="c1">#check how to map from positions in struct to alignment</span>
+    <span class="c1">#seq_to_aln_map = aln.get_gapped_seq(toName).gap_maps()[0]</span>
+    <span class="n">pscout_to_aln_map</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="n">fromName</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mapToStruct</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="n">toName</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1">#print(mapToStruct)</span>
+    <span class="n">INTERPRO</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">mutPositions</span> <span class="o">=</span> <span class="n">returnMutPosList</span><span class="p">(</span><span class="n">diffList</span><span class="p">)</span>
+    <span class="n">gap_threshold</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">domainStruct</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+        <span class="c1">#first check to see if the domain is within the range of the mapping. </span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span><span class="o">==</span><span class="mi">4</span><span class="p">:</span>
+            <span class="n">INTERPRO</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">interpro_ID</span> <span class="o">=</span> <span class="n">domain</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">start_domain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">stop_domain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#Uniprot indexes positions by 1, so have to remove</span>
+            <span class="n">start_domain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">stop_domain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+        <span class="c1">#print(&quot;DEBUG: checking if domain %d start and %d stop is between positions %d and %d&quot;%(start_domain, stop_domain, ref_start, ref_stop))</span>
+        <span class="k">if</span> <span class="n">start_domain</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">ref_start</span><span class="o">-</span><span class="n">domainExclValue</span><span class="p">):</span>
+            <span class="c1">#print(&quot;\tit is not&quot;)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">stop_domain</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">ref_stop</span> <span class="o">+</span> <span class="n">domainExclValue</span><span class="p">):</span>
+            <span class="c1">#print(&quot;\tit is not&quot;)</span>
+            <span class="k">continue</span>
+        
+        <span class="c1">#print(&quot;\tFound domain&quot;)</span>
+        <span class="k">if</span> <span class="n">start_domain</span> <span class="o">&lt;</span> <span class="n">ref_start</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">ref_start</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">start_domain</span>
+        <span class="k">if</span> <span class="n">stop_domain</span> <span class="o">&gt;</span> <span class="n">ref_stop</span><span class="p">:</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="n">ref_stop</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="n">stop_domain</span>
+  
+        <span class="c1">#domain = aln.get_seq(fromName).add_annotation(Feature, &#39;domain&#39;, domain_name, [(start, end)])</span>
+        
+        <span class="c1">#There is a very infrequent, but possible event, that a domain boundary exists at a gap, leading to a key issue</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+            <span class="c1">#how about is a start +/-1 OK?</span>
+            <span class="k">if</span> <span class="n">start</span><span class="o">-</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="o">-</span><span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">start</span><span class="o">+</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">start</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: domain start boundary not found due to gaps&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">stop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+            <span class="c1">#how about is a stop +/-1 OK?</span>
+            <span class="k">if</span> <span class="n">stop</span><span class="o">+</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">stop</span><span class="o">-</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">mapToStruct</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span><span class="o">-</span><span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: domain stop boundary not found due to gaps&quot;</span><span class="p">)</span>
+        
+
+        
+        <span class="n">start_aln</span> <span class="o">=</span> <span class="n">mapToStruct</span><span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="n">stop_aln</span> <span class="o">=</span> <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop</span><span class="p">]</span>
+        <span class="n">numGaps</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">seqs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">start_aln</span><span class="p">:</span><span class="n">stop_aln</span><span class="p">]</span><span class="o">.</span><span class="n">count_gaps</span><span class="p">()</span>
+        <span class="n">numMuts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">diffList</span><span class="p">):</span>
+            <span class="n">numMuts</span> <span class="o">=</span> <span class="n">countMutsInRange</span><span class="p">(</span><span class="n">mutPositions</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span> 
+        <span class="c1">#count the number of gaps in each sequence:</span>
+    <span class="c1"># print(&#39;Domain: %s\t Length: %d \t Num Gaps: %d&#39;%(domain_name, stop_aln-start_aln, numGaps ))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">numGaps</span><span class="o">/</span><span class="p">(</span><span class="n">stop_aln</span><span class="o">-</span><span class="n">start_aln</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">gap_threshold</span><span class="p">):</span>
+            <span class="n">start_aln_val</span> <span class="o">=</span> <span class="n">start_aln</span>
+            <span class="n">stop_aln_val</span> <span class="o">=</span> <span class="n">stop_aln</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">domain_name</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
+                    <span class="n">domain_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">INTERPRO</span><span class="p">:</span>
+                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpro_ID</span><span class="p">,</span> <span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">]</span>
+                <span class="c1">#domain_name may already exist, so add a new value to it</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="c1">#print(&quot;ERROR: could not map domains&quot;)</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">return</span> <span class="n">domainStruct</span>
+
+
+<span class="k">def</span> <span class="nf">countMutsInRange</span><span class="p">(</span><span class="n">posList</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a region of a protein, defined by start, end - count the number of mutations in that region</span>
+<span class="sd">    This assumes all sequencing is in the same base (i.e. 0-based or 1-based counting)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    posList: list of ints</span>
+<span class="sd">        sorted integer list of ints from returnMutPosList(diffList)</span>
+<span class="sd">    start: int</span>
+<span class="sd">        position of start of range</span>
+<span class="sd">    end: int</span>
+<span class="sd">        position of end of range</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numMuts: int</span>
+<span class="sd">        number of mutations found in range start to end</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">numMuts</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">posList</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_right</span><span class="p">(</span><span class="n">posList</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+    <span class="c1">#if i != len(posList) and g != len(posList):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">posList</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">g</span><span class="p">])</span>
+    <span class="c1">#else return 0</span>
+
+    
+
+<span class="k">def</span> <span class="nf">returnMutPosList</span><span class="p">(</span><span class="n">diffList</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a diffList (such as found in return_mapping_between_sequences), return just the positions that have mutations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    diffList: list</span>
+<span class="sd">        list of strings, each string is &lt;aa&gt;&lt;pos&gt;&lt;aa&gt;</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mut_positions: list</span>
+<span class="sd">        list of ints, just the positions mutations exist in, sorted</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mut_positions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">mutation</span> <span class="ow">in</span> <span class="n">diffList</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">mutation</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isdigit</span><span class="p">())</span>
+        <span class="n">mut_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">pos</span><span class="p">))</span>
+    <span class="n">mut_positions</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">mut_positions</span>
+
+
+<span class="k">def</span> <span class="nf">return_reference_information</span><span class="p">(</span><span class="n">reference_df</span><span class="p">,</span> <span class="n">uniprot_id</span><span class="p">,</span> <span class="n">struct_seq</span><span class="p">,</span> <span class="n">ref_seq_pos_start</span><span class="p">,</span> <span class="n">pdb_pos_start</span><span class="p">,</span> <span class="n">ref_length</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given inforation from a structure reference line, for a uniprot_id, the structure sequence</span>
+<span class="sd">    and the mapped reference position, return the string-based information for appending to the</span>
+<span class="sd">    structure file, including domains, mutations, sequence range, etc.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reference_df: pandas DataFrame</span>
+<span class="sd">        loaded from a reference file</span>
+<span class="sd">    uniprot_id: str</span>
+<span class="sd">        uniprot ID of the structure sequence of interest</span>
+<span class="sd">    struct_seq: str</span>
+<span class="sd">        the structure sequence, includes mutations and modifications translated to single aa codes</span>
+<span class="sd">    ref_seq_pos_start: int  </span>
+<span class="sd">        position in reference of structure where experimental structure begins coverage</span>
+<span class="sd">    pdb_pos_start: int</span>
+<span class="sd">        position of structure where the reference position begins, may be different than 1 when tags exist experimentally</span>
+<span class="sd">    INTERPRO: boolean   </span>
+<span class="sd">        If True, uses the Intepro domain information, otherwise use Uniprot</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gene_name: str</span>
+<span class="sd">        The gene name found in the Uniprot Reference (reports N/A (Not Found in Reference) if this is not a domain-containing sequence found in the reference)</span>
+<span class="sd">    struct_seq_ref_spanning: str</span>
+<span class="sd">        ?</span>
+<span class="sd">    rangeStr: str</span>
+<span class="sd">        A string that denotes the start-end in the reference that was captured in the experiment. </span>
+<span class="sd">        For example 30-150 indicates amino acids 30 to 150 of the reference appeared in the structure.</span>
+<span class="sd">    pos_diff: int</span>
+<span class="sd">        The integer offset between the number of the reference and the numbering indicated in the structure file.</span>
+<span class="sd">    diffStr: str</span>
+<span class="sd">    </span>
+<span class="sd">    gaps_ref_to_struct: int</span>
+<span class="sd">        Number of insertions in the full range covering the reference that exist in strucutre that are not in reference</span>
+<span class="sd">    gaps_struct_to_ref: int</span>
+<span class="sd">        Number of insertions in the full range covering the reference that exist in reference that are not in structure</span>
+<span class="sd">    domainStr: str</span>
+<span class="sd">        A domain information string that follows the following rules</span>
+<span class="sd">        Domains are separated by &#39;;&#39;</span>
+<span class="sd">        Each domain set is separated by &#39;:&#39; and includes &#39;name:InterproID:info_string&#39;</span>
+<span class="sd">        info_string is &#39;,&#39; separated and has 4 entries </span>
+<span class="sd">            start - start position of domain IN STRUCTURE SEQUENCE NUMBERING</span>
+<span class="sd">            end - end position fo the domain IN STRUCTURE SEQUENCE NUMBERING</span>
+<span class="sd">            number_variations - number of variant positions (positions that differ between structure and reference) within the domain spanning region</span>
+<span class="sd">            number_gaps - number of gaps/insertions within the domain range.</span>
+<span class="sd">    structure_arch: str</span>
+<span class="sd">        This is an easily readable string of domain names, in the order they appear in the protein from N- to C-terminal that was</span>
+<span class="sd">        covered by the experiment. Domains are separated by &#39;|&#39;. For example SH3_domain|SH2|Prot_kinase_dom means that the </span>
+<span class="sd">        structure fully covered the SH3_domain, SH2, and Protein_kinase_dom of a SRC family kinase. </span>
+<span class="sd">    full_domain_arch: str</span>
+<span class="sd">        For easy reference, this includes the architecture of the full protein so it can be seen what part of the whole protein</span>
+<span class="sd">        was studied in the experiment.</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">diffStr</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+    <span class="n">domainStr</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+    <span class="n">gene_name</span> <span class="o">=</span> <span class="s1">&#39;N/A (Not Found In Reference)&#39;</span>
+    <span class="n">pos_diff</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">domainStr</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+    <span class="n">structure_arch</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+    <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+
+
+    <span class="k">if</span> <span class="n">ref_seq_pos_start</span> <span class="o">==</span> <span class="s1">&#39;not found&#39;</span><span class="p">:</span> 
+        <span class="c1"># if not found, then we will set the ref_struct range and position</span>
+
+        <span class="n">rangeStr</span> <span class="o">=</span> <span class="s1">&#39;1-&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">struct_seq</span><span class="p">))</span> <span class="c1">#set the range starting from start to end</span>
+        
+        <span class="n">struct_seq_ref_spanning</span> <span class="o">=</span> <span class="n">struct_seq</span> <span class="c1">#what it is based on existing.</span>
+        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ref_seq_pos_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_seq_pos_start</span><span class="p">)</span>
+        <span class="n">ref_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_length</span><span class="p">)</span>
+        <span class="n">pdb_pos_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pdb_pos_start</span><span class="p">)</span>
+    <span class="n">rangeStr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref_seq_pos_start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ref_seq_pos_start</span><span class="o">+</span><span class="n">ref_length</span><span class="p">)</span> <span class="c1">#start the default, to be updated later </span>
+    <span class="n">struct_seq_ref_spanning</span> <span class="o">=</span> <span class="n">struct_seq</span><span class="p">[</span><span class="n">pdb_pos_start</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">pdb_pos_start</span><span class="o">+</span><span class="n">ref_length</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1">#First find the protein information in the reference file based on uniprot_id</span>
+    <span class="n">protein_rec</span> <span class="o">=</span> <span class="n">reference_df</span><span class="p">[</span><span class="n">reference_df</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">uniprot_id</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">protein_rec</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">uniprot_id</span> <span class="o">==</span> <span class="s1">&#39;not found&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: Encountered Uniprot </span><span class="si">%s</span><span class="s2"> in PDB, not in reference&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">))</span>
+        <span class="c1">#return default information here</span>
+    
+        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">protein_rec</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: Found more than one record for </span><span class="si">%s</span><span class="s2"> in reference&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
+            <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Interpro Domains&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Uniprot Domains&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Uniprot Domain Architecture&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+            
+        <span class="n">domain_tuple</span> <span class="o">=</span> <span class="n">return_domains_tuple</span><span class="p">(</span><span class="n">domains</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="p">)</span> <span class="c1">#domain_tuple is a different element if INTERPRO (includes ID)</span>
+        <span class="n">reference_seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Ref Sequence&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">gene_name</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Gene&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="n">aln</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">from_end</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffList</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span> <span class="o">=</span> <span class="n">return_mapping_between_sequences</span><span class="p">(</span><span class="n">struct_seq</span><span class="p">,</span> <span class="n">reference_seq</span><span class="p">,</span> <span class="n">ref_seq_pos_start</span><span class="p">,</span> <span class="n">pdb_pos_start</span><span class="p">,</span> <span class="n">ref_length</span><span class="p">)</span>
+    <span class="n">domainStruct</span> <span class="o">=</span> <span class="n">returnDomainStruct</span><span class="p">(</span><span class="n">aln</span><span class="p">,</span> <span class="n">from_start</span><span class="p">,</span> <span class="n">from_end</span><span class="p">,</span> <span class="n">domain_tuple</span><span class="p">,</span> <span class="n">diffList</span><span class="p">)</span>
+    <span class="c1">#make the domainStr</span>
+    <span class="n">domainList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">domainDict_forArch</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domainStruct</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">domain_name</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
+                <span class="n">interproID</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
+            <span class="n">valStr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">numGaps</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">numMuts</span><span class="p">)</span>
+            <span class="n">domainDict_forArch</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_name</span>
+            <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
+                <span class="n">domainList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_name</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span> <span class="n">interproID</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">valStr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">domainList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_name</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">valStr</span><span class="p">)</span>
+    <span class="n">domainStr</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">domainList</span><span class="p">)</span>
+
+    <span class="n">arch_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">domainDict_forArch</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">starts</span><span class="p">:</span>
+        <span class="n">arch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domainDict_forArch</span><span class="p">[</span><span class="n">start</span><span class="p">])</span>
+    <span class="n">structure_arch</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arch_list</span><span class="p">)</span>
+
+
+    <span class="n">diffStr</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">diffList</span><span class="p">)</span>
+    
+    <span class="c1">#make gaps </span>
+    
+    <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+
+<div class="viewcode-block" id="add_reference_info_to_struct_file">
+<a class="viewcode-back" href="../../IntegrateStructure_Reference.html#CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file">[docs]</a>
+<span class="k">def</span> <span class="nf">add_reference_info_to_struct_file</span><span class="p">(</span><span class="n">struct_file</span><span class="p">,</span> <span class="n">ref_file</span><span class="p">,</span> <span class="n">out_file</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a PDB meta structure file and a Uniprot reference, integrate the two pieces to add information from reference</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    struct_file: str</span>
+<span class="sd">        Name of structure reference file</span>
+<span class="sd">    ref_file: str </span>
+<span class="sd">        Name of reference file</span>
+<span class="sd">    out_file: str   </span>
+<span class="sd">        name of output file to write</span>
+<span class="sd">    INTERPRO: boolean</span>
+<span class="sd">        If True, uses Interpro, otherwise appends Uniprot from reference file. </span>
+<span class="sd">        Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming</span>
+<span class="sd">        conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest. </span>
+<span class="sd">    verbose: boolean</span>
+<span class="sd">        Print information about processing. Default is Falses.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out_struct: pandas dataframe</span>
+<span class="sd">        the appended dataframe of the structure (also written to out_file)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">struct_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">struct_file</span><span class="p">)</span>
+    <span class="n">reference_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">ref_file</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">struct_df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">uniprot_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">]</span>
+        <span class="n">struct_seq</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">]</span>
+        <span class="n">ref_seq_pos_start</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">]</span>
+        <span class="n">pdb_seq_pos_start</span>  <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">]</span>
+        <span class="n">ref_length</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;aligned_regions_length&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Working on </span><span class="si">%s</span><span class="s2"> for protein </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">],</span> <span class="n">uniprot_id</span><span class="p">))</span>
+        <span class="n">information_list</span> <span class="o">=</span> <span class="n">return_reference_information</span><span class="p">(</span><span class="n">reference_df</span><span class="p">,</span> <span class="n">uniprot_id</span><span class="p">,</span> <span class="n">struct_seq</span><span class="p">,</span> <span class="n">ref_seq_pos_start</span><span class="p">,</span> <span class="n">pdb_seq_pos_start</span><span class="p">,</span> <span class="n">ref_length</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="p">)</span>
+        <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="n">information_list</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span><span class="s1">&#39;ref:gene name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gene_name</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:struct/ref sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">struct_seq_ref_spanning</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:reference range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rangeStr</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:start position offset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos_diff</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;Gaps ref:struct&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gaps_ref_to_struct</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;Gaps struct:ref&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gaps_struct_to_ref</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:variants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diffStr</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:domains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domainStr</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:struct domain architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure_arch</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:protein domain architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_domain_arch</span>
+    <span class="n">struct_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">struct_df</span></div>
+
+
+
+<div class="viewcode-block" id="filter_structure_file">
+<a class="viewcode-back" href="../../IntegrateStructure_Reference.html#CoDIAC.IntegrateStructure_Reference.filter_structure_file">[docs]</a>
+<span class="k">def</span> <span class="nf">filter_structure_file</span><span class="p">(</span><span class="n">appended_structure_file</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">filtered_structure_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an annotated structure file, keep only structures that have at least one chain that contain the </span>
+<span class="sd">    Interpro_ID of interest. </span>
+
+<span class="sd">    Prints the filtered structure file to filtered_structure_file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    appended_structure_file: str</span>
+<span class="sd">        location of the UniProt reference file that also has been appended using InterPro.appendRefFile to add</span>
+<span class="sd">        interpro structures. </span>
+<span class="sd">    Interpro_ID: str</span>
+<span class="sd">        Interpro ID (controlled Interpro ID database identifier)</span>
+<span class="sd">    filtered_structure_file: str</span>
+<span class="sd">        location to write the output file to - all the same column fields, but reducing the rows to only those</span>
+<span class="sd">        that contain an Interpro_ID of interest. </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">PDB_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">appended_structure_file</span><span class="p">)</span>
+    <span class="n">filtered_PDB_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total_PDBs</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">PDB_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">):</span>
+        <span class="n">total_PDBs</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;ref:domains&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">Interpro_ID</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;ref:domains&#39;</span><span class="p">]:</span>
+                <span class="n">filtered_PDB_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">PDB_df_sub</span> <span class="o">=</span> <span class="n">PDB_df</span><span class="p">[</span><span class="n">PDB_df</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">filtered_PDB_list</span><span class="p">)]</span>
+    <span class="n">PDB_df_sub</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filtered_structure_file</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Made </span><span class="si">%s</span><span class="s2"> file: </span><span class="si">%d</span><span class="s2"> structures retained of </span><span class="si">%d</span><span class="s2"> total&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">filtered_structure_file</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_PDB_list</span><span class="p">),</span> <span class="n">total_PDBs</span><span class="p">))</span></div>
+
+        
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.IntegrateStructure_Reference</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

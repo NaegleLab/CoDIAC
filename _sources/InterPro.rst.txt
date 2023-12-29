@@ -1,0 +1,4 @@
+InterPro
+--------
+.. automodule:: CoDIAC.InterPro
+    :members: fetch_uniprotids, appendRefFile
