@@ -17,13 +17,25 @@ def translate_features(input_fasta_file, input_features, reference_fasta_file, o
      
     
     """
+    input_aligned = aligned_file_check(input_fasta_file)
+    reference_aligned = aligned_file_check(reference_fasta_file)
+    if input_aligned or reference_aligned:
+        return "Error: One or both of the files contain dashes. Alignment check failed."
+        pass
+    else:
+        return "Both input and reference FASTA files are likely unaligned. Alignment check successful"
     input_dict, input_errors = return_sequence_dict_from_fasta(input_fasta_file)
     reference_dict, reference_errors = return_sequence_dict_from_fasta(reference_fasta_file)
     type_dict, feature_dict = read_feature_file(input_features)
     feature_trans_dict= return_translation_dict_for_all_feature_seqs(feature_dict, input_dict, reference_dict)
     feature_output_dict = return_translated_features(feature_dict, feature_trans_dict, percent_matched_threshold)
     write_feature_file(type_dict, feature_output_dict, output_feature_file)
-
+def aligned_file_check(fasta_file):
+    sequences=list(SeqIO.parse(fasta_file, "fasta"))
+    for seq in sequences:
+        if '-' in seq.seq:
+            return True #found dashes, alignment file is being used
+    return False #no dashes found, everything is good
 def read_feature_file(feature_file):
     feature_dict={}
     type_dict = {}
