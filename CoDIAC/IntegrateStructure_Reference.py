@@ -359,7 +359,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     #First find the protein information in the reference file based on uniprot_id
     protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
     if len(protein_rec.index) < 1 or uniprot_id == 'not found':
-        print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
+        #print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
         #return default information here
     
         return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
@@ -428,7 +428,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
         Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming
         conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest. 
     verbose: boolean
-        Print information about processing. Default is Falses.
+        Print information about processing. Default is False.
     
     Returns
     -------
