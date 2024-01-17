@@ -325,6 +325,9 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         This is an easily readable string of domain names, in the order they appear in the protein from N- to C-terminal that was
         covered by the experiment. Domains are separated by '|'. For example SH3_domain|SH2|Prot_kinase_dom means that the 
         structure fully covered the SH3_domain, SH2, and Protein_kinase_dom of a SRC family kinase. 
+    full_protein_domain: str
+        For easy reference, this includes the domains and domain boundaries of the full protein. If domainStr does not contain 
+        the protein domain, it's due to lack of full inclusion. 
     full_domain_arch: str
         For easy reference, this includes the architecture of the full protein so it can be seen what part of the whole protein
         was studied in the experiment.
@@ -339,6 +342,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     pos_diff = 0
     domainStr = 'N/A'
     structure_arch = 'N/A'
+    full_protein_domain = 'N/A'
     full_domain_arch = 'N/A'
 
 
@@ -348,7 +352,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
         rangeStr = '1-'+str(len(struct_seq)) #set the range starting from start to end
         
         struct_seq_ref_spanning = struct_seq #what it is based on existing.
-        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
+        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_protein_domain, full_domain_arch
     else:
         ref_seq_pos_start = int(ref_seq_pos_start)
         ref_length = int(ref_length)
@@ -359,19 +363,21 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     #First find the protein information in the reference file based on uniprot_id
     protein_rec = reference_df[reference_df['UniProt ID']==uniprot_id]
     if len(protein_rec.index) < 1 or uniprot_id == 'not found':
-        print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
+        #print("NOTE: Encountered Uniprot %s in PDB, not in reference"%(uniprot_id))
         #return default information here
     
-        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_domain_arch
+        return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, 0, 0, domainStr, structure_arch, full_protein_domain, full_domain_arch
     elif len(protein_rec.index) > 1:
         print("ERROR: Found more than one record for %s in reference"%(uniprot_id))
     else:
         if INTERPRO:
             domains = list(protein_rec['Interpro Domains'])[0]
+            full_protein_domain = domains
             full_domain_arch = list(protein_rec['Interpro Domain Architecture'])[0]
 
         else:
             domains = list(protein_rec['Uniprot Domains'])[0]
+            full_protein_domain = domains
             full_domain_arch = list(protein_rec['Uniprot Domain Architecture'])[0]
 
             
@@ -409,7 +415,7 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     
     #make gaps 
     
-    return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch
+    return gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_protein_domain, full_domain_arch
 
 def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=True, verbose=False):
     """
@@ -428,7 +434,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
         Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming
         conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest. 
     verbose: boolean
-        Print information about processing. Default is Falses.
+        Print information about processing. Default is False.
     
     Returns
     -------
@@ -447,7 +453,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
         if verbose:
             print("Working on %s for protein %s"%(row['PDB_ID'], uniprot_id))
         information_list = return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_pos_start, pdb_seq_pos_start, ref_length, INTERPRO)
-        gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_domain_arch = information_list
+        gene_name, struct_seq_ref_spanning, rangeStr, pos_diff, diffStr, gaps_ref_to_struct, gaps_struct_to_ref, domainStr, structure_arch, full_protein_domain, full_domain_arch = information_list
         struct_df.loc[index,'ref:gene name'] = gene_name
         struct_df.loc[index, 'ref:struct/ref sequence'] = struct_seq_ref_spanning
         struct_df.loc[index, 'ref:reference range'] = rangeStr
@@ -457,6 +463,7 @@ def add_reference_info_to_struct_file(struct_file, ref_file, out_file, INTERPRO=
         struct_df.loc[index, 'ref:variants'] = diffStr
         struct_df.loc[index, 'ref:domains'] = domainStr
         struct_df.loc[index, 'ref:struct domain architecture'] = structure_arch
+        struct_df.loc[index, 'ref:full protein domain'] = full_protein_domain
         struct_df.loc[index, 'ref:protein domain architecture'] = full_domain_arch
     struct_df.to_csv(out_file, index=False)
     return struct_df
