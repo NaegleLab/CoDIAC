@@ -17,6 +17,16 @@ def translate_features(input_fasta_file, input_features, reference_fasta_file, o
      
     
     """
+    if fasta_file_check(input_fasta_file):
+        return "The input fasta file is in the correct FASTA format"
+    else:
+        return "The input file is not in the correct FASTA format"
+        pass
+    if fasta_file_check(reference_fasta_file):
+        return "The reference fasta file is in the correct FASTA format"
+    else:
+        return "The reference file is not in the correct FASTA format"
+        pass
     input_aligned = aligned_file_check(input_fasta_file)
     reference_aligned = aligned_file_check(reference_fasta_file)
     if input_aligned or reference_aligned:
@@ -36,6 +46,15 @@ def aligned_file_check(fasta_file):
         if '-' in seq.seq:
             return True #found dashes, alignment file is being used
     return False #no dashes found, everything is good
+def fasta_file_check(fasta_file):
+    records= list(SeqIO.parse(fasta_file,"fasta"))
+    #check if there is at least one sequence
+    if records:
+        return True
+    valid_characters= set("ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy")
+    for record in records:
+        if set(record.seq.upper()) <= valid_characters:
+            return True
 def read_feature_file(feature_file):
     feature_dict={}
     type_dict = {}
