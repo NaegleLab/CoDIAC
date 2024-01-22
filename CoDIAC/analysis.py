@@ -5,9 +5,9 @@ import numpy as np
 from Bio import SeqIO
 import os
 
-def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq = True, PTM='PTR', mutation=False, 
+def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq = True, PTM='PTR', mutation=False, 
                       domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
-    '''Generates contact features that are present across canonical interfaces (between a domain and it sligand partner)
+    '''Generates contact features that are present across interprotein interfaces (between a domain and it sligand partner)
     
     Parameters
     ----------
@@ -34,7 +34,7 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
             
     Returns
     -------
-        Fasta and feature files with canonical interface contact features'''
+        Fasta and feature files with interprotein interface contact features'''
     
     main = pd.read_csv(pdb_ann_file)
     list_of_uniprotids=[]
@@ -155,9 +155,9 @@ def CanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_st
                         file.write('>'+name+'\n'+sequence+'\n')
 
 
-def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq=True, mutation = False, DOMAIN = 'SH2', 
+def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq=True, mutation = False, DOMAIN = 'SH2', 
                          filename='SH2_NC'):
-    '''Generates contact features that are present across non-canonical interfaces (between two domains part of teh same protein) 
+    '''Generates contact features that are present across intraprotein interfaces (between two domains part of teh same protein) 
     
     Parameters
     ----------
@@ -180,7 +180,7 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
         
     Returns
     -------
-        Fasta and feature files with non-canonical interface contact features'''
+        Fasta and feature files with intraprotein interface contact features'''
     
     ann = pd.read_csv(pdb_ann_file)
     list_of_uniprotids = []
@@ -322,9 +322,9 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
 
 
 def make_mergedFeatureFiles(fasta_unaligned,fasta_aligned,feaFile_unaligned,feaFile_aligned,
-                            feaFile_merge_aligned,feaFile_merge_unaligned, interface='NonCanonical'):
+                            feaFile_merge_aligned,feaFile_merge_unaligned, interface='Intraprotein'):
     '''
-        For a given fasta and feature file with sequences extracted from structures, we can merge the features across several structures and project onto the reference sequence. The fasta files generated using 'NonCanonicalFeatures' and 'CanonicalFeatures' functions will include both the structure and reference sequences to be able to merge the features based of the reference sequence alignments. 
+        For a given fasta and feature file with sequences extracted from structures, we can merge the features across several structures and project onto the reference sequence. The fasta files generated using 'Intraprotein_Features' and 'Interprotein_Features' functions will include both the structure and reference sequences to be able to merge the features based of the reference sequence alignments. 
         Parameters
         ----------
            fasta_unaligned : str
@@ -338,7 +338,7 @@ def make_mergedFeatureFiles(fasta_unaligned,fasta_aligned,feaFile_unaligned,feaF
             feaFile_merge_aligned : str
                 location of feature file that contains the merge features and the residue positions are with respect to the aligned sequence numbering. This is also a temporary file. 
             interface : str
-                select the interface of interest - NonCanonical (default) or Canonical
+                select the interface of interest - intraprotein (default) or interprotein
 
         Returns
         -------
@@ -566,7 +566,7 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
 #     print('Created feature file for aligned fasta sequences!')
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
-                   alignment_similarity = 85, feature_cutoff = 30, interface = 'NonCanonical'):
+                   alignment_similarity = 85, feature_cutoff = 30, interface = 'Intraprotein'):
     '''Collapse features across PDB structures onto the reference sequence.
     Parameters
     ----------
@@ -581,7 +581,7 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
         feature_cutoff : int
             a feature present in more than the set threshold will be considered and will make it to the final feature set. 
         interface : str
-            chose between 'NonCanonical' or 'Canonical' This is mainly to create specific headers in each of the cases. 
+            chose between 'intraprotein' or 'interprotein' This is mainly to create specific headers in each of the cases. 
     Returns
     -------
         output_features : str
@@ -595,9 +595,9 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
         splitname = name.split('|')
         if len(splitname) > 7:
             uid, gene, dom1, index, IPR, start, end, dom2,pdb = name.split('|')
-            if interface == 'NonCanonical':
+            if interface == 'Intraprotein':
                 identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|'+dom2
-            if interface == 'Canonical':
+            if interface == 'Interprotein':
                 identifier = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end+'|lig'
             if identifier not in identifier_list:
                 identifier_list.append(identifier)
@@ -630,9 +630,9 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                         tmp_features.append(features)
                         if header not in tmp_headers:
                             tmp_headers.append(header)
-                            if interface == 'NonCanonical':
+                            if interface == 'Intraprotein':
                                 feature_header = dom2
-                            if interface == 'Canonical':
+                            if interface == 'Interprotein':
                                 feature_header = 'lig'
                             header_for_reference = uid+'|'+gene+'|'+dom1+'|'+index+'|'+IPR+'|'+start+'|'+end
 
