@@ -323,6 +323,28 @@ def NonCanonicalFeatures(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error
 
 def make_mergedFeatureFiles(fasta_unaligned,fasta_aligned,feaFile_unaligned,feaFile_aligned,
                             feaFile_merge_aligned,feaFile_merge_unaligned, interface='NonCanonical'):
+    '''
+        For a given fasta and feature file with sequences extracted from structures, we can merge the features across several structures and project onto the reference sequence. The fasta files generated using 'NonCanonicalFeatures' and 'CanonicalFeatures' functions will include both the structure and reference sequences to be able to merge the features based of the reference sequence alignments. 
+        Parameters
+        ----------
+           fasta_unaligned : str
+               location of the input fasta file with unaligned sequences
+            fasta_aligned : str
+                location of the input fasta file with aligned sequences (can be created using any alignment software such as MAFFT, etc.)
+            feaFile_unaligned : str
+                location of the input feature file with features that can be projected onto the input fasta files
+            feaFile_aligned : str
+                location of the feature file with features where the residue positions are translated from unaligned to aligned sequence positions. This is a temporary file created while merging the features. To generate this file, one can use 'makeFeatureFile_updateSeqPos' to generate this file.
+            feaFile_merge_aligned : str
+                location of feature file that contains the merge features and the residue positions are with respect to the aligned sequence numbering. This is also a temporary file. 
+            interface : str
+                select the interface of interest - NonCanonical (default) or Canonical
+
+        Returns
+        -------
+            feaFile_merge_unaligned : str
+                the location of the final feature file that is generated here with merged features. The feature positions are with respect to the unaligned sequences. These features can be visualized using the input fasta file (aligned or unaligned could be used for Jalview purpose)
+                '''
     
     makeFeatureFile_updateSeqPos(fasta_unaligned, fasta_aligned, feaFile_unaligned, feaFile_aligned)
     mergedFeatures(fasta_unaligned, fasta_aligned, feaFile_aligned, feaFile_merge_aligned, 
@@ -415,7 +437,7 @@ def identityScore(aligned_sequences_list):
     return percent
 
 def reference_seq(gene_of_interest, domain_of_interest, uniprot_ref_file):
-    
+    '''generates a dictionary with keys and values as fasta headers and fasta sequences extracted from data stored in the Uniprot reference file for domain of interest'''
     list_sequence = []
     list_domain = []
     for name, group in df.groupby('Gene'):
@@ -426,17 +448,17 @@ def reference_seq(gene_of_interest, domain_of_interest, uniprot_ref_file):
                 uniprot_id = row['UniProt ID']
                 parse_interpro_domain = interpro_domain.split(';')
 
-                sh2 = []
+                doi = []
                 other = []
                 for i in parse_interpro_domain:
                     domain, IPR, (start), (stop) = i.split(':')
                     if domain_of_interest in domain:
-                        sh2.append(i)
+                        doi.append(i)
                     else:
                         other.append(i)
                 fasta_dict = {}
                 index = 1
-                for j in sh2:
+                for j in doi:
 
                     domain_1, IPR, (start_1), (stop_1) = j.split(':')
                     for k in other:
@@ -448,6 +470,7 @@ def reference_seq(gene_of_interest, domain_of_interest, uniprot_ref_file):
     return(fasta_dict)
 
 def assign_ID_AA(sequence_of_domain):
+    '''assigns a position value to each residue of the sequence provided as an input. The aligned seqeunces that contain '-' characters will be skipped while reporting the updated residue positions '''
     sequence_with_ID=[]
     sequence_with_ID_upd=[]
     len_of_seq = 1
@@ -463,7 +486,15 @@ def assign_ID_AA(sequence_of_domain):
     return(sequence_with_ID_upd, len(sequence_with_ID_upd))
 
 def pair_ref_aln(sequence1, sequence2, length_of_domain):
-    
+    '''generates a dictionary with translated residue positions
+    Parameters
+    ----------
+        sequence1 : list
+            list generated from 'assign_ID_AA(sequence_of_domain)[0]' - this is for unaligned sequence numbering
+        sequence2 : list
+            list generated from 'assign_ID_AA(sequence_of_domain)[0]' - this is for the aligned sequence numbering
+        length_of_domain : int
+            the length of the domain sequence is used to check whether there are any insertions/deletions or differences in the two aligned and unaligned seqeunces. Expecting to get the same sequence whether aligned or unaligned. ''' 
     matrix_AA_ID = {}
     
     for num in range(length_of_domain):
@@ -474,6 +505,22 @@ def pair_ref_aln(sequence1, sequence2, length_of_domain):
     return(matrix_AA_ID)
 
 def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, output_featurefile):
+    '''Makes a feature file with feature positions translated to the ones on the aligned sequences.
+    Parameters
+    ----------
+        fasta_file : str
+            location of the fasta file with unaligned seqeunces used as input here
+        fasta_aln_file : str
+            location of teh fasta file with aligned sequences used as input as well (can be aligned by any software)
+        input_featurefile : str
+            location of the feature file that goes with the input fasta files
+    Returns
+    -------
+        output_featurefile : str
+            location to store the output feature file with feature residue positions translated from unaligned to aligned positions. 
+            For example: unaligned seq = 'AKPLYYG'; aligned seq = 'AKP--LYY-G'. If 'A' and 'L' are features, the the input feature file would have A:1 and L:4 but the output file here will show A:1 and L:6. 
+            We cannot use this output feature file to project onto the fasta sequences on Jalview. But we can use this numbering for other analysis purposes'''
+    
     dict_ref_header_seq = {}
     dict_aln_header_seq = {}
 
@@ -520,6 +567,26 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30, interface = 'NonCanonical'):
+    '''Collapse features across PDB structures onto the reference sequence.
+    Parameters
+    ----------
+        fasta_unaligned : str
+            location of the fasta file with unaligned seqeunces used as input here
+        fasta_aln_file : str
+            location of teh fasta file with aligned sequences used as input as well (can be aligned by any software)
+        features_for_alignedFasta : str
+            location of the input feature file that have the trasnlated residue positions with respect to teh aligned sequences. This is generated using 'makeFeatureFile_updateSeqPos'.
+        alignment_similarity : int
+            while grouping the sequences to merge features across multiple structures, we want to make sure that identical seqeunces are under consideration. So, we use >=85% as the identity score between the sequences to create some flexibility for taking int oaccount the small differences taht arise while structure determination expriments
+        feature_cutoff : int
+            a feature present in more than the set threshold will be considered and will make it to the final feature set. 
+        interface : str
+            chose between 'NonCanonical' or 'Canonical' This is mainly to create specific headers in each of the cases. 
+    Returns
+    -------
+        output_features : str
+            location of the feature file with merged set of features that can now be visualized using a reference seqeunce file. 
+            '''
     
     fasta_seq = SeqIO.parse(open(fasta_unaligned), 'fasta')
     identifier_list = []
