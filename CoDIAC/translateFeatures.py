@@ -17,23 +17,6 @@ def translate_features(input_fasta_file, input_features, reference_fasta_file, o
      
     
     """
-    if fasta_file_check(input_fasta_file):
-        return "The input fasta file is in the correct FASTA format"
-    else:
-        return "The input file is not in the correct FASTA format"
-        pass
-    if fasta_file_check(reference_fasta_file):
-        return "The reference fasta file is in the correct FASTA format"
-    else:
-        return "The reference file is not in the correct FASTA format"
-        pass
-    input_aligned = aligned_file_check(input_fasta_file)
-    reference_aligned = aligned_file_check(reference_fasta_file)
-    if input_aligned or reference_aligned:
-        return "Error: One or both of the files contain dashes. Alignment check failed."
-        pass
-    else:
-        return "Both input and reference FASTA files are likely unaligned. Alignment check successful"
     input_dict, input_errors = return_sequence_dict_from_fasta(input_fasta_file)
     reference_dict, reference_errors = return_sequence_dict_from_fasta(reference_fasta_file)
     type_dict, feature_dict = read_feature_file(input_features)
