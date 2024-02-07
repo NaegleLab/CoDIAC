@@ -554,16 +554,17 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
                 for line in open(input_featurefile,'r'):
                     line.strip() 
                     line = line.split('\t')
-                    feature_header = line[0]
-                    header = line[1]
-                    feature_1 = int(line[3])
-                    feature_2 = int(line[4])
-                    if key == header:
-                        for unaln_val, aln_val in matrix.items():
-                            if int(unaln_val) == (feature_1):
-#                                 print(key, unaln_val, aln_val)
-                                file.write(feature_header+"\t"+str(header)+"\t-1\t"+str(aln_val)+"\t"+str(aln_val)+'\t'+str(feature_header)+'\n')
-#     print('Created feature file for aligned fasta sequences!')
+                    if len(line) > 2:
+                        feature_header = line[0]
+                        header = line[1]
+                        feature_1 = int(line[3])
+                        feature_2 = int(line[4])
+                        if key == header:
+                            for unaln_val, aln_val in matrix.items():
+                                if int(unaln_val) == (feature_1):
+    #                                 print(key, unaln_val, aln_val)
+                                    file.write(feature_header+"\t"+str(header)+"\t-1\t"+str(aln_val)+"\t"+str(aln_val)+'\t'+str(feature_header)+'\n')
+    #     print('Created feature file for aligned fasta sequences!')
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30, interface = 'Intraprotein'):
@@ -646,3 +647,131 @@ def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, ou
                         tmp_write.append(fea)
                         file.write(feature_header+'\t'+header_for_reference+'\t-1\t'+str(fea)+'\t'+str(fea)+'\t'+feature_header+'\n')
     print('Created feature file with merged features!')
+
+
+def generate_feadict(input_featurefile):
+    '''generates a dictionary whose keys are the header names and the key value is the list of features that correspond to each of the headers from the input feature file provided'''
+    df_ptm = pd.DataFrame()
+    header_list = []
+    feature_list = []
+    for line in open(input_featurefile):
+        
+        line = line.strip('\n')
+        line = line.split('\t')
+        if len(line) >2:
+            header_list.append(line[1])
+            feature_list.append(line[3])
+            
+    df_ptm['header'] = header_list
+    df_ptm['feature'] = feature_list
+    
+    fea_dict = {}
+    for name, group in df_ptm.groupby('header'):
+        features = [eval(i) for i in group['feature'].tolist()]
+        fea_dict[name] = features
+    return fea_dict
+
+def match_aln_unaln_feafiles(input_ptm_feafile, ptm_feafile):
+    '''generates a dictionary with feature positions and headers values from two feature files that belong to the same feature extraction 
+    Parameters
+    ----------
+        input_ptm_feafile : str
+            path to the file that stores residue positions as features on the unaligned sequence
+        ptm_feafile : str
+            path to the file that stores residue positions as features on the aligned seqeunce
+    Returns
+    -------
+        feature_pos_match : dict
+            dictionary whose values contain a list of the header, aligned and unaligned feature values'''
+    df_unaln = pd.read_csv(input_ptm_feafile,skiprows=[0], sep='\t', header=None)
+    df_aln = pd.read_csv(ptm_feafile, sep='\t', header=None)
+    index = 1
+    feature_pos_match = {}
+    for i in range(len(df_unaln)):
+        if df_unaln.iloc[i,1] == df_aln.iloc[i,1]:
+            feature_pos_match[index] = [df_unaln.iloc[i,1], df_unaln.iloc[i,3], df_aln.iloc[i,3]]
+            index+=1
+        else:
+            print('ERROR: unmatched headers from both the feature files')
+    return feature_pos_match
+
+
+def map_PTM_localenv(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile, input_feafile, outputfile_path, PTM_of_interest='PTR', localenv = 'Can',distance=5):
+    '''finding features at a chain length (distance) of n and c term of the PTM 
+    Parameters 
+    ----------
+        fasta_file_unaliogned : str
+            path to fasta file of unaligned sequences
+        fasta_file_aligned : str
+            path to fasta file for aligned sequences
+        input_ptm_feafile : str
+            path to feature file. This will be the file with features that are our point of focus and around which we would like to inspect for its local environment and whether or not they encounter other features at a certain distance 
+        input_feafile : str
+            path to feature file that we would want to know whther they are in proximity with the PTM of interest
+        outputfile_path : str
+            path to save the .txt output file
+        PTM_of_interest : str
+            PTM name to be used to save the output file name
+        localenv : str
+            name of the features present in the local environment of the PTM studied 
+        distance : int
+            the number of amino acids we would like to probe into on the N and C terminal of the PTM. Here, the lengths taken into account are equal on both the sides. Default is set to 5 AA
+
+    Returns
+    -------
+        outputs a .txt file that lists the features (aligned and unaligned positions) of the PTM that finds features in the definied proximity range along with the number of features on N and C term sides of the PTM '''
+    #generate feature files that translate feature positions from unaligned to aligned
+    ptm_feafile = outputfile_path+'/'+PTM_of_interest+'_aln.fea'
+    feafile = outputfile_path+'/'+localenv+'_aln.fea'
+    makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile, ptm_feafile)
+    makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_feafile, feafile)
+
+    #match the unaligned and aligned feature files generated above to know aligned and unaligned position values
+    feature_pos_match = match_aln_unaln_feafiles(input_ptm_feafile, ptm_feafile)
+
+    #generates dicts with list of features for each unique header
+    PTM_DICT = generate_feadict(ptm_feafile)
+    CAN_DICT = generate_feadict(feafile)
+
+    #identifies for features at defined amino acid chain length (distance) from the PTM of interest 
+    output_filename = PTM_of_interest+'_localenv.txt'
+    with open(output_filename,'w') as file:
+        file.write('Header\tUnaligned_pos\tAligned_pos\tC_term\tN_term\n')
+        for entry1 in PTM_DICT:
+            ptm_fea = PTM_DICT[entry1]
+            for ptm in ptm_fea:
+                local_env = []
+                for entry2 in CAN_DICT:
+                    can_fea = CAN_DICT[entry2]
+                    if entry1 == entry2:
+                        for fea in can_fea:
+                            if fea in range(int(ptm)-distance, int(ptm)+distance):
+                                # print(entry1, ptm, fea)
+                                local_env.append(fea)
+                if len(local_env)!= 0:
+                    for key, values in feature_pos_match.items():
+                        header = values[0]
+                        aln_pos = values[2]
+    
+                        if entry1 == header and aln_pos == ptm:
+                            unaln_pos = values[1]
+                            # print(entry1, ptm, unaln_pos,len(local_env), local_env)
+                            cterm = []
+                            nterm = []
+                            for i in local_env:
+                                if i>ptm:
+                                    cterm.append(i)
+                                if i<ptm:
+                                    nterm.append(i)
+                            file.write(str(entry1)+'\t'+str(unaln_pos)+'\t'+str(ptm)+'\t'+str(len(cterm))+'\t'+str(len(nterm))+'\n')
+                            # print(entry1,'...', ptm, '...',unaln_pos, '...',local_env, '...', len(cterm), len(nterm))
+
+    if os.path.exists(feafile):
+        os.remove(feafile)
+    else:
+        print("The file does not exist")
+        
+    if os.path.exists(ptm_feafile):
+        os.remove(ptm_feafile)
+    else:
+        print("The file does not exist")
