@@ -730,11 +730,10 @@ def map_PTM_localenv(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile
     #generate feature files that translate feature positions from unaligned to aligned
     ptm_feafile = outputfile_path+'/'+PTM_of_interest+'_aln.fea'
     feafile = outputfile_path+'/'+localenv+'_aln.fea'
-    makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile, ptm_feafile)
-    makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_feafile, feafile)
-
     #match the unaligned and aligned feature files generated above to know aligned and unaligned position values
-    feature_pos_match = match_aln_unaln_feafiles(input_ptm_feafile, ptm_feafile)
+    feature_pos_match = makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile, ptm_feafile, outputdict=True)
+    makeFeatureFile_updateSeqPos(fasta_file_unaligned, fasta_file_aligned, input_feafile, feafile)
+    
 
     #generates dicts with list of features for each unique header
     PTM_DICT = generate_feadict(ptm_feafile)
@@ -760,7 +759,7 @@ def map_PTM_localenv(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile
                         header = values[0]
                         aln_pos = values[2]
     
-                        if entry1 == header and aln_pos == ptm:
+                        if entry1 == str(header) and int(aln_pos) == ptm:
                             unaln_pos = values[1]
                             # print(entry1, ptm, unaln_pos,len(local_env), local_env)
                             cterm = []
