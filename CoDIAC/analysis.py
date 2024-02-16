@@ -504,7 +504,7 @@ def pair_ref_aln(sequence1, sequence2, length_of_domain):
         
     return(matrix_AA_ID)
 
-def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, output_featurefile):
+def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, output_featurefile, outputdict=True):
     '''Makes a feature file with feature positions translated to the ones on the aligned sequences.
     Parameters
     ----------
@@ -514,6 +514,8 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
             location of teh fasta file with aligned sequences used as input as well (can be aligned by any software)
         input_featurefile : str
             location of the feature file that goes with the input fasta files
+        outputdict : bool
+            if True, outputs a dictionary with aligned and unaligned positions for every entry in the input feature file
     Returns
     -------
         output_featurefile : str
@@ -542,7 +544,8 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
             if k1 == k2:
                 dict_ref_aln[k1] = (v1, v2)
                 break
-
+    feature_aln_unaln = {}
+    fea_index = 1
     for key, value in dict_ref_aln.items():
 #         print(key)
         ref = assign_ID_AA(value[0])
@@ -564,7 +567,11 @@ def makeFeatureFile_updateSeqPos(fasta_file, fasta_aln_file, input_featurefile, 
                                 if int(unaln_val) == (feature_1):
     #                                 print(key, unaln_val, aln_val)
                                     file.write(feature_header+"\t"+str(header)+"\t-1\t"+str(aln_val)+"\t"+str(aln_val)+'\t'+str(feature_header)+'\n')
+                                    feature_aln_unaln[fea_index] = [header, unaln_val,aln_val]
+                                    fea_index +=1
     #     print('Created feature file for aligned fasta sequences!')
+    if outputdict:
+        return feature_aln_unaln
     
 def mergedFeatures(fasta_unaligned, fasta_aligned, features_for_alignedFasta, output_features, 
                    alignment_similarity = 85, feature_cutoff = 30, interface = 'Intraprotein'):
