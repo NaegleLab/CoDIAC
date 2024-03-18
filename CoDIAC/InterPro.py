@@ -133,7 +133,7 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
 
     with requests.Session() as session:
         for protein_accession in uniprot_accessions:
-            print(f"Processing {protein_accession}")  # Debugging line
+            #print(f"Processing {protein_accession}")  # Debugging line
 
             url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
 
