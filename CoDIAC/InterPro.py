@@ -149,33 +149,35 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
             # pulling out top hierarchy domains from extra fields
             entry_results = resp['results']
             top_hierarchy = [] # Getting top hierarchy domains for each entry in the results
-            for entry in entry_results:
+            num_children_list = [] # List to store number of children for each domain
+            for i, entry in enumerate(entry_results):
                 if 'extra_fields' in entry and 'hierarchy' in entry['extra_fields']:
-            
-                    #if 'children' in entry['extra_fields']['hierarchy']: #and len(entry['extra_fields']['hierarchy']['children']) > 0:
-                        #print(entry['extra_fields']['hierarchy']['accession'])
+                    if 'children' in entry['extra_fields']['hierarchy']:
+                        num_children = len(entry['extra_fields']['hierarchy']['children'])
+                        num_children_list.append(num_children)
                     top_hierarchy.append(entry['extra_fields']['hierarchy']['accession'])
                 else: 
                     print(f"Error processing {protein_accession}: No hierarchy found")
             #print(top_hierarchy)
             entry_list = [
-                {'interpro': data}
-                for entry in resp['results']
+                {'interpro': data, 'num_children': num_children_list[i]}
+                for i, entry in enumerate(resp['results'])
                 if entry['metadata']['type'] == 'domain' and entry['metadata']['accession'] in top_hierarchy
                 for data in [collect_data(entry, current_accession)]
                 if data is not None
-]
+            ]
         
             metadata[protein_accession] = entry_list 
            # print(entry_list)
 
     return metadata
+
 # Filtering returned metadata 
 
-def filter_domains(metadata, threshold =0):
+def filter_domains(metadata, threshold=0.15):
     for protein_accession, domains in metadata.items():
         # Sort by end position and then by size in descending order
-        domains.sort(key=lambda x: (-x['interpro']['boundaries'][0]['end'], -(x['interpro']['boundaries'][0]['end'] - x['interpro']['boundaries'][0]['start'])))
+        domains.sort(key=lambda x: (-x['interpro']['boundaries'][0]['end'], -(x['interpro']['boundaries'][0]['end'] - x['interpro']['boundaries'][0]['start']), -x['num_children']))
         filtered_domains = []
         for domain in domains:
             overlap = False
@@ -185,6 +187,10 @@ def filter_domains(metadata, threshold =0):
                 overlap_length = max(0, end_min - start_max)
                 domain_length = domain['interpro']['boundaries'][0]['end'] - domain['interpro']['boundaries'][0]['start']
                 if overlap_length / domain_length > threshold:
+                    # If the current domain has more children, replace the existing domain
+                    if domain['num_children'] > existing_domain['num_children']:
+                        filtered_domains.remove(existing_domain)
+                        filtered_domains.append(domain)
                     overlap = True
                     break
             if not overlap:
