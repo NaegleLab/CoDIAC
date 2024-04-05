@@ -133,13 +133,16 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
         Keeps track of PTMs that did not translate and the reason
     
     """
-    proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+
+    proteomescout_seq, PTMs = get_PTMS_proteomeScout(uniprot_ID)
+    #proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+    #PTMs = PTM_API.get_PTMs(uniprot_ID)
     errors = ""
     if proteomescout_seq == '-1':
         errors = "Error: ProteomeScout record not found by %s"%(uniprot_ID)
         return errors, [], []
     aln, struct_sequence_ref_spanning, from_start, from_end, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = IntegrateStructure_Reference.return_mapping_between_sequences(proteomescout_seq, uniprot_seq, 1, 1, len(uniprot_seq))
-    PTMs = PTM_API.get_PTMs(uniprot_ID)
+    
     #mapToRef = aln.get_gapped_seq('reference').gap_maps()[1]
     map_to_ref = aln.get_gapped_seq('structure').gap_maps()[0]
     numGaps = aln.seqs[0].count_gaps()
@@ -170,6 +173,13 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
                 translated_PTMs.append((str(pos_translated), aa, ptm_type))
 
     return(errors, translated_PTMs, failed_PTMs)
+
+
+def get_PTMS_proteomeScout(uniprot_ID):
+    proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+    PTMs = PTM_API.get_PTMs(uniprot_ID)
+
+    return proteomescout_seq, PTMs
 
 
 def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_term_offset=0, gap_threshold=0.7):
