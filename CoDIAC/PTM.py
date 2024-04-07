@@ -1,5 +1,5 @@
 
-from CoDIAC import IntegrateStructure_Reference, UniProt, proteomeScoutAPI
+from CoDIAC import IntegrateStructure_Reference, UniProt, proteomeScoutAPI, PhosphoSitePlus_Tools
 import pandas as pd
 import os 
 
@@ -8,7 +8,7 @@ PROTEOMESCOUT_DATA = package_directory + '/data/proteomescout_everything_2019070
 PTM_API = proteomeScoutAPI.ProteomeScoutAPI(PROTEOMESCOUT_DATA)
 
 
-def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file ='', n_term_offset=0, c_term_offset=0, gap_threshold=0.7, num_PTM_threshold = 5):
+def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file ='', n_term_offset=0, c_term_offset=0, gap_threshold=0.7, num_PTM_threshold = 5, PHOSPHOSITE_PLUS=False):
     """
     Writes all PTM features from ProteomeScout on Interpro domains from a uniprot reference file, if there are more
     than num_PTM_threshold that occur across all domains of that type in the reference. Returns the ptm_count_dict for reference
@@ -37,6 +37,10 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
         fraction gap allowed before dispanding with PTM translation from ProteomeScout
     num_PTM_threshold: int
         Number of PTMs in all domains of a type required to generate a feature file
+    PHOSPHOSITE_PLUS: bool
+        If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
+        This requires runnign your own local setup of PhosphoSite files. See PhosphoSitePlus_Tools.py convert_pSiteDataFiles
+    
 
     Returns
     -------
@@ -107,7 +111,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
 
     return ptm_feature_file_list, ptm_count_dict, ptm_feature_dict, mapping_dict
 
-def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
+def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold, PHOSPHOSITE_PLUS):
     """
     Given an Uniprot ID and a uniprot sequence, return PTMs on the uniprot sequence positions. Uses the pairwise alignment
     of proteomescout sequence to the uniprot sequence to build a position map and translates PTMs into 
@@ -121,6 +125,8 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
         Uniprot sequence
     gap_threshold: float
         Allowed gap fraction before considering too poor an alignment
+    PHOSPHOSITE_PLUS: bool
+        Will use PhosphoSitePlus data if True, ProteomeScout if False
     
     Returns
     -------
@@ -133,13 +139,19 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
         Keeps track of PTMs that did not translate and the reason
     
     """
-    proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+
+    if not PHOSPHOSITE_PLUS:
+        proteomescout_seq, PTMs = get_PTMS_proteomeScout(uniprot_ID)
+    else:
+        proteomescout_seq, PTMs = get_PTMs_phosphoSitePlus(uniprot_ID)
+    #proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+    #PTMs = PTM_API.get_PTMs(uniprot_ID)
     errors = ""
     if proteomescout_seq == '-1':
-        errors = "Error: ProteomeScout record not found by %s"%(uniprot_ID)
+        errors = "Error: PTM record not found by %s"%(uniprot_ID)
         return errors, [], []
     aln, struct_sequence_ref_spanning, from_start, from_end, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = IntegrateStructure_Reference.return_mapping_between_sequences(proteomescout_seq, uniprot_seq, 1, 1, len(uniprot_seq))
-    PTMs = PTM_API.get_PTMs(uniprot_ID)
+    
     #mapToRef = aln.get_gapped_seq('reference').gap_maps()[1]
     map_to_ref = aln.get_gapped_seq('structure').gap_maps()[0]
     numGaps = aln.seqs[0].count_gaps()
@@ -160,7 +172,7 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
         pos = int(pos) #this is ones-based counted
         if aa_list[pos-1][proteomescout_ind]!=aa:
             #print("error: proteomescout position is %s not %s"%(aa_list[int(pos)-1][proteomescout_ind], aa))
-            failed_PTMs.append((pos, aa, ptm_type, 'proteomescout issue, non-matching amino acid'))
+            failed_PTMs.append((pos, aa, ptm_type, 'PTM reference issue, non-matching amino acid'))
         else:
             if aa_list[pos-1][uniprot_ind]!=aa:
                 #print("Skipping %s, proteomescout and uniprot don't match"%(pos))
@@ -172,7 +184,20 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold):
     return(errors, translated_PTMs, failed_PTMs)
 
 
-def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_term_offset=0, gap_threshold=0.7):
+def get_PTMS_proteomeScout(uniprot_ID):
+    proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
+    PTMs = PTM_API.get_PTMs(uniprot_ID)
+
+    return proteomescout_seq, PTMs
+
+
+def get_PTMS_phosphoSitePlus(uniprot_ID):
+    seq = PhosphoSitePlus_Tools.get_sequence(uniprot_ID)
+    PTMs = PhosphoSitePlus_Tools.get_PTMs(uniprot_ID)
+
+    return seq, PTMs
+
+def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_term_offset=0, gap_threshold=0.7, PHOSPHOSITE_PLUS=False):
     """
     Given an uniprot reference file and a particular InterproID of interest, get all the PTMs that exist
     within the domains in the uniprot reference file that have that interpro ID. 
@@ -192,6 +217,9 @@ def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_te
         Number of amino acids to extend in the c-term direction (up to end of protein)
     gap_threshold: float
         fraction gap allowed before dispanding with 
+    PHOSPHOSITE_PLUS: bool
+        If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
+        This requires running your own local setup of PhosphoSite files. See PhosphoSitePlus_Tools.py convert_pSiteDataFiles
     
     Returns
     -------
@@ -218,7 +246,7 @@ def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_te
         seq = row['Ref Sequence']
         uniprot_id = row['UniProt ID']
         domains = row['Interpro Domains']
-        errors_dict[uniprot_id], translated_PTMs_dict[uniprot_id], failed_PTMs_dict[uniprot_id] = translate_PTMs(uniprot_id, seq, gap_threshold)
+        errors_dict[uniprot_id], translated_PTMs_dict[uniprot_id], failed_PTMs_dict[uniprot_id] = translate_PTMs(uniprot_id, seq, gap_threshold, PHOSPHOSITE_PLUS)
 
         #Writing/printing a report of global issues encountered.
         if errors_dict[uniprot_id]:
