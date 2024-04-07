@@ -6,21 +6,58 @@ import codecs
 
 #Given licensing terms of PhosphoSitePlus, you must create a download and point to your 
 #local directory of Phosphosite data and point that here. 
-PHOSPHOSITEPLUS_DATA_DIR = '/Users/kmn4mj/OneDrive - University of Virginia/General - Naegle Lab/Projects/PhosphositePlus Datasets/'
+package_directory = os.path.dirname(os.path.abspath(__file__))
+PHOSPHOSITE_FILE = package_directory + '/data/phosphositeplus_data.csv'
 
-def convert_pSiteDataFiles():
+
+def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
     """
-    Given the files as they are downloaded from PhosphositePlus, rearrange to initialize
-    a flat text file that looks enough like ProteomeScout to make searching possible. 
-    This means getting the UniprotID, species, protein name, and sequence from the fasta file
-    Then the PTMs from each of the key PTM datasets that come down with it. 
+    First, download all the data from PhosphositePlus and place it in where you will 
+    reference as PHOSPHOSTIEPLUS_DATA_DIR. 
+    
+    Given the files as they are downloaded from PhosphositePlusrearrange this rearranges 
+    data from those files to create a dataframe, written to the CoDIAC data location
+    as a dataframe that can tehn be used to query sequence and PTMs by a Uniprot ID. 
+
+    This code will need to be updated in the PhosphositePlus website changes their data format.
+    Currently assumes the files are the following and each of a 3 line header preamble:
+    Phosphorylation_site_dataset
+    Ubiquitination_site_dataset
+    Sumoylation_site_dataset
+    O-GalNAc_site_dataset
+    Phosphosite_PTM_seq.fasta
 
     Returns
     -------
     df : pandas dataframe
         A dataframe with the UniprotID, species, protein name, sequence, and PTMs for each protein
+
     """
+
+    phospho = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Phosphorylation_site_dataset')
+    ubiq = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Ubiquitination_site_dataset')
+    sumo = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Sumoylation_site_dataset')
+    glyco = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset')
     sequence_file = PHOSPHOSITEPLUS_DATA_DIR+'Phosphosite_PTM_seq.fasta'
+
+    #check that all the files exist
+    if not os.path.exists(sequence_file):
+        print("ERROR: %s does not exist"%(sequence_file))
+        return None
+    if not os.path.exists(phospho):
+        print("ERROR: %s does not exist"%(phospho))
+        return None
+    if not os.path.exists(ubiq):
+        print("ERROR: %s does not exist"%(ubiq))
+        return None
+    if not os.path.exists(sumo):
+        print("ERROR: %s does not exist"%(sumo))
+        return None
+    if not os.path.exists(glyco):
+        print("ERROR: %s does not exist"%(glyco))
+        return None
+    
+
     #first remove the non-fasta lines at the preamble of the file, then load the rest of the data
     with codecs.open(sequence_file, 'r', encoding='utf-8',
                  errors='ignore') as f:
@@ -54,11 +91,6 @@ def convert_pSiteDataFiles():
 
     #next, let's handle the PTM files, put them as a dataframe then, merge their PTMs into a string 
     #for appending to the larger parent df.
-    phospho = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Phosphorylation_site_dataset')
-    ubiq = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Ubiquitination_site_dataset')
-    sumo = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Sumoylation_site_dataset')
-    glyco = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset')
-    dict_list = [phospho, ubiq, sumo, glyco]
     #merge the PTMs into a string
     for uniprot_id, row in df.iterrows():
         print("DEBUG: working on %s"%(uniprot_id))
@@ -75,7 +107,10 @@ def convert_pSiteDataFiles():
         df.loc[uniprot_id, 'modifications'] = PTM_string
         print("DEBUG, adding PTMs %s"%(PTM_string))
 
-    return df, dict_list
+    print("Writing New Phosphosite Data to %s"%(PHOSPHOSITE_FILE))
+    df.to_csv(PHOSPHOSITE_FILE)
+
+    return df
 
 def read_PTM_file_to_df(file):
     """
