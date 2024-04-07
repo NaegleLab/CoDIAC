@@ -52,7 +52,7 @@ def get_PTMs(uniprot_ID):
                 return PTMs
         else:
             print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
-            return None
+            return '-1'
     else:
         print("ERROR: PhosphositePlus data not found. Run convert_pSiteDataFiles to create it")
         return None
@@ -71,14 +71,15 @@ def get_sequence(uniprot_ID):
     -------
     sequence : str
         The sequence of the protein of interest. 
+        Returns '-1' if sequence not found
     
     """
     if PSITE_INIT:
         if uniprot_ID in PHOSPHOSITE.index:
             return PHOSPHOSITE.loc[uniprot_ID, 'sequence']
         else:
-            print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
-            return None
+            #print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
+            return '-1'
     else:
         print("ERROR: PhosphositePlus data not found. Run convert_pSiteDataFiles to create it")
         return None
