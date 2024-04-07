@@ -8,7 +8,65 @@ import codecs
 #local directory of Phosphosite data and point that here. 
 package_directory = os.path.dirname(os.path.abspath(__file__))
 PHOSPHOSITE_FILE = package_directory + '/data/phosphositeplus_data.csv'
+if os.path.exists(PHOSPHOSITE_FILE):
+    PHOSPHOSITE = pd.read_csv(PHOSPHOSITE_FILE, index_col=0)
+    PSITE_INIT = True
+else:
+    PSITE_INIT = False
 
+
+
+def get_PTMs(uniprot_ID):
+    """
+    Get PTMs for a given Uniprot ID from the PhosphoSitePlus data. You must have created
+    the data file from the PhosphoSitePlus using convert_pSiteDataFiles.
+
+    Parameters
+    ----------
+    uniprot_ID : str
+        Uniprot ID for the protein of interest
+    
+    Returns
+    -------
+    PTMs : str
+        A string of PTMs for the protein of interest. 
+    
+    """
+    if PSITE_INIT:
+        if uniprot_ID in PHOSPHOSITE.index:
+            return PHOSPHOSITE.loc[uniprot_ID, 'modifications']
+        else:
+            print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
+            return None
+    else:
+        print("ERROR: PhosphositePlus data not found. Run convert_pSiteDataFiles to create it")
+        return None
+
+def get_sequence(uniprot_ID):
+    """
+    Get the sequence for a given Uniprot ID from the PhosphoSitePlus data. You must have created
+    the data file from the PhosphoSitePlus using convert_pSiteDataFiles.
+
+    Parameters
+    ----------
+    uniprot_ID : str
+        Uniprot ID for the protein of interest
+    
+    Returns
+    -------
+    sequence : str
+        The sequence of the protein of interest. 
+    
+    """
+    if PSITE_INIT:
+        if uniprot_ID in PHOSPHOSITE.index:
+            return PHOSPHOSITE.loc[uniprot_ID, 'sequence']
+        else:
+            print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
+            return None
+    else:
+        print("ERROR: PhosphositePlus data not found. Run convert_pSiteDataFiles to create it")
+        return None
 
 def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
     """
