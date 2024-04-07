@@ -28,13 +28,28 @@ def get_PTMs(uniprot_ID):
     
     Returns
     -------
-    PTMs : str
-        A string of PTMs for the protein of interest. 
+    PTMs : tuples
+        Returns a list of tuples of modifications
+        [(position, residue, modification-type),...,]
+        
+        Returns -1 if unable to find the ID
+
+        Returns [] (empty list) if no modifications  
     
     """
     if PSITE_INIT:
         if uniprot_ID in PHOSPHOSITE.index:
-            return PHOSPHOSITE.loc[uniprot_ID, 'modifications']
+            mod_str = PHOSPHOSITE.loc[uniprot_ID, 'modifications']
+            if mod_str == 'nan':
+                return []
+            else:
+                mod_list = mod_str.split(';')
+                PTMs = []
+                for mod in mod_list:
+                    pos, mod_type = mod.split('-')
+                    aa = pos[0]
+                    PTMs.append((aa, pos[1:], mod_type))
+                return PTMs
         else:
             print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
             return None
@@ -92,28 +107,31 @@ def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
 
     """
 
+    #check that all the files exist
+    sequence_file = PHOSPHOSITEPLUS_DATA_DIR+'Phosphosite_seq.fasta'
+
+    if not os.path.exists(sequence_file):
+        print("ERROR: %s does not exist"%(sequence_file))
+        return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'Phosphorylation_site_dataset'):
+        print("ERROR: Phosphorylation file Phosphorylation_site_dataset does not exist")
+        return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'Ubiquitination_site_dataset'):
+        print("ERROR: Ubiquitination file Ubiquitination_site_dataset does not exist")
+        return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'Sumoylation_site_dataset'):
+        print("ERROR: Sumoylation file Sumoylation_site_dataset does not exist")
+        return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset'):
+        print("ERROR: O-GalNAc file O-GalNAc_site_dataset does not exist")
+        return None
+
     phospho = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Phosphorylation_site_dataset')
     ubiq = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Ubiquitination_site_dataset')
     sumo = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Sumoylation_site_dataset')
     glyco = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset')
-    sequence_file = PHOSPHOSITEPLUS_DATA_DIR+'Phosphosite_PTM_seq.fasta'
 
-    #check that all the files exist
-    if not os.path.exists(sequence_file):
-        print("ERROR: %s does not exist"%(sequence_file))
-        return None
-    if not os.path.exists(phospho):
-        print("ERROR: %s does not exist"%(phospho))
-        return None
-    if not os.path.exists(ubiq):
-        print("ERROR: %s does not exist"%(ubiq))
-        return None
-    if not os.path.exists(sumo):
-        print("ERROR: %s does not exist"%(sumo))
-        return None
-    if not os.path.exists(glyco):
-        print("ERROR: %s does not exist"%(glyco))
-        return None
+
     
 
     #first remove the non-fasta lines at the preamble of the file, then load the rest of the data
@@ -151,7 +169,7 @@ def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
     #for appending to the larger parent df.
     #merge the PTMs into a string
     for uniprot_id, row in df.iterrows():
-        print("DEBUG: working on %s"%(uniprot_id))
+        #print("DEBUG: working on %s"%(uniprot_id))
         PTM_list = []
         if uniprot_id in phospho:
             PTM_list += phospho[uniprot_id]
@@ -163,7 +181,7 @@ def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
             PTM_list += glyco[uniprot_id]
         PTM_string = ';'.join(PTM_list)
         df.loc[uniprot_id, 'modifications'] = PTM_string
-        print("DEBUG, adding PTMs %s"%(PTM_string))
+        #print("DEBUG, adding PTMs %s"%(PTM_string))
 
     print("Writing New Phosphosite Data to %s"%(PHOSPHOSITE_FILE))
     df.to_csv(PHOSPHOSITE_FILE)
