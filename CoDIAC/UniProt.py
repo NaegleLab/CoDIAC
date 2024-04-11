@@ -98,8 +98,15 @@ def makeRefFile(Uniprot_IDs, outputFile):
                         for k, v in s.items():
                             if k == 'type':
                                 if v == 'DOMAIN':
-                                    start = int(s['begin'])
-                                    end = s['end']
+                                    start_str = s['begin']
+                                    if not start_str[0].isdigit():
+                                        start_str = start_str[1:]
+                                    start = int(start_str)
+
+                                    end_str = s['end']
+                                    if not end_str[0].isdigit():
+                                        end_str = end_str[1:]
+                                    end = int(end_str)
                                     name = s['description']
                                     domdict[start] = end, name
 
