@@ -126,14 +126,22 @@ def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
     if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset'):
         print("ERROR: O-GalNAc file O-GalNAc_site_dataset does not exist")
         return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'O-GlcNAc_site_dataset'):
+        print("ERROR: O-GlcNAc file O-GlcNAc_site_dataset does not exist")
+        return None
+    if not os.path.exists(PHOSPHOSITEPLUS_DATA_DIR+'Methylation_site_dataset'):
+        print("ERROR: Methylation file Methylation_site_dataset does not exist")
+        return None
 
     phospho = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Phosphorylation_site_dataset')
     ubiq = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Ubiquitination_site_dataset')
     sumo = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Sumoylation_site_dataset')
-    glyco = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset')
+    galnac = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GalNAc_site_dataset')
+    glcnac = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'O-GlcNAc_site_dataset')
+    meth = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Methylation_site_dataset')
+    acetyl = read_PTM_file_to_df(PHOSPHOSITEPLUS_DATA_DIR+'Acetylation_site_dataset')
 
 
-    
 
     #first remove the non-fasta lines at the preamble of the file, then load the rest of the data
     with codecs.open(sequence_file, 'r', encoding='utf-8',
@@ -178,8 +186,15 @@ def convert_pSiteDataFiles(PHOSPHOSITEPLUS_DATA_DIR):
             PTM_list += ubiq[uniprot_id]
         if uniprot_id in sumo:
             PTM_list += sumo[uniprot_id]
-        if uniprot_id in glyco:
-            PTM_list += glyco[uniprot_id]
+        if uniprot_id in galnac:
+            PTM_list += galnac[uniprot_id]
+        if uniprot_id in glcnac:
+            PTM_list += glcnac[uniprot_id]
+        if uniprot_id in meth:
+            PTM_list += meth[uniprot_id]
+        if uniprot_id in acetyl:
+            PTM_list += acetyl[uniprot_id]
+        
         PTM_string = ';'.join(PTM_list)
         df.loc[uniprot_id, 'modifications'] = PTM_string
         #print("DEBUG, adding PTMs %s"%(PTM_string))
@@ -216,9 +231,28 @@ def read_PTM_file_to_df(file):
         elif type == 'sm':
             type_name = 'Sumoylation'
         elif type == 'ga':
-            type_name = 'N-Glycosylation'
+            if 'N' in pos:
+                type_name = 'N-Glycosylation'
+            elif 'S' in pos: #if you want a more general classification, this and T can be either just O-GalNAc or O-glycosylation
+                type_name = 'O-GalNAc Serine'
+            elif 'T' in pos:
+                type_name = 'O-GalNAc Threonine'
+        elif type == 'gl':
+            if 'S' in pos: #if you want a more general classification, this can be either just O-GlcNAc or O-glycosylation
+                type_name = 'O-GlcNAc Serine'
+            elif 'T' in pos:
+                type_name = 'O-GlcNAc Threonine'
+        elif type == 'm1' or type == 'me':
+            type_name = 'Methylation'
+        elif type == 'm2':
+            type_name = 'Dimethylation'
+        elif type == 'm3':
+            type_name = 'Trimethylation'
+        elif type == 'ac':
+            type_name = 'Acetylation'
         else: 
             print("ERROR: don't recognize PTM type %s"%(type))
+
         if uniprot_id not in PTM_dict:
             PTM_dict[uniprot_id] = []
         PTM_dict[uniprot_id].append(pos+'-'+type_name)
