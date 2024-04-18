@@ -39,17 +39,19 @@ def get_PTMs(uniprot_ID):
     """
     if PSITE_INIT:
         if uniprot_ID in PHOSPHOSITE.index:
-            mod_str = PHOSPHOSITE.loc[uniprot_ID, 'modifications']
-            if mod_str == 'nan':
-                return []
-            else:
-                mod_list = mod_str.split(';')
-                PTMs = []
-                for mod in mod_list:
-                    pos, mod_type = mod.split('-')
-                    aa = pos[0]
-                    PTMs.append((aa, pos[1:], mod_type))
-                return PTMs
+            mods = PHOSPHOSITE.loc[uniprot_ID, 'modifications']
+            if mods == 'nan' or pd.isna(mods):
+                print("Found no mods for %s"%(uniprot_ID))
+                return [] #can find the ID, but no modifications
+            mods_raw=mods.split(";")
+            mods_clean =[]
+            for i in mods_raw:
+                tmp = i.strip()
+                tmp = tmp.split("-")
+            
+            # append a tuple of (position, residue, type)
+            mods_clean.append((tmp[0][1:], tmp[0][0], "-".join(tmp[1:])))
+            return mods_clean
         else:
             print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
             return '-1'

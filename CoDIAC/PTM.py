@@ -59,6 +59,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
         print("Directory for target files does not exist, please create it.")
         return ptm_feature_file_list
 
+    #print("DEBUG: PhosphoSitePlus is %s"%(PHOSPHOSITE_PLUS))
     #write the fasta into the directory - this actually doesn't make sense, it's the wrong headers if mappingDict is incorrect
     #fasta_output_file = feature_dir + Interpro_ID + '.fasta'
     domain_dict = UniProt.make_domain_fasta_dict(uniprot_ref_file, Interpro_ID, n_term_offset, c_term_offset)
@@ -83,7 +84,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
 
 
     color = '3546b5'
-    ptm_count_dict, ptm_feature_dict = get_Interpro_PTMs(Interpro_ID, uniprot_ref_file, n_term_offset, c_term_offset, gap_threshold)
+    ptm_count_dict, ptm_feature_dict = get_Interpro_PTMs(Interpro_ID, uniprot_ref_file, PHOSPHOSITE_PLUS, n_term_offset, c_term_offset, gap_threshold)
 
     if num_PTM_threshold <=0:
         num_PTM_threshold = 1 
@@ -139,16 +140,20 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold, PHOSPHOSITE_PLUS):
         Keeps track of PTMs that did not translate and the reason
     
     """
-
+    #print("DEBUG: PhosphoSitePlus is %s"%(PHOSPHOSITE_PLUS))
     if not PHOSPHOSITE_PLUS:
         proteomescout_seq, PTMs = get_PTMS_proteomeScout(uniprot_ID)
     else:
-        proteomescout_seq, PTMs = get_PTMs_phosphoSitePlus(uniprot_ID)
+        proteomescout_seq, PTMs = get_PTMS_phosphoSitePlus(uniprot_ID)
+        #print("DEBUG: Working on %s"%(uniprot_ID))
+        #print(proteomescout_seq)
+        #print(PTMs)
     #proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
     #PTMs = PTM_API.get_PTMs(uniprot_ID)
     errors = ""
     if proteomescout_seq == '-1':
         errors = "Error: PTM record not found by %s"%(uniprot_ID)
+        print(errors)
         return errors, [], []
     aln, struct_sequence_ref_spanning, from_start, from_end, range, pos_diff, diffList, gaps_ref_to_struct, gaps_struct_to_ref = IntegrateStructure_Reference.return_mapping_between_sequences(proteomescout_seq, uniprot_seq, 1, 1, len(uniprot_seq))
     
@@ -168,6 +173,7 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold, PHOSPHOSITE_PLUS):
     proteomescout_ind = 0
     uniprot_ind = 1
     for a_PTM in PTMs:
+        #print(a_PTM)
         pos, aa, ptm_type = a_PTM
         pos = int(pos) #this is ones-based counted
         if aa_list[pos-1][proteomescout_ind]!=aa:
@@ -194,10 +200,9 @@ def get_PTMS_proteomeScout(uniprot_ID):
 def get_PTMS_phosphoSitePlus(uniprot_ID):
     seq = PhosphoSitePlus_Tools.get_sequence(uniprot_ID)
     PTMs = PhosphoSitePlus_Tools.get_PTMs(uniprot_ID)
-
     return seq, PTMs
 
-def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, n_term_offset=0, c_term_offset=0, gap_threshold=0.7, PHOSPHOSITE_PLUS=False):
+def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, PHOSPHOSITE_PLUS, n_term_offset=0, c_term_offset=0, gap_threshold=0.7):
     """
     Given an uniprot reference file and a particular InterproID of interest, get all the PTMs that exist
     within the domains in the uniprot reference file that have that interpro ID. 
