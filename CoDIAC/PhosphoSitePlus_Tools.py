@@ -50,7 +50,7 @@ def get_PTMs(uniprot_ID):
                 tmp = tmp.split("-")
             
             # append a tuple of (position, residue, type)
-            mods_clean.append((tmp[0][1:], tmp[0][0], "-".join(tmp[1:])))
+                mods_clean.append((tmp[0][1:], tmp[0][0], "-".join(tmp[1:])))
             return mods_clean
         else:
             print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
