@@ -501,3 +501,34 @@ def domain_specific_feafile(input_feafile, output_path, domain_of_interest):
         df_filter.to_csv(output_file, mode='a', sep='\t', index=False, header=False)  
         print('%s specific Feature file created!'%domain_of_interest_edit)
         
+
+def return_array_from_annotation(ann_file):
+    """
+    Given an annotation file, return the array of values from the annotation file bar graph track
+    This is useful for plotting the bar graph track in matplotlib or counting the total number of 
+    features along an alignment. 
+
+    Parameters
+    ----------
+    ann_file: str
+        Name of the annotation file to parse the bar graph of
+    
+    Returns
+    -------
+    arr: np.array
+        Array of values from the bar graph track in the annotation file
+    """
+    with open(ann_file, 'r') as f:
+        lines = f.readlines()
+        bar_graph_line = lines[1]
+        bar_graph = bar_graph_line.split('\t')[-1]
+        bar_graph = bar_graph.strip('\n')
+        bar_graph = bar_graph.strip(' ')
+        bar_graph_vals = bar_graph.split('|')
+        val_arr = []
+        for index in range(len(bar_graph_vals)-1):
+            temp = bar_graph_vals[index].split(',')
+            val_arr.append(int(temp[0]))  
+            arr = np.array(val_arr)
+
+    return arr
