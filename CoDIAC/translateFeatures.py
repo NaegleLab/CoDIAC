@@ -3,6 +3,7 @@ from Bio import pairwise2
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
+from CoDIAC import jalviewFunctions
 
 '''
 These tools allow you to translate features from an input fasta version of protein or protein coding regions onto a reference.
@@ -19,10 +20,11 @@ def translate_features(input_fasta_file, input_features, reference_fasta_file, o
     """
     input_dict, input_errors = return_sequence_dict_from_fasta(input_fasta_file)
     reference_dict, reference_errors = return_sequence_dict_from_fasta(reference_fasta_file)
-    type_dict, feature_dict = read_feature_file(input_features)
+    type_dict, feature_dict = jalviewFunctions.return_features_from_file(input_features)
     feature_trans_dict= return_translation_dict_for_all_feature_seqs(feature_dict, input_dict, reference_dict)
     feature_output_dict = return_translated_features(feature_dict, feature_trans_dict, percent_matched_threshold)
     write_feature_file(type_dict, feature_output_dict, output_feature_file)
+    return feature_output_dict
 def aligned_file_check(fasta_file):
     sequences=list(SeqIO.parse(fasta_file, "fasta"))
     for seq in sequences:
@@ -325,7 +327,7 @@ def return_translation_dict_for_all_feature_seqs(feature_dict, input_dict, refer
     Parameters
     ----------
     feature_dict: dict
-        keys are fasta headers, values are the list of features to translate
+        keys are fasta headers, values are dictionaries, whose keys are the list of features to translate and values are a list of the feature types
     input_dict: dict
         input dictionary, keys fasta headers and values are sequences
     reference_dict: dict
@@ -364,7 +366,7 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
     """       
     feature_dict_output = {}
     for input_header in feature_dict:
-        features_to_trans = feature_dict[input_header]
+        features_to_trans = list(feature_dict[input_header].keys())
         aln = feature_trans_dict[input_header]['aln']
         output_header = feature_trans_dict[input_header]['header']
         percent_matched = feature_trans_dict[input_header]['percent_matched']
@@ -379,24 +381,33 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
                 # what position that is in the output, keeping it only if the two amino acids match
                 # at that aligned position.
                 try:
-                    if aa[feature-1][0] == aa[feature-1][1]:  # amino acids are the same
-                        validated_features.append(map_to_ref[feature-1]+1)
+                    if aa[int(feature)-1][0] == aa[int(feature)-1][1]:  # amino acids are the same
+                        validated_features.append(map_to_ref[int(feature)-1]+1) #validated features are integer values
                 except:
-                    print("ERROR: position%d is out of range for match %s to %s"%(feature, input_header, output_header))
+                    print("ERROR: position%d is out of range for match %s to %s"%(int(feature), input_header, output_header))
 
-            feature_dict_output[output_header]=validated_features
+            ## feature_dict_output[output_header]=validated_features
+            #having found the features that can be translated, rebuild the output feature_dictionary, keeping the construct 
+            # of the input dictionary format
+            for feature in validated_features:
+                if output_header not in feature_dict_output:
+                    feature_dict_output[output_header] = {}
+                feature_dict_output[output_header][str(feature)] = feature_dict[input_header][str(feature)] #copy the feature type
         else:
             print("LOG: %s did not have sufficent match that meant %0.2f"%(input_header, percent_match_threshold))
     return feature_dict_output
 
 def write_feature_file(type_dict, feature_dict, output_file):
     with open(output_file, 'w') as file:
-        ptm_type = list(type_dict.keys())[0]
-        color = list(type_dict.values())[0]
-        file.write('{}\t{}\n'.format(ptm_type, color))
+        for type in type_dict:
+            file.write('{}\t{}\n'.format(type, type_dict[type]))
+        # ptm_type = list(type_dict.keys())[0]
+        # color = list(type_dict.values())[0]
+        # file.write('{}\t{}\n'.format(ptm_type, color))
         for header in feature_dict:
             for feature_pos in feature_dict[header]:
-                file.write('{}\t{}\t-1\t{}\t{}\t{}\n'.format(ptm_type, header, feature_pos, feature_pos, ptm_type))
+                feature_name = feature_dict[header][feature_pos][0]
+                file.write('{}\t{}\t-1\t{}\t{}\t{}\n'.format(feature_name, header, feature_pos, feature_pos, feature_name))
     return file
 
 
