@@ -390,8 +390,9 @@ def write_feature_file(type_dict, feature_dict, output_file):
         # file.write('{}\t{}\n'.format(ptm_type, color))
         for header in feature_dict:
             for feature_pos in feature_dict[header]:
-                feature_name = feature_dict[header][feature_pos][0]
-                file.write('{}\t{}\t-1\t{}\t{}\t{}\n'.format(feature_name, header, feature_pos, feature_pos, feature_name))
+                for feature_name in feature_dict[header][feature_pos]:
+                #feature_name = feature_dict[header][feature_pos][0]
+                    file.write('{}\t{}\t-1\t{}\t{}\t{}\n'.format(feature_name, header, feature_pos, feature_pos, feature_name))
     return file
 
 

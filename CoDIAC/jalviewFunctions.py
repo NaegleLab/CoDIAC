@@ -56,7 +56,11 @@ def return_features_from_file(file):
                 seq_dict[seq_id][pos] = [feature]
                 if len(feature_set) > 1:
                     for feat in feature_set:
-                        seq_dict[seq_id][pos].append(feat)
+                        if feat not in seq_dict[seq_id][pos]:
+                            seq_dict[seq_id][pos].append(feat)
+            else: #position has already been set, so append to the list of features seen at this position
+                if feature not in seq_dict[seq_id][pos]: # avoid adding a duplicate feature  
+                    seq_dict[seq_id][pos].append(feature) #will get a list of features. 
         elif ~len(line_arr):
             continue
         else:
