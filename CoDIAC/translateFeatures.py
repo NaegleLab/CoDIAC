@@ -40,23 +40,7 @@ def fasta_file_check(fasta_file):
     for record in records:
         if set(record.seq.upper()) <= valid_characters:
             return True
-def read_feature_file(feature_file):
-    feature_dict={}
-    type_dict = {}
-    with open(feature_file, 'r') as file:
-        for row in file:
-            columns = row.split('\t')
-            if len(columns) > 2:
-                header = columns[1]
-                feature = int(columns[4])
-                if header not in feature_dict:
-                    feature_dict[header] = []
-                feature_dict[header].append(feature)
-            elif len(columns) == 2:
-                feature_type = columns[0]
-                color = columns[1]
-                type_dict[feature_type] = color
-    return type_dict, feature_dict
+
 
 def return_sequence_dict_from_fasta(fasta_file):
     """
