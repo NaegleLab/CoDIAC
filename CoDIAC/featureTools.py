@@ -339,3 +339,44 @@ def return_position_mapping_dict(alignment_file):
     #remember this gap_map is 0-based counting, but feature_dict are 1-based counting
     return seq_translation_dict, aln
 
+def return_intersection(feature_set_1, feature_set_2):
+    """
+    Given two feature set dictionaries, return the intersection of the second set with the first
+    Returns a dictionary outer key the header, inner key the position, and values a list of the features that 
+    directly overlapped. 
+    Assumes that both feature sets are on the same positioning system (i.e. translated to the same reference sequences)
+
+    Parameters
+    ----------
+    feature_set_1:
+        dict in the form returned by return_features_from_file(file)
+        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position
+        and values equal to a list of features set for that feature.
+    feature_set_2:
+        dict in the form returned by return_features_from_file(file)
+        Dict of dicts, with parent key the fasta header seq id, then inner dict with keys equal to the amino acid position
+        and values equal to a list of features set for that feature.
+    Returns
+    -------
+    intersection_dict:
+        A dictionary containing the headers of feature_set_1 for sequences where at least one position overlapped 
+        with feature_set_2. The inner dictionary key are the positions and these point to value arrays of 
+        feautres in set 2 that occurred at the same position. 
+    
+
+    """
+
+    headers_not_overlapping = []
+    feature_intersection = {}
+    for header in feature_set_1:
+        feature_intersection[header] = {}
+        for site in feature_set_1[header]:
+            feature_intersection[header][site] = []
+
+            if header in feature_set_2:
+                if site in feature_set_2[header]:
+                    feature_intersection[header][site] += feature_set_2[header][site]
+                #print(header, site, domain_int_dict[header][site])
+    else:
+        headers_not_overlapping.append(header)
+    return feature_intersection, headers_not_overlapping
