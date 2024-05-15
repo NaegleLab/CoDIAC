@@ -10,7 +10,7 @@ import sys
 
 
 """
-CoDAC.featureTools 
+CoDIAC.featureTools 
 Assumes fasta and feature files, such as used by Jalview definitions.
 Includes Functions to integrate feature files, create annotation tracks, and translate features between possible different sources
 """
@@ -232,7 +232,7 @@ def return_feature_ann_dict(aln, feature_dict):
 
     Parameters
     ----------
-    aln: Cogent3.load_alinged_seqs
+    aln: Cogent3.load_aligned_seqs
         Cogent3 sequence alignment object, such as createdg by aln = load_aligned_seqs(alignment_file, moltype='protein')
 
     feature_dict : dict
@@ -315,3 +315,27 @@ def print_ann_file(feature_annotations, feature_colors, annotation_file):
 
     af.close()
     
+def return_position_mapping_dict(alignment_file):
+    """
+    Given an alignment file (fasta format), return a dictionary with the mapping of the alignment position to the 
+    original sequence position to the new positions. 
+
+    Parameters
+    ----------
+    alignment_file: str
+        Name of the alignment file in fasta format
+    
+    Returns
+    -------
+    seq_translation_dict: dict
+        Dict with keys as the sequence ids and values a dictionary. Subdictionary has keys int positions (zero-based)
+         of the protein sequence and values the alignment position (also int and zero-based)
+
+    """
+    aln = load_aligned_seqs(alignment_file,  moltype='protein')
+    seq_translation_dict = {}
+    for seq_id in aln.names:
+        seq_translation_dict[seq_id] = aln.get_gapped_seq(seq_id).gap_maps()[0] #first argument is the key of the original sequence, value is the gapped position
+    #remember this gap_map is 0-based counting, but feature_dict are 1-based counting
+    return seq_translation_dict, aln
+
