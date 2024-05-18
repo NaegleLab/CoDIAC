@@ -252,16 +252,45 @@ def generate_domain_metadata_string_list(metadata, uniprot_list):
             short_name = domain_dict['interpro']['short']
             id = domain_dict['interpro']['accession']
             # Iterate over boundaries
+            # here, also sort the domains in the list according to start positions.
             for boundary in domain_dict['interpro']['boundaries']:
                 start = boundary['start']
                 end = boundary['end']
                 metadata_string = short_name+':'+id+':'+str(start)+':'+str(end)
                 string_list.append(metadata_string)
+        sorted_domain_list = sort_domain_list(string_list)
         domain_arch = return_domain_architecture(string_list)
         domain_arch_list.append(domain_arch)
-        metadata_string_list.append(';'.join(string_list))
+        metadata_string_list.append(';'.join(sorted_domain_list))
     return metadata_string_list, domain_arch_list
 
+def sort_domain_list(domain_string_list):
+    """
+    Given a domain_list, list of domain information short_name:id:start:end, 
+    sort the list according to start positions of the domains and return a new list
+
+    Parameters
+    ----------
+    domain_string_list: list
+        list of domain information short_name:id:start:end as a string, array of strings
+    Returns
+    -------
+    sorted_domain_string_list: list
+        list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings
+
+    """
+    domdict = {}
+    for domain_info in domain_string_list:
+        name, uniprot_id, start, end = domain_info.split(':')
+        start = int(start)
+        domdict[start] = name, uniprot_id, end
+
+    sorted_dict = dict(sorted(domdict.items(),reverse=False))
+    sorted_domain_list = []
+    for key, values in sorted_dict.items():
+        domain = values[0]+':'+values[1]+':'+str(key)+':'+str(values[2])
+        sorted_domain_list.append(domain)
+    return sorted_domain_list
 
 def appendRefFile(input_RefFile, outputfile):
     '''
