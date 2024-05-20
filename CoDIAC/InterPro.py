@@ -125,6 +125,91 @@ def collect_data(entry, protein_accession, domain_database=None):
         dictionary['short'] = entry['extra_fields']['short_name']
     return dictionary
 
+def get_domains(protein_accession):
+    """
+    Given a uniprot accession (protein_accession), return a list of domain dictionaries
+    each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
+    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
+    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
+    """
+    interpro_url = "https://www.ebi.ac.uk/interpro/api"
+    extra_fields = ['hierarchy', 'short_name']
+    metadata = {}
+    with requests.Session() as session:
+        url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+        try:
+            resp = session.get(url).json()
+        except Exception as e:
+            print(f"Error processing {protein_accession}: {e}")  # Debugging line
+            metadata[protein_accession] = []     
+        current_accession = [protein_accession]
+        
+    entry_results = resp['results']
+    d_dict = {} # Dictionary to store domain information for each entry
+    d_resolved = []
+    for i, entry in enumerate(entry_results):
+        d_dict[i] = collect_data(entry, protein_accession)
+    d_resolved+=return_expanded_domains(d_dict[0]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+    values = list(d_dict.keys())
+    for domain_num in values[1:]:
+    
+        d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+    return d_resolved
+  
+def return_expanded_domains(domain_entry):
+    """
+    Given a domain entry, such as from collect_data, return a list of expanded domains where there is only 
+    one boundary per set. This will reset the dictionary, such that instead of 'boundaries' with a list of ['start': x, 'end': y]
+    it will be a single boundary with 'start': x, 'end': y as keys in the dictionary.
+    """
+    boundary_list = domain_entry['boundaries']
+    domain_new = domain_entry.copy()
+    domain_new['start'] = boundary_list[0]['start']
+    domain_new['end'] = boundary_list[0]['end']
+    domain_list = []
+    domain_list.append(domain_new)
+    #make a new dictionary with the start and end values of subsequent domains (Then go through and pop boundaries off all)
+    if len(boundary_list) > 1:
+        for i in range(1, len(boundary_list)):
+            domain_temp = domain_entry.copy()
+            domain_temp['start'] = boundary_list[i]['start']
+            domain_temp['end'] = boundary_list[i]['end']
+            domain_list.append(domain_temp)
+    for domain in domain_list: #remove the boundaries term now
+        domain.pop('boundaries')
+    return domain_list
+
+def resolve_domain(d_resolved, dict_entry):
+    # d_resolved is a list of dictionaries, each dictionary is a domain entry
+    #setup the existing boundaries that are in d_resolved
+    boundary_array = []
+    for domain in d_resolved:
+        boundary_array.append(set(range(domain['start'], domain['end'])))
+    
+    #expand the dict_entry as well to a list
+    new_domains = return_expanded_domains(dict_entry)
+    #print("DEBUG: have these new domains")
+    #print(new_domains)
+
+    #first expand if multiple boundaries exist in the dict_entry
+    for domain in new_domains:
+        range_new = set(range(domain['start'], domain['end']))
+        found_intersecting = False
+        for range_existing in boundary_array:
+            #check if the set overlap between the new range and the existing range is greater than 
+            # 50% of the new range. If so, do not add the new range.
+            if len(range_new.intersection(range_existing))/len(min(range_new, range_existing)) > 0.5:
+                found_intersecting = True
+                break
+        if not found_intersecting:
+            d_resolved.append(domain)
+    return d_resolved
+
+
+#compare the overlap of a domain to an existing set of domains.
+
+
+
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
     interpro_url = "https://www.ebi.ac.uk/interpro/api"
