@@ -99,6 +99,27 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
 
 
 def collect_data(entry, protein_accession, domain_database=None):
+    """
+    Given an entry from the InterPro API, collect the data for a protein accession
+    and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'.
+    If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
+    
+    Parameters
+    ----------
+    entry: dict
+        dictionary from the InterPro API
+    protein_accession: str
+        Uniprot accession ID for a protein
+    domain_database: str
+        Domain database to search for, default is None
+    Returns
+    -------
+    dictionary: dict
+        dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+        where 'boundaries' is a list of dictionaries with keys 'start' and 'end'
+
+    """
     entry_protein_locations = entry['proteins'][0]['entry_protein_locations']
     if entry_protein_locations is None:
         entry_protein_locations = []
@@ -131,6 +152,16 @@ def get_domains(protein_accession):
     each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
     These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
     we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
+
+    Parameters
+    ----------
+    protein_accession: str
+        Uniprot accession ID for a protein
+    Returns
+    -------
+    d_resolved: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+
     """
     interpro_url = "https://www.ebi.ac.uk/interpro/api"
     extra_fields = ['hierarchy', 'short_name']
@@ -206,12 +237,29 @@ def resolve_domain(d_resolved, dict_entry):
     return d_resolved
 
 
-#compare the overlap of a domain to an existing set of domains.
-
-
 
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
+    """
+
+    Given a list of uniprot accessions, return a dictionary of protein accessions containing domain metadata.
+    This function will return a dictionary with keys as the protein accession and values as a list of dictionaries
+    where each dictionary contains domain metadata. This metadata is collected from the InterPro API and includes
+    the keys 'interpro', 'num_children'. The 'interpro' key contains a dictionary with keys 'name', 'accession', 'num_boundaries', 'boundaries'
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'. If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
+    This version of code uses hierarchy and children nodes to select InterPro domains. 
+
+    Parameters
+    ----------
+    uniprot_accessions: list
+        list of uniprot accessions
+    Returns
+    -------
+    metadata: dict
+        dictionary of protein accessions containing domain metadata
+    """
+
+
     interpro_url = "https://www.ebi.ac.uk/interpro/api"
     extra_fields = ['hierarchy', 'short_name']
     metadata = {}
