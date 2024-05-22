@@ -309,31 +309,41 @@ def resolve_domain(d_resolved, dict_entry, threshold=0.5):
             d_resolved.append(domain)
     return d_resolved
 
-def return_domain_architecture(domain_list):
+def sort_domain_list(domain_list):
     """
-    Given a domain_list, list of domain information short_name:id:start:end return a domain 
-    architecture, which is the | separated list of domain names, in the order they appear in protein
+    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of
+    the domains according to the start site. 
+
+    Parameters
+    ----------
+    domain_list: list
+        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'short', 'start', 'end'
+    Returns
+    -------
+    sorted_domain_list: list
+        list of domain dictionaries, now sorted by the start positions.
+    domain_string_list: list
+        list of domain information short_name:id:start:end
+    domain_arch: string
+        domain architecture as a string, | separated list of domain names
 
     """
-    #Domain Architecture
     domdict = {}
-    for domain_info in domain_list:
-        name, id, start, end = domain_info.split(':')
-        start = int(start)
-        domdict[start] = end, name
+    for domain in domain_list:
+        start = int(domain['start'])
+        if start in domdict:
+            print("ERROR: More than one domain have the same start position!")
+        domdict[start] = domain
 
     sorted_dict = dict(sorted(domdict.items(),reverse=False))
-    domain_arch = []
+    sorted_domain_list = []
+    domain_string_list = []
+    domain_arch_names = []
     for key, value in sorted_dict.items():
-        #sort_start = key
-        #sort_end = value[0]
-        domain = value[1]
-        domain_arch.append(domain)
-
-    
-    final_domarch = '|'.join(domain_arch)   
-    return final_domarch
-
+        sorted_domain_list.append(value)
+        domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
+        domain_arch_names.append(value['short'])
+    return sorted_domain_list, domain_string_list, '|'.join(domain_arch_names)
 
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
@@ -477,41 +487,6 @@ def generate_domain_metadata_string_list(metadata, uniprot_list):
     return metadata_string_list, domain_arch_list
 
 
-def sort_domain_list(domain_list):
-    """
-    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of
-    the domains according to the start site. 
-
-    Parameters
-    ----------
-    domain_list: list
-        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'short', 'start', 'end'
-    Returns
-    -------
-    sorted_domain_list: list
-        list of domain dictionaries, now sorted by the start positions.
-    domain_string_list: list
-        list of domain information short_name:id:start:end
-    domain_arch: string
-        domain architecture as a string, | separated list of domain names
-
-    """
-    domdict = {}
-    for domain in domain_list:
-        start = int(domain['start'])
-        if start in domdict:
-            print("ERROR: More than one domain have the same start position!")
-        domdict[start] = domain
-
-    sorted_dict = dict(sorted(domdict.items(),reverse=False))
-    sorted_domain_list = []
-    domain_string_list = []
-    domain_arch_names = []
-    for key, value in sorted_dict.items():
-        sorted_domain_list.append(value)
-        domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
-        domain_arch_names.append(value['short'])
-    return sorted_domain_list, domain_string_list, '|'.join(domain_arch_names)
 
 
 
@@ -565,14 +540,13 @@ def appendRefFile(input_RefFile, outputfile):
     df = pd.read_csv(input_RefFile)
     uniprotList = df['UniProt ID'].to_list()
     print("Fetching domains..")
-    domainMD = generateDomainMetadata_wfilter(uniprotList)
-    print("Processing domains...")
-    #processed_MD = process_proteins(domainMD)
-    filtered_MD = filter_domains(domainMD)
-    metadata_string_list, domain_arch_list = generate_domain_metadata_string_list(filtered_MD, uniprotList)
-    
-    df['Interpro Domains'] = metadata_string_list
-    df['Interpro Domain Architecture'] = domain_arch_list
+    domain_dict, domain_string_dict, domain_arch_dict = get_domains(uniprotList)
+    print("Appending domains to file..")    
+    for i in range(len(uniprotList)):
+        df.at[i, 'Interpro Domains'] = ';'.join(domain_string_dict[uniprotList[i]])
+        df.at[i, 'Interpro Domain Architecture'] = domain_arch_dict[uniprotList[i]]
+    #df['Interpro Domains'] = metadata_string_list
+    #df['Interpro Domain Architecture'] = domain_arch_list
     df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
     return df
