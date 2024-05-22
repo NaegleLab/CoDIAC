@@ -173,7 +173,6 @@ def get_domains(protein_accession):
         except Exception as e:
             print(f"Error processing {protein_accession}: {e}")  # Debugging line
             metadata[protein_accession] = []     
-        current_accession = [protein_accession]
         
     entry_results = resp['results']
     d_dict = {} # Dictionary to store domain information for each entry
@@ -187,7 +186,10 @@ def get_domains(protein_accession):
     for domain_num in values[1:]:
     
         d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
-    return d_resolved
+
+    #having resolved, now let's sort the list and get the domain string information
+    sorted_domain_list, domain_string_list = sort_domain_list(d_resolved)
+    return sorted_domain_list, domain_string_list
   
 def return_expanded_domains(domain_entry):
     """
@@ -264,6 +266,8 @@ def resolve_domain(d_resolved, dict_entry, threshold=0.5):
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
     """
+    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC. 
 
     Given a list of uniprot accessions, return a dictionary of protein accessions containing domain metadata.
     This function will return a dictionary with keys as the protein accession and values as a list of dictionaries
@@ -331,6 +335,8 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
 # Filtering returned metadata 
 
 def filter_domains(metadata, threshold=0.15):
+    """NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC. """
     for protein_accession, domains in metadata.items():
         # Sort by end position and then by size in descending order
         domains.sort(key=lambda x: (-x['interpro']['boundaries'][0]['end'], -(x['interpro']['boundaries'][0]['end'] - x['interpro']['boundaries'][0]['start']), -x['num_children']))
@@ -381,9 +387,12 @@ def return_domain_architecture(domain_list):
     return final_domarch
 
 
-
+# NO LONGER USED, this string generation goes with the code that focuses on hierarch. 
 def generate_domain_metadata_string_list(metadata, uniprot_list):
     """
+    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC.
+
     Condenses protein metadata into strings and outputs them as a list corresponding with indices of accessions in uniprot_list
     Parameters
     ----------
@@ -420,33 +429,66 @@ def generate_domain_metadata_string_list(metadata, uniprot_list):
         metadata_string_list.append(';'.join(sorted_domain_list))
     return metadata_string_list, domain_arch_list
 
-def sort_domain_list(domain_string_list):
+
+def sort_domain_list(domain_list):
     """
-    Given a domain_list, list of domain information short_name:id:start:end, 
-    sort the list according to start positions of the domains and return a new list
+    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of
+    the domains according to the start site. 
 
     Parameters
     ----------
-    domain_string_list: list
-        list of domain information short_name:id:start:end as a string, array of strings
+    domain_list: list
+        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'short', 'start', 'end'
     Returns
     -------
-    sorted_domain_string_list: list
-        list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings
+    sorted_domain_list: list
+        list of domain dictionaries, now sorted by the start positions.
 
     """
     domdict = {}
-    for domain_info in domain_string_list:
-        name, uniprot_id, start, end = domain_info.split(':')
-        start = int(start)
-        domdict[start] = name, uniprot_id, end
+    for domain in domain_list:
+        start = int(domain['start'])
+        if start in domdict:
+            print("ERROR: More than one domain have the same start position!")
+        domdict[start] = domain
 
     sorted_dict = dict(sorted(domdict.items(),reverse=False))
     sorted_domain_list = []
-    for key, values in sorted_dict.items():
-        domain = values[0]+':'+values[1]+':'+str(key)+':'+str(values[2])
-        sorted_domain_list.append(domain)
-    return sorted_domain_list
+    domain_string_list = []
+    for key, value in sorted_dict.items():
+        sorted_domain_list.append(value)
+        domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
+    return sorted_domain_list, domain_string_list
+
+
+
+# def sort_domain_list(domain_string_list):
+#     """
+#     Given a domain_list, list of domain information short_name:id:start:end, 
+#     sort the list according to start positions of the domains and return a new list
+
+#     Parameters
+#     ----------
+#     domain_string_list: list
+#         list of domain information short_name:id:start:end as a string, array of strings
+#     Returns
+#     -------
+#     sorted_domain_string_list: list
+#         list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings
+
+#     """
+#     domdict = {}
+#     for domain_info in domain_string_list:
+#         name, uniprot_id, start, end = domain_info.split(':')
+#         start = int(start)
+#         domdict[start] = name, uniprot_id, end
+
+#     sorted_dict = dict(sorted(domdict.items(),reverse=False))
+#     sorted_domain_list = []
+#     for key, values in sorted_dict.items():
+#         domain = values[0]+':'+values[1]+':'+str(key)+':'+str(values[2])
+#         sorted_domain_list.append(domain)
+#     return sorted_domain_list
 
 def appendRefFile(input_RefFile, outputfile):
     '''
