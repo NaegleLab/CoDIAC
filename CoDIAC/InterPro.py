@@ -168,7 +168,7 @@ def fetch_InterPro_json(protein_accessions):
     return response_dict
 
 
-def get_domains(protein_accession):
+def get_domains(protein_accessions):
     """
     Given a uniprot accession (protein_accession), return a list of domain dictionaries
     each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
@@ -181,11 +181,47 @@ def get_domains(protein_accession):
         Uniprot accession ID for a protein
     Returns
     -------
-    d_resolved: list
-        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
-
+    domain_dict: dict of list of dicts
+        outer key values are the individual protein accessions
+        these point to a list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+        this list is ordered by start positions of domains
+    domain_string_dict: dict of lists of strings
+        outer key values are the individual protein accessions
+        these point to a list of stirngs, each string is information for the domain in this manner
+        short_name:interpro_id:start:end
+    arch_dict: dict of strings
+        outer key values are the individual protein accessions
+        these point to a string that is the domain architecture, | separated list of domain names
     """
-    resp = fetch_InterPro_json([protein_accession])[protein_accession] #pack and unpack as a list for a single domain fetch
+    resp_dict = fetch_InterPro_json(protein_accessions) #pack and unpack as a list for a single domain fetch
+    domain_dict = {}
+    domain_string_dict = {}
+    arch_dict = {}
+    for protein_accession in resp_dict:
+        domain_dict[protein_accession], domain_string_dict[protein_accession], arch_dict[protein_accession] = get_domains_from_response(resp_dict[protein_accession])
+    return domain_dict, domain_string_dict, arch_dict
+
+def get_domains_from_response(resp):
+    """
+    Given a response from the InterPro API for a single protein search, return a list of domain dictionaries
+    each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
+    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
+    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
+    This returns the ordere list of domains and a list of domain information strings, based on start site.
+
+    Parameters
+    ----------
+    resp: dict
+        response from the InterPro API (json)
+    Returns
+    -------
+    sorted_domain_list: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    domain_string_list: list
+        list of domain information short_name:id:start:end
+    domain_arch: string
+        domain architecture as a string, | separated list of domain names
+    """
     entry_results = resp['results']
     d_dict = {} # Dictionary to store domain information for each entry
     d_resolved = []
@@ -200,8 +236,8 @@ def get_domains(protein_accession):
         d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
 
     #having resolved, now let's sort the list and get the domain string information
-    sorted_domain_list, domain_string_list = sort_domain_list(d_resolved)
-    return sorted_domain_list, domain_string_list
+    sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+    return sorted_domain_list, domain_string_list, domain_arch
   
 def return_expanded_domains(domain_entry):
     """
@@ -454,6 +490,10 @@ def sort_domain_list(domain_list):
     -------
     sorted_domain_list: list
         list of domain dictionaries, now sorted by the start positions.
+    domain_string_list: list
+        list of domain information short_name:id:start:end
+    domain_arch: string
+        domain architecture as a string, | separated list of domain names
 
     """
     domdict = {}
@@ -466,10 +506,12 @@ def sort_domain_list(domain_list):
     sorted_dict = dict(sorted(domdict.items(),reverse=False))
     sorted_domain_list = []
     domain_string_list = []
+    domain_arch_names = []
     for key, value in sorted_dict.items():
         sorted_domain_list.append(value)
         domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
-    return sorted_domain_list, domain_string_list
+        domain_arch_names.append(value['short'])
+    return sorted_domain_list, domain_string_list, '|'.join(domain_arch_names)
 
 
 
