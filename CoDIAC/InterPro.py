@@ -1,9 +1,10 @@
 from collections import defaultdict
 import requests
 import logging
-import os
 import pandas as pd
-import copy
+
+import timeit
+
 
 def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     """
@@ -146,6 +147,27 @@ def collect_data(entry):
         dictionary['short'] = entry['extra_fields']['short_name']
     return dictionary
 
+def fetch_InterPro_json(protein_accessions):
+    """
+    Instantiates an api fetch to InterPro database for domains. Returns a dictionary of those repsonses with keys equal 
+    to the protein accession run.
+    
+    """
+    interpro_url = "https://www.ebi.ac.uk/interpro/api"
+    extra_fields = ['short_name']
+    response_dict = {}
+    # code you want to evaluate
+    with requests.Session() as session:
+        for protein_accession in protein_accessions:
+            url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+            try:
+                response_dict[protein_accession] = session.get(url).json()
+            
+            except Exception as e:
+                print(f"Error processing {protein_accession}: {e}")  # Debugging line
+    return response_dict
+
+
 def get_domains(protein_accession):
     """
     Given a uniprot accession (protein_accession), return a list of domain dictionaries
@@ -163,17 +185,7 @@ def get_domains(protein_accession):
         list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
 
     """
-    interpro_url = "https://www.ebi.ac.uk/interpro/api"
-    extra_fields = ['hierarchy', 'short_name']
-    metadata = {}
-    with requests.Session() as session:
-        url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
-        try:
-            resp = session.get(url).json()
-        except Exception as e:
-            print(f"Error processing {protein_accession}: {e}")  # Debugging line
-            metadata[protein_accession] = []     
-        
+    resp = fetch_InterPro_json([protein_accession])[protein_accession] #pack and unpack as a list for a single domain fetch
     entry_results = resp['results']
     d_dict = {} # Dictionary to store domain information for each entry
     d_resolved = []
@@ -261,6 +273,30 @@ def resolve_domain(d_resolved, dict_entry, threshold=0.5):
             d_resolved.append(domain)
     return d_resolved
 
+def return_domain_architecture(domain_list):
+    """
+    Given a domain_list, list of domain information short_name:id:start:end return a domain 
+    architecture, which is the | separated list of domain names, in the order they appear in protein
+
+    """
+    #Domain Architecture
+    domdict = {}
+    for domain_info in domain_list:
+        name, id, start, end = domain_info.split(':')
+        start = int(start)
+        domdict[start] = end, name
+
+    sorted_dict = dict(sorted(domdict.items(),reverse=False))
+    domain_arch = []
+    for key, value in sorted_dict.items():
+        #sort_start = key
+        #sort_end = value[0]
+        domain = value[1]
+        domain_arch.append(domain)
+
+    
+    final_domarch = '|'.join(domain_arch)   
+    return final_domarch
 
 
 
@@ -360,31 +396,6 @@ def filter_domains(metadata, threshold=0.15):
         filtered_domains.sort(key=lambda x: x['interpro']['boundaries'][0]['start'])
         metadata[protein_accession] = filtered_domains
     return metadata
-
-def return_domain_architecture(domain_list):
-    """
-    Given a domain_list, list of domain information short_name:id:start:end return a domain 
-    architecture, which is the | separated list of domain names, in the order they appear in protein
-
-    """
-    #Domain Architecture
-    domdict = {}
-    for domain_info in domain_list:
-        name, id, start, end = domain_info.split(':')
-        start = int(start)
-        domdict[start] = end, name
-
-    sorted_dict = dict(sorted(domdict.items(),reverse=False))
-    domain_arch = []
-    for key, value in sorted_dict.items():
-        #sort_start = key
-        #sort_end = value[0]
-        domain = value[1]
-        domain_arch.append(domain)
-
-    
-    final_domarch = '|'.join(domain_arch)   
-    return final_domarch
 
 
 # NO LONGER USED, this string generation goes with the code that focuses on hierarch. 
