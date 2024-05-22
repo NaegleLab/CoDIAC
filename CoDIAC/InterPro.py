@@ -179,7 +179,9 @@ def get_domains(protein_accession):
     d_dict = {} # Dictionary to store domain information for each entry
     d_resolved = []
     for i, entry in enumerate(entry_results):
-        d_dict[i] = collect_data(entry, protein_accession)
+    #for i, entry in enumerate(entry_list):
+        if entry['metadata']['type'] == 'domain': #get domain level only features
+            d_dict[i] = collect_data(entry, protein_accession)
     d_resolved+=return_expanded_domains(d_dict[0]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
     values = list(d_dict.keys())
     for domain_num in values[1:]:
@@ -247,7 +249,7 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
     where each dictionary contains domain metadata. This metadata is collected from the InterPro API and includes
     the keys 'interpro', 'num_children'. The 'interpro' key contains a dictionary with keys 'name', 'accession', 'num_boundaries', 'boundaries'
     where 'boundaries' is a list of dictionaries with keys 'start' and 'end'. If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
-    This version of code uses hierarchy and children nodes to select InterPro domains. 
+    This version of code uses hierarchy and children nodes to select InterPro domains.
 
     Parameters
     ----------
