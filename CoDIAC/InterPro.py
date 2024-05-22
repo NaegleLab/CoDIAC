@@ -98,7 +98,7 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     return(UNIPROT_ID_LIST, species_dict)
 
 
-def collect_data(entry, protein_accession, domain_database=None):
+def collect_data(entry):
     """
     Given an entry from the InterPro API, collect the data for a protein accession
     and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
@@ -181,7 +181,7 @@ def get_domains(protein_accession):
     for i, entry in enumerate(entry_results):
     #for i, entry in enumerate(entry_list):
         if entry['metadata']['type'] == 'domain': #get domain level only features
-            d_dict[i] = collect_data(entry, protein_accession)
+            d_dict[i] = collect_data(entry)
     d_resolved+=return_expanded_domains(d_dict[0]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
     values = list(d_dict.keys())
     for domain_num in values[1:]:
@@ -319,7 +319,7 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
                 {'interpro': data, 'num_children': num_children_list[i]}
                 for i, entry in enumerate(resp['results'])
                 if entry['metadata']['type'] == 'domain' and entry['metadata']['accession'] in top_hierarchy
-                for data in [collect_data(entry, current_accession)]
+                for data in [collect_data(entry)]
                 if data is not None
             ]
         
