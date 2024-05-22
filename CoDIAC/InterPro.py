@@ -212,9 +212,30 @@ def return_expanded_domains(domain_entry):
         domain.pop('boundaries')
     return domain_list
 
-def resolve_domain(d_resolved, dict_entry):
+def resolve_domain(d_resolved, dict_entry, threshold=0.5):
+    """
+    Given a list of resolved domains and a new domain entry, resolve the new domain entry with the existing domains
+    Keep the new domain entry if it does not overlap by more than threshold% with any existing domain. Default threshold is
+    50% (or 0.5)
+    Parameters
+    ----------
+    d_resolved: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    dict_entry: dict
+        dictionary of domain information with that comes from collect_data on an entry. This function expands multiple domain entries, meaning that these are prioritized as they are encountered first
+    threshold: float
+        threshold for rejecting domains by overlap, default is 0.5, should be between 0 and 1
+    Returns
+    -------
+    d_resolved: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    """
     # d_resolved is a list of dictionaries, each dictionary is a domain entry
     #setup the existing boundaries that are in d_resolved
+    if threshold < 0 or threshold > 1:
+        threshold = 0.5 #set to default
+        print("WARN: Threshold must be between 0 and 1 for rejecting domains by overlap, setting to default of 0.5")
+
     boundary_array = []
     for domain in d_resolved:
         boundary_array.append(set(range(domain['start'], domain['end'])))
@@ -231,7 +252,7 @@ def resolve_domain(d_resolved, dict_entry):
         for range_existing in boundary_array:
             #check if the set overlap between the new range and the existing range is greater than 
             # 50% of the new range. If so, do not add the new range.
-            if len(range_new.intersection(range_existing))/len(min(range_new, range_existing)) > 0.5:
+            if len(range_new.intersection(range_existing))/len(min(range_new, range_existing)) > threshold:
                 found_intersecting = True
                 break
         if not found_intersecting:
