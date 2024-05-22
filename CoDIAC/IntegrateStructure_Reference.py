@@ -123,9 +123,10 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
     Returns
     -------
     domainStruct: dict
-        This dictionary has the name of domainName tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps]
+        This dictionary has the domain tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps, domain_num]
+        using a unique key according to the start position of the domain in the alignment.
         if INTERPRO is detected then the tuple is [Interpro_ID, 
-        toName_sequence_start, toName_sequence_stop, numGaps]
+        toName_sequence_start, toName_sequence_stop, numGaps, domain_name]
         numGaps says how many gaps existed in the alignment. 
         Returns -1 if the region could not be mapped. It returns an empty dictionary if the alignment did not meet a gap threshold of less than 30%
     """
@@ -208,12 +209,14 @@ def returnDomainStruct(aln, ref_start, ref_stop, domains, diffList, domainExclVa
             start_aln_val = start_aln
             stop_aln_val = stop_aln
             try:
-                if domain_name in domainStruct:
-                    domain_name = "%s_%d"%(domain_name, 2)
+                if start_aln_val in domainStruct:
+                    print("ERROR: more than one domain with the same start value was found. First will be overwritten")
                 if not INTERPRO:
-                    domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                    #domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                    domainStruct[start_aln_val] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts, domain_name]
                 else:
-                    domainStruct[domain_name] = [interpro_ID, mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                    #domainStruct[domain_name] = [interpro_ID, mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]
+                    domainStruct[start_aln_val] = [interpro_ID, mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts, domain_name]
                 #domain_name may already exist, so add a new value to it
             except:
                 #print("ERROR: could not map domains")
@@ -391,11 +394,11 @@ def return_reference_information(reference_df, uniprot_id, struct_seq, ref_seq_p
     domainList = []
     domainDict_forArch = {}
     if isinstance(domainStruct, dict):
-        for domain_name in domainStruct:
+        for start_val in domainStruct:
             if INTERPRO:
-                interproID, start, end, numGaps, numMuts = domainStruct[domain_name]
+                interproID, start, end, numGaps, numMuts, domain_name = domainStruct[start_val]
             else:
-                start, end, numGaps, numMuts = domainStruct[domain_name]
+                start, end, numGaps, numMuts, domain_name = domainStruct[start_val]
             valStr = str(start)+','+str(end)+','+str(numGaps)+','+str(numMuts)
             domainDict_forArch[start] = domain_name
             if INTERPRO:
