@@ -35,14 +35,36 @@ def get_PTMs(uniprot_ID):
         Returns -1 if unable to find the ID
 
         Returns [] (empty list) if no modifications  
+    Uniprot_ID: string
+        The Uniprot ID of the protein of interest, this may change if mods are not found on the root protein
     
     """
+    USE_ISO = False
     if PSITE_INIT:
         if uniprot_ID in PHOSPHOSITE.index:
             mods = PHOSPHOSITE.loc[uniprot_ID, 'modifications']
             if mods == 'nan' or pd.isna(mods):
+                NO_MODS = True
                 print("Found no mods for %s"%(uniprot_ID))
-                return [] #can find the ID, but no modifications
+                # There are some cases where the root has no data, but an isoform does, so let's test that
+                iso_num = 1
+                uniprot_ID_iso = uniprot_ID + '-'+str(iso_num)
+                while uniprot_ID_iso in PHOSPHOSITE.index and NO_MODS:
+                    mods = PHOSPHOSITE.loc[uniprot_ID_iso, 'modifications']
+                    if mods == 'nan' or pd.isna(mods):
+                        iso_num += 1
+                        uniprot_ID_iso = uniprot_ID + '-'+str(iso_num)
+                    else:
+                        USE_ISO = True
+                        print("Using an isoform for PTMs %s, found mods"%(uniprot_ID_iso))
+                        print(mods)
+                        NO_MODS = False
+                        break
+                
+                #out of the while loop, see if we have to return empty
+                if NO_MODS:
+                    return [], uniprot_ID #hit the end of the isoforms and found no mods in while, so leaving with empty
+
             mods_raw=mods.split(";")
             mods_clean =[]
             for i in mods_raw:
@@ -51,13 +73,16 @@ def get_PTMs(uniprot_ID):
             
             # append a tuple of (position, residue, type)
                 mods_clean.append((tmp[0][1:], tmp[0][0], "-".join(tmp[1:])))
-            return mods_clean
+            return_ID = uniprot_ID
+            if USE_ISO:
+                return_ID = uniprot_ID_iso
+            return mods_clean, return_ID
         else:
             print("ERROR: %s not found in PhosphositePlus data"%(uniprot_ID))
-            return '-1'
+            return '-1', uniprot_ID
     else:
         print("ERROR: PhosphositePlus data not found. Run convert_pSiteDataFiles to create it")
-        return None
+        return None, uniprot_ID
 
 def get_sequence(uniprot_ID):
     """

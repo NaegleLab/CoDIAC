@@ -198,8 +198,9 @@ def get_PTMS_proteomeScout(uniprot_ID):
 
 
 def get_PTMS_phosphoSitePlus(uniprot_ID):
-    seq = PhosphoSitePlus_Tools.get_sequence(uniprot_ID)
-    PTMs = PhosphoSitePlus_Tools.get_PTMs(uniprot_ID)
+    PTMs, ID_used = PhosphoSitePlus_Tools.get_PTMs(uniprot_ID)
+
+    seq = PhosphoSitePlus_Tools.get_sequence(ID_used) #make sure if the ID changed, we get the right sequence
     return seq, PTMs
 
 def get_Interpro_PTMs(Interpro_ID, uniprot_reference_file, PHOSPHOSITE_PLUS, n_term_offset=0, c_term_offset=0, gap_threshold=0.7):
