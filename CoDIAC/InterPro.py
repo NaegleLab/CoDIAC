@@ -1,9 +1,10 @@
 from collections import defaultdict
 import requests
 import logging
-import os
 import pandas as pd
-import copy
+
+import timeit
+
 
 def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     """
@@ -98,7 +99,28 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     return(UNIPROT_ID_LIST, species_dict)
 
 
-def collect_data(entry, protein_accession, domain_database=None):
+def collect_data(entry):
+    """
+    Given an entry from the InterPro API, collect the data for a protein accession
+    and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'.
+    If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
+    
+    Parameters
+    ----------
+    entry: dict
+        dictionary from the InterPro API
+    protein_accession: str
+        Uniprot accession ID for a protein
+    domain_database: str
+        Domain database to search for, default is None
+    Returns
+    -------
+    dictionary: dict
+        dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+        where 'boundaries' is a list of dictionaries with keys 'start' and 'end'
+
+    """
     entry_protein_locations = entry['proteins'][0]['entry_protein_locations']
     if entry_protein_locations is None:
         entry_protein_locations = []
@@ -125,8 +147,228 @@ def collect_data(entry, protein_accession, domain_database=None):
         dictionary['short'] = entry['extra_fields']['short_name']
     return dictionary
 
+def fetch_InterPro_json(protein_accessions):
+    """
+    Instantiates an api fetch to InterPro database for domains. Returns a dictionary of those repsonses with keys equal 
+    to the protein accession run.
+    
+    """
+    interpro_url = "https://www.ebi.ac.uk/interpro/api"
+    extra_fields = ['short_name']
+    response_dict = {}
+    # code you want to evaluate
+    with requests.Session() as session:
+        for protein_accession in protein_accessions:
+            url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+            try:
+                response_dict[protein_accession] = session.get(url).json()
+            
+            except Exception as e:
+                print(f"Error processing {protein_accession}: {e}")  # Debugging line
+    return response_dict
+
+
+def get_domains(protein_accessions):
+    """
+    Given a uniprot accession (protein_accession), return a list of domain dictionaries
+    each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
+    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
+    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
+
+    Parameters
+    ----------
+    protein_accession: str
+        Uniprot accession ID for a protein
+    Returns
+    -------
+    domain_dict: dict of list of dicts
+        outer key values are the individual protein accessions
+        these point to a list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+        this list is ordered by start positions of domains
+    domain_string_dict: dict of lists of strings
+        outer key values are the individual protein accessions
+        these point to a list of stirngs, each string is information for the domain in this manner
+        short_name:interpro_id:start:end
+    arch_dict: dict of strings
+        outer key values are the individual protein accessions
+        these point to a string that is the domain architecture, | separated list of domain names
+    """
+    resp_dict = fetch_InterPro_json(protein_accessions) #pack and unpack as a list for a single domain fetch
+    domain_dict = {}
+    domain_string_dict = {}
+    arch_dict = {}
+    for protein_accession in resp_dict:
+        domain_dict[protein_accession], domain_string_dict[protein_accession], arch_dict[protein_accession] = get_domains_from_response(resp_dict[protein_accession])
+    return domain_dict, domain_string_dict, arch_dict
+
+def get_domains_from_response(resp):
+    """
+    Given a response from the InterPro API for a single protein search, return a list of domain dictionaries
+    each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
+    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
+    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
+    This returns the ordere list of domains and a list of domain information strings, based on start site.
+
+    Parameters
+    ----------
+    resp: dict
+        response from the InterPro API (json)
+    Returns
+    -------
+    sorted_domain_list: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    domain_string_list: list
+        list of domain information short_name:id:start:end
+    domain_arch: string
+        domain architecture as a string, | separated list of domain names
+    """
+    entry_results = resp['results']
+    d_dict = {} # Dictionary to store domain information for each entry
+    d_resolved = []
+    for i, entry in enumerate(entry_results):
+    #for i, entry in enumerate(entry_list):
+        if entry['metadata']['type'] == 'domain': #get domain level only features
+            d_dict[i] = collect_data(entry)
+    d_resolved+=return_expanded_domains(d_dict[0]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+    values = list(d_dict.keys())
+    for domain_num in values[1:]:
+    
+        d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+
+    #having resolved, now let's sort the list and get the domain string information
+    sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+    return sorted_domain_list, domain_string_list, domain_arch
+  
+def return_expanded_domains(domain_entry):
+    """
+    Given a domain entry, such as from collect_data, return a list of expanded domains where there is only 
+    one boundary per set. This will reset the dictionary, such that instead of 'boundaries' with a list of ['start': x, 'end': y]
+    it will be a single boundary with 'start': x, 'end': y as keys in the dictionary.
+    """
+    boundary_list = domain_entry['boundaries']
+    domain_new = domain_entry.copy()
+    domain_new['start'] = boundary_list[0]['start']
+    domain_new['end'] = boundary_list[0]['end']
+    domain_list = []
+    domain_list.append(domain_new)
+    #make a new dictionary with the start and end values of subsequent domains (Then go through and pop boundaries off all)
+    if len(boundary_list) > 1:
+        for i in range(1, len(boundary_list)):
+            domain_temp = domain_entry.copy()
+            domain_temp['start'] = boundary_list[i]['start']
+            domain_temp['end'] = boundary_list[i]['end']
+            domain_list.append(domain_temp)
+    for domain in domain_list: #remove the boundaries term now
+        domain.pop('boundaries')
+    return domain_list
+
+def resolve_domain(d_resolved, dict_entry, threshold=0.5):
+    """
+    Given a list of resolved domains and a new domain entry, resolve the new domain entry with the existing domains
+    Keep the new domain entry if it does not overlap by more than threshold% with any existing domain. Default threshold is
+    50% (or 0.5)
+    Parameters
+    ----------
+    d_resolved: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    dict_entry: dict
+        dictionary of domain information with that comes from collect_data on an entry. This function expands multiple domain entries, meaning that these are prioritized as they are encountered first
+    threshold: float
+        threshold for rejecting domains by overlap, default is 0.5, should be between 0 and 1
+    Returns
+    -------
+    d_resolved: list
+        list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
+    """
+    # d_resolved is a list of dictionaries, each dictionary is a domain entry
+    #setup the existing boundaries that are in d_resolved
+    if threshold < 0 or threshold > 1:
+        threshold = 0.5 #set to default
+        print("WARN: Threshold must be between 0 and 1 for rejecting domains by overlap, setting to default of 0.5")
+
+    boundary_array = []
+    for domain in d_resolved:
+        boundary_array.append(set(range(domain['start'], domain['end'])))
+    
+    #expand the dict_entry as well to a list
+    new_domains = return_expanded_domains(dict_entry)
+    #print("DEBUG: have these new domains")
+    #print(new_domains)
+
+    #first expand if multiple boundaries exist in the dict_entry
+    for domain in new_domains:
+        range_new = set(range(domain['start'], domain['end']))
+        found_intersecting = False
+        for range_existing in boundary_array:
+            #check if the set overlap between the new range and the existing range is greater than 
+            # 50% of the new range. If so, do not add the new range.
+            if len(range_new.intersection(range_existing))/len(min(range_new, range_existing)) > threshold:
+                found_intersecting = True
+                break
+        if not found_intersecting:
+            d_resolved.append(domain)
+    return d_resolved
+
+def sort_domain_list(domain_list):
+    """
+    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of
+    the domains according to the start site. 
+
+    Parameters
+    ----------
+    domain_list: list
+        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'short', 'start', 'end'
+    Returns
+    -------
+    sorted_domain_list: list
+        list of domain dictionaries, now sorted by the start positions.
+    domain_string_list: list
+        list of domain information short_name:id:start:end
+    domain_arch: string
+        domain architecture as a string, | separated list of domain names
+
+    """
+    domdict = {}
+    for domain in domain_list:
+        start = int(domain['start'])
+        if start in domdict:
+            print("ERROR: More than one domain have the same start position!")
+        domdict[start] = domain
+
+    sorted_dict = dict(sorted(domdict.items(),reverse=False))
+    sorted_domain_list = []
+    domain_string_list = []
+    domain_arch_names = []
+    for key, value in sorted_dict.items():
+        sorted_domain_list.append(value)
+        domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
+        domain_arch_names.append(value['short'])
+    return sorted_domain_list, domain_string_list, '|'.join(domain_arch_names)
+
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
+    """
+    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC. 
+
+    Given a list of uniprot accessions, return a dictionary of protein accessions containing domain metadata.
+    This function will return a dictionary with keys as the protein accession and values as a list of dictionaries
+    where each dictionary contains domain metadata. This metadata is collected from the InterPro API and includes
+    the keys 'interpro', 'num_children'. The 'interpro' key contains a dictionary with keys 'name', 'accession', 'num_boundaries', 'boundaries'
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'. If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
+    This version of code uses hierarchy and children nodes to select InterPro domains.
+
+    Parameters
+    ----------
+    uniprot_accessions: list
+        list of uniprot accessions
+    Returns
+    -------
+    metadata: dict
+        dictionary of protein accessions containing domain metadata
+    """
+
+
     interpro_url = "https://www.ebi.ac.uk/interpro/api"
     extra_fields = ['hierarchy', 'short_name']
     metadata = {}
@@ -163,7 +405,7 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
                 {'interpro': data, 'num_children': num_children_list[i]}
                 for i, entry in enumerate(resp['results'])
                 if entry['metadata']['type'] == 'domain' and entry['metadata']['accession'] in top_hierarchy
-                for data in [collect_data(entry, current_accession)]
+                for data in [collect_data(entry)]
                 if data is not None
             ]
         
@@ -175,6 +417,8 @@ def generateDomainMetadata_wfilter(uniprot_accessions):
 # Filtering returned metadata 
 
 def filter_domains(metadata, threshold=0.15):
+    """NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC. """
     for protein_accession, domains in metadata.items():
         # Sort by end position and then by size in descending order
         domains.sort(key=lambda x: (-x['interpro']['boundaries'][0]['end'], -(x['interpro']['boundaries'][0]['end'] - x['interpro']['boundaries'][0]['start']), -x['num_children']))
@@ -199,35 +443,13 @@ def filter_domains(metadata, threshold=0.15):
         metadata[protein_accession] = filtered_domains
     return metadata
 
-def return_domain_architecture(domain_list):
-    """
-    Given a domain_list, list of domain information short_name:id:start:end return a domain 
-    architecture, which is the | separated list of domain names, in the order they appear in protein
 
-    """
-    #Domain Architecture
-    domdict = {}
-    for domain_info in domain_list:
-        name, id, start, end = domain_info.split(':')
-        start = int(start)
-        domdict[start] = end, name
-
-    sorted_dict = dict(sorted(domdict.items(),reverse=False))
-    domain_arch = []
-    for key, value in sorted_dict.items():
-        #sort_start = key
-        #sort_end = value[0]
-        domain = value[1]
-        domain_arch.append(domain)
-
-    
-    final_domarch = '|'.join(domain_arch)   
-    return final_domarch
-
-
-
+# NO LONGER USED, this string generation goes with the code that focuses on hierarch. 
 def generate_domain_metadata_string_list(metadata, uniprot_list):
     """
+    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list 
+    of proteins. May 22, 2024 KMN. Written by LC.
+
     Condenses protein metadata into strings and outputs them as a list corresponding with indices of accessions in uniprot_list
     Parameters
     ----------
@@ -264,33 +486,37 @@ def generate_domain_metadata_string_list(metadata, uniprot_list):
         metadata_string_list.append(';'.join(sorted_domain_list))
     return metadata_string_list, domain_arch_list
 
-def sort_domain_list(domain_string_list):
-    """
-    Given a domain_list, list of domain information short_name:id:start:end, 
-    sort the list according to start positions of the domains and return a new list
 
-    Parameters
-    ----------
-    domain_string_list: list
-        list of domain information short_name:id:start:end as a string, array of strings
-    Returns
-    -------
-    sorted_domain_string_list: list
-        list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings
 
-    """
-    domdict = {}
-    for domain_info in domain_string_list:
-        name, uniprot_id, start, end = domain_info.split(':')
-        start = int(start)
-        domdict[start] = name, uniprot_id, end
 
-    sorted_dict = dict(sorted(domdict.items(),reverse=False))
-    sorted_domain_list = []
-    for key, values in sorted_dict.items():
-        domain = values[0]+':'+values[1]+':'+str(key)+':'+str(values[2])
-        sorted_domain_list.append(domain)
-    return sorted_domain_list
+
+# def sort_domain_list(domain_string_list):
+#     """
+#     Given a domain_list, list of domain information short_name:id:start:end, 
+#     sort the list according to start positions of the domains and return a new list
+
+#     Parameters
+#     ----------
+#     domain_string_list: list
+#         list of domain information short_name:id:start:end as a string, array of strings
+#     Returns
+#     -------
+#     sorted_domain_string_list: list
+#         list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings
+
+#     """
+#     domdict = {}
+#     for domain_info in domain_string_list:
+#         name, uniprot_id, start, end = domain_info.split(':')
+#         start = int(start)
+#         domdict[start] = name, uniprot_id, end
+
+#     sorted_dict = dict(sorted(domdict.items(),reverse=False))
+#     sorted_domain_list = []
+#     for key, values in sorted_dict.items():
+#         domain = values[0]+':'+values[1]+':'+str(key)+':'+str(values[2])
+#         sorted_domain_list.append(domain)
+#     return sorted_domain_list
 
 def appendRefFile(input_RefFile, outputfile):
     '''
@@ -314,14 +540,13 @@ def appendRefFile(input_RefFile, outputfile):
     df = pd.read_csv(input_RefFile)
     uniprotList = df['UniProt ID'].to_list()
     print("Fetching domains..")
-    domainMD = generateDomainMetadata_wfilter(uniprotList)
-    print("Processing domains...")
-    #processed_MD = process_proteins(domainMD)
-    filtered_MD = filter_domains(domainMD)
-    metadata_string_list, domain_arch_list = generate_domain_metadata_string_list(filtered_MD, uniprotList)
-    
-    df['Interpro Domains'] = metadata_string_list
-    df['Interpro Domain Architecture'] = domain_arch_list
+    domain_dict, domain_string_dict, domain_arch_dict = get_domains(uniprotList)
+    print("Appending domains to file..")    
+    for i in range(len(uniprotList)):
+        df.at[i, 'Interpro Domains'] = ';'.join(domain_string_dict[uniprotList[i]])
+        df.at[i, 'Interpro Domain Architecture'] = domain_arch_dict[uniprotList[i]]
+    #df['Interpro Domains'] = metadata_string_list
+    #df['Interpro Domain Architecture'] = domain_arch_list
     df.to_csv(outputfile, index=False)
     print('Interpro metadata succesfully incorporated')
     return df
