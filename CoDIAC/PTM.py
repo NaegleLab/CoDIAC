@@ -191,6 +191,20 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold, PHOSPHOSITE_PLUS):
 
 
 def get_PTMS_proteomeScout(uniprot_ID):
+    """
+    Parameters
+    ----------
+    uniprot_ID: str
+        Uniprot ID
+    Returns
+    -------
+    seq: str
+        Sequence of the protein. 
+    PTMs: list of tuples
+        List of tuples with PTM information in [('position', 'amino acid', 'modification')]
+    
+    """
+
     proteomescout_seq = PTM_API.get_sequence(uniprot_ID)
     PTMs = PTM_API.get_PTMs(uniprot_ID)
 
@@ -198,6 +212,26 @@ def get_PTMS_proteomeScout(uniprot_ID):
 
 
 def get_PTMS_phosphoSitePlus(uniprot_ID):
+    """
+    Found cases where PhosphoSitePlus had no modification annotations under the canonical number (e.g. Q9HBL0, TNS1), but had them under a 
+    isoform number Q9HBL0-1. So added the ability to check isoforms, until no isoforms are found. This now returns a sequence and PTMs for the record found. 
+    The isoform differences should be handled by alignment to reference. If the isoform with PTMs (starting with 1 and going forward) is very different, 
+    failure will occur in mapping and if slightly different, numbering will be corrected. 
+
+    Parameters
+    ----------
+    uniprot_ID: str
+        Uniprot ID
+    Returns
+    -------
+    seq: str
+        Sequence of the protein. Please note that we may have moved to an isoform in the search for PTMs in PSitePlus.
+        Sequence returned will reflect the sequence PTMs are attached to. 
+    PTMs: list of tuples
+        List of tuples with PTM information. [('position', 'amino acid', 'modification')]
+    
+    """
+
     PTMs, ID_used = PhosphoSitePlus_Tools.get_PTMs(uniprot_ID)
 
     seq = PhosphoSitePlus_Tools.get_sequence(ID_used) #make sure if the ID changed, we get the right sequence
