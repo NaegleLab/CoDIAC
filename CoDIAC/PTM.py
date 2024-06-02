@@ -12,7 +12,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
     """
     Writes all PTM features from ProteomeScout on Interpro domains from a uniprot reference file, if there are more
     than num_PTM_threshold that occur across all domains of that type in the reference. Returns the ptm_count_dict for reference
-    and the feature dict that is generated to write the files. Files are named Interpro_ID_<PTM_Type>.fea
+    and the feature dict that is generated to write the files. Files are named Interpro_ID_<PTM_Type>.feature
     and the reference fasta is also generated so that it is clear the features are attached to that 
     particular run of the domains. 
 
@@ -98,7 +98,7 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
     # for each feature type, create the feature file, printing features for each protein that has them. 
     for ptm_type in ptm_list:
         ptm_dict_temp = {}
-        ptm_feature_file = feature_dir + Interpro_ID + '_' + ptm_type + '.fea'
+        ptm_feature_file = feature_dir + Interpro_ID + '_' + ptm_type + '.feature'
         for header in ptm_feature_dict:
             if ptm_type in ptm_feature_dict[header]:
                 if header in mapping_dict:
