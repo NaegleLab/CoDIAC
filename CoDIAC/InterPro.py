@@ -88,7 +88,7 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
         source_database = entry['metadata']['source_database']
         Scientific_name = entry['metadata']['source_organism']['scientificName']
 
-        if species not in all_species and Scientific_name != species:
+        if species not in all_species and species not in Scientific_name:
             continue
 
         UNIPROT_ID_LIST.append(Uniprot_Accession)
