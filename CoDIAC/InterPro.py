@@ -229,8 +229,10 @@ def get_domains_from_response(resp):
     #for i, entry in enumerate(entry_list):
         if entry['metadata']['type'] == 'domain': #get domain level only features
             d_dict[i] = collect_data(entry)
-    d_resolved+=return_expanded_domains(d_dict[0]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+    
     values = list(d_dict.keys())
+    d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+    
     for domain_num in values[1:]:
     
         d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
