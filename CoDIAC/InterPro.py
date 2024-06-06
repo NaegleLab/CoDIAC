@@ -162,9 +162,13 @@ def fetch_InterPro_json(protein_accessions):
             url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
             try:
                 response_dict[protein_accession] = session.get(url).json()
-            
+
             except Exception as e:
-                print(f"Error processing {protein_accession}: {e}")  # Debugging line
+                if session.get(url).status_code == 204:
+                    response_dict[protein_accession] = {}
+                    print(f"An empty response was received for {protein_accession} resulting in empty domain architecture.")
+                else:
+                    print(f"Error processing {protein_accession}: {e}")  # Debugging line
     return response_dict
 
 
@@ -222,23 +226,30 @@ def get_domains_from_response(resp):
     domain_arch: string
         domain architecture as a string, | separated list of domain names
     """
-    entry_results = resp['results']
-    d_dict = {} # Dictionary to store domain information for each entry
-    d_resolved = []
-    for i, entry in enumerate(entry_results):
-    #for i, entry in enumerate(entry_list):
-        if entry['metadata']['type'] == 'domain': #get domain level only features
-            d_dict[i] = collect_data(entry)
-    
-    values = list(d_dict.keys())
-    d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
-    
-    for domain_num in values[1:]:
-    
-        d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+    # An empty response passed from the Interpro API will bypass all this
+    if resp:
+        entry_results = resp['results']
+        d_dict = {} # Dictionary to store domain information for each entry
+        d_resolved = []
+        for i, entry in enumerate(entry_results):
+        #for i, entry in enumerate(entry_list):
+            if entry['metadata']['type'] == 'domain': #get domain level only features
+                d_dict[i] = collect_data(entry)
+        
+        values = list(d_dict.keys())
+        if values:
+            d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+        
+        for domain_num in values[1:]:
+        
+            d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
 
-    #having resolved, now let's sort the list and get the domain string information
-    sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+        #having resolved, now let's sort the list and get the domain string information
+        sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+    else:
+        sorted_domain_list = []
+        domain_string_list = []
+        domain_arch = ''
     return sorted_domain_list, domain_string_list, domain_arch
   
 def return_expanded_domains(domain_entry):
