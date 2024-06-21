@@ -70,6 +70,7 @@ class PDB_interface:
 #        for each_id in IDs:
         try:
             metadata = self.PDB_metadata(self.PDB_ID)
+            print("DEBUG: returned from annotation")
             annotated_dict = metadata.set_PDB_API_annotation()
             #overall_dict[self.PDB_ID] = annotated_dict
         except:
@@ -136,8 +137,6 @@ class PDB_interface:
             stores information from the entry service for the PDB_ID
         overall_polymer_entity_dict : dictionary
             stores polymer entity data for each entity id corresponding with the PDB_ID
-        overall_uniprot_dict : dictionary
-            stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)
                         
         Methods
         --------
@@ -173,7 +172,7 @@ class PDB_interface:
 
             self.name = PDB_ID
 
-            self.entry_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
+            self.entry_dict, self.overall_polymer_entity_dict = self.get_all_dicts()
             self.mods = {}
             self.locs = {}
 
@@ -192,13 +191,13 @@ class PDB_interface:
             """
             anno_dict_list = []
             for entity_id in self.entry_dict['rcsb_entry_container_identifiers']['polymer_entity_ids']:
+                #print("testing anno dict fetch for entity_id %d"%(entity_id))
                 anno_dict = self.return_anno_dict(entity_id)
-
-
-                #for attribute in anno_dict:
-                #    anno_dict[attribute] = self.get_annotation(attribute, entity_id)
-
+                print("DEBUG:")
+                print(anno_dict)
                 anno_dict_list.append(anno_dict)
+                #print("DEBUG: returned with an anno dict for entity %d"%(entity_id))
+                print('list is now %d long'%(len(anno_dict_list)))
             return anno_dict_list
 
         def get_empty_anno_dict(self):
@@ -242,7 +241,6 @@ class PDB_interface:
                     anno_dict['CHAIN_ID'] = CHAIN_ID
             except:
                 anno_dict['CHAIN_ID'] = 'not found'
-
             
             #database name
             try:
@@ -294,29 +292,32 @@ class PDB_interface:
             
             
             #elif (attribute == 'rcsb_uniprot_protein_sequence'):
-            try:
-
-                #for each_entity_id in ENTITY_IDS:
-                #ENTRY_ID = anno_dict['database_accession'] #this was fetched earlier
-                entity_id =  anno_dict['ENTITY_ID']
-                uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
-                    anno_dict['PDB_ID'] + "/" + entity_id
-                print("DEBUG: %s"%(uniprot_url))
-                resp = requests.get(uniprot_url)
-                if resp.status_code != 200:
-                    #print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
-                    anno_dict['rcsb_uniprot_protein_sequence'] = 'not found, bad response code'
-                else:
+            entity_id =  anno_dict['ENTITY_ID']
+            uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
+                anno_dict['PDB_ID'] + "/" + entity_id
+            print("DEBUG: %s"%(uniprot_url))
+            resp = requests.get(uniprot_url)
+            print("DEBUG: %s"%(resp.status_code))
+            if resp.status_code != 200:
+                #print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
+                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found, bad response code'
+            else: #in case we got a response, but it does not conform to json, try, except here
+                try:
                     uniprot_entity_dict = resp.json()
                     SEQ = ''
+                    print("DEBUG: OK to here with uniprot entity dict")
+                    print(uniprot_entity_dict)
                     if len(uniprot_entity_dict) < 3:
                         middle = uniprot_entity_dict[0]
                         rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
                         SEQ = rcsb_uniprot_protein['sequence']
-                    anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
-            except KeyError:
-                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+                        anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
+                        print("DEBUG: have sequence %s"%(SEQ))
+                except KeyError:
+                    anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
             
+
+            print("DEBUG: moved out of ref seq ok")
             #elif (attribute == 'rcsb_sample_sequence_length'):
             try:
                 if len(polymer_entity_dict) > 3:
@@ -522,6 +523,9 @@ class PDB_interface:
                 anno_dict['pdbx_description'] = rcsb_polymer_entity['pdbx_description']
             except KeyError:
                 anno_dict['pdbx_description'] =  'N/A'
+
+            print("DEBUG: done, got to the bottom")
+            print(anno_dict)
             return anno_dict
 
 
@@ -580,8 +584,6 @@ class PDB_interface:
                 stores information from the uniprot schema for the PDB_ID
             overall_polymer_entity_dict : dictionary
                 stores polymer entity data for each entity id corresponding with the PDB_ID
-            overall_uniprot_dict : dictionary
-                stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)
 
             """
 
@@ -618,20 +620,8 @@ class PDB_interface:
                 polymer_entity_dict = resp.json()
                 overall_polymer_entity_dict[each_entity_id] = polymer_entity_dict
         
-            overall_uniprot_dict = {}
-            for each_entity_id in ENTITY_IDS:
-                uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
-                    ENTRY_ID + "/" + each_entity_id
-                print("DEBUG: in old code %s"%(uniprot_url))
-
-                resp = requests.get(uniprot_url)
-                if resp.status_code != 200:
-                    print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
-                    ERROR = 1
-                uniprot_dict = resp.json()
-                overall_uniprot_dict[each_entity_id] = uniprot_dict
         
-            return entry_dict, overall_polymer_entity_dict, overall_uniprot_dict
+            return entry_dict, overall_polymer_entity_dict
 
         
 def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
