@@ -304,14 +304,17 @@ class PDB_interface:
                 try:
                     uniprot_entity_dict = resp.json()
                     SEQ = ''
-                   
-                    if isinstance(uniprot_entity_dict, dict): #len(uniprot_entity_dict) < 3:
+
+                    if isinstance(uniprot_entity_dict, list): #len(uniprot_entity_dict) < 3:
+                        #print(len(uniprot_entity_dict))
                         middle = uniprot_entity_dict[0]
-                        rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
-                        SEQ = rcsb_uniprot_protein['sequence']
-                        anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
-                    else:
-                        anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+                        if isinstance(middle, dict):
+                            rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
+                            SEQ = rcsb_uniprot_protein['sequence']
+                            #print(SEQ)
+                            anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
+                        else:
+                            anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
                 except KeyError:
                     anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
             
@@ -473,8 +476,8 @@ class PDB_interface:
                 anno_dict['pdbx_mutation joined'] = 'N/A'
             
             #elif (attribute =='deposit_date'):
-                summary = self.entry_dict['rcsb_accession_info']
-                anno_dict['deposit_date'] = summary['deposit_date'][:10]            
+            summary = self.entry_dict['rcsb_accession_info']
+            anno_dict['deposit_date'] = summary['deposit_date'][:10]            
 
             #elif (attribute == 'audit_author_name'): #fixed
             AUTHORS_LIST = []
