@@ -134,12 +134,6 @@ class PDB_interface:
             the PDB ID (4-character alphanumeric identifier) that the user wants to gather information on
         entry_dict : dictionary
             stores information from the entry service for the PDB_ID
-        pubmed_dict : dictionary
-            stores the pubmed annotations (data integrated from PubMed) for the PDB_ID
-        schema_dict : dictionary
-            stores information from the entry schema for the PDB_ID
-        schema_uniprot_dict : dictionary
-            stores information from the uniprot schema for the PDB_ID
         overall_polymer_entity_dict : dictionary
             stores polymer entity data for each entity id corresponding with the PDB_ID
         overall_uniprot_dict : dictionary
