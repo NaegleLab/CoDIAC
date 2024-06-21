@@ -13,8 +13,8 @@ COLUMNS = ['PDB_ID', 'ENTITY_ID', 'CHAIN_ID', 'pdbx_description',  'rcsb_gene_na
 
 class PDB_interface:
     """
-    A class that obtains and outputs relevant metadata/annotations for individual PDB IDs in the form of a dictionary
-    and/or a csv file.
+    A class that obtains and outputs relevant metadata/annotations for a PDB ID in the form of a dictionary
+    and/or ability to write to a csv file.
     
     Attributes
     -----------
@@ -24,7 +24,8 @@ class PDB_interface:
     Methods
     --------
     get_anno_dict
-        Produces a dictionary full of the annotations for all of the PDB IDs from the inputted csv file.
+        Produces a dictionary full of the annotations for
+         the PDB ID.
     print_output_csv
         Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
@@ -34,21 +35,21 @@ class PDB_interface:
     
 	
 	"""
-    def __init__(self, PDB_list):
+    def __init__(self, PDB_ID):
         """
         Constructor for the PDB_interface class.
         
         Parameters
         ----------
-        PDB_list : list of strings
-            list of PDB IDs (4-character alphanumeric identifier) that the user wants to gather information on
+        PDB : list of strings
+            PDB ID (4-character alphanumeric identifier) that the user wants to gather information on
         
         Returns
         -------
         None.
 
         """
-        self.PDB_list = PDB_list
+        self.PDB_ID = PDB_ID
 
        
     def get_anno_dict(self):
@@ -62,18 +63,18 @@ class PDB_interface:
 
         """
 
-        IDs = self.PDB_list
+        #IDs = self.PDB_list
         
         overall_dict = {}
         
-        for each_id in IDs:
-            try:
-                metadata = self.PDB_metadata(each_id)
-                annotated_dict = metadata.set_PDB_API_annotation()
-                overall_dict[each_id] = annotated_dict
-            except:
-                print(each_id + ' is not a valid PDB ID')
-        return overall_dict
+#        for each_id in IDs:
+        try:
+            metadata = self.PDB_metadata(self.PDB_ID)
+            annotated_dict = metadata.set_PDB_API_annotation()
+            #overall_dict[self.PDB_ID] = annotated_dict
+        except:
+            print(self.PDB_ID + ' could not be fetched')
+        return annotated_dict
 
 
     
@@ -190,8 +191,9 @@ class PDB_interface:
 
             Returns
             -------
-            anno_dict : dictionary
+            anno_dict_list : list of dictionaries
                 dictionary storing all information for the PDB_ID
+                list is returned since multipel entities can be present in a single PDB file with different attributes
 
             """
             anno_dict_list = []
@@ -280,21 +282,35 @@ class PDB_interface:
 
             PDB_ID = self.name
 
+            ERROR = 0
+            #check for repsonse issues, collecting errors and handling them
             entry_url = "https://data.rcsb.org/rest/v1/core/entry/" + PDB_ID
             resp = requests.get(entry_url)
-            entry_dict = resp.json()
+            if resp.status_code != 200:
+                print('Failed to get %s from rcsb entry with code %s:'%(PDB_ID, resp.status_code))
+                ERROR = 1
+            entry_dict = resp.json() #THIS one is used!!
         
             pubmed_url = "https://data.rcsb.org/rest/v1/core/pubmed/" + PDB_ID
             resp = requests.get(pubmed_url)
-            pubmed_dict = resp.json()
+            if resp.status_code != 200:
+                print('Failed to get %s from pubmed entry with code %s:'%(PDB_ID, resp.status_code))
+                ERROR = 1
+            pubmed_dict = resp.json() #pubmed_dict does not appear to be used
         
             schema_url = "https://data.rcsb.org/rest/v1/schema/entry" + PDB_ID
             resp = requests.get(schema_url)
-            schema_dict = resp.json()
+            if resp.status_code != 200:
+                print('Failed to get %s from rcsb entry schema with code %s:'%(PDB_ID, resp.status_code))
+                ERROR = 1
+            schema_dict = resp.json() #schema_dict does not appear to be used
         
             schema_uniprot_url = "https://data.rcsb.org/rest/v1/schema/uniprot" + PDB_ID
             resp = requests.get(schema_uniprot_url)
-            schema_uniprot_dict = resp.json()
+            if resp.status_code != 200:
+                print('Failed to get %s from rcsb uniprot information entry with code %s:'%(PDB_ID, resp.status_code))
+                ERROR = 1
+            schema_uniprot_dict = resp.json() #schema_uniprot_dict does not appear to be used
         
             entry_id_dict = entry_dict['entry']
             ENTRY_ID = entry_id_dict['id']
@@ -311,6 +327,9 @@ class PDB_interface:
                 polymer_entity_url = "https://data.rcsb.org/rest/v1/core/polymer_entity/" + \
                     ENTRY_ID + "/" + each_entity_id
                 resp = requests.get(polymer_entity_url)
+                if resp.status_code != 200:
+                    print('Failed to get %s from rcsb polymer entity with code %s:'%(PDB_ID, resp.status_code))
+                    ERROR = 1
                 polymer_entity_dict = resp.json()
                 overall_polymer_entity_dict[each_entity_id] = polymer_entity_dict
         
@@ -319,6 +338,9 @@ class PDB_interface:
                 uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
                     ENTRY_ID + "/" + each_entity_id
                 resp = requests.get(uniprot_url)
+                if resp.status_code != 200:
+                    print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
+                    ERROR = 1
                 uniprot_dict = resp.json()
                 overall_uniprot_dict[each_entity_id] = uniprot_dict
         
