@@ -179,7 +179,7 @@ class PDB_interface:
 
             self.name = PDB_ID
 
-            self.entry_dict, self.pubmed_dict, self.schema_dict, self.schema_uniprot_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
+            self.entry_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
             self.mods = {}
             self.locs = {}
 
@@ -291,27 +291,7 @@ class PDB_interface:
                 ERROR = 1
             entry_dict = resp.json() #THIS one is used!!
         
-            pubmed_url = "https://data.rcsb.org/rest/v1/core/pubmed/" + PDB_ID
-            resp = requests.get(pubmed_url)
-            if resp.status_code != 200:
-                print('Failed to get %s from pubmed entry with code %s:'%(PDB_ID, resp.status_code))
-                ERROR = 1
-            pubmed_dict = resp.json() #pubmed_dict does not appear to be used
-        
-            schema_url = "https://data.rcsb.org/rest/v1/schema/entry" + PDB_ID
-            resp = requests.get(schema_url)
-            if resp.status_code != 200:
-                print('Failed to get %s from rcsb entry schema with code %s:'%(PDB_ID, resp.status_code))
-                ERROR = 1
-            schema_dict = resp.json() #schema_dict does not appear to be used
-        
-            schema_uniprot_url = "https://data.rcsb.org/rest/v1/schema/uniprot" + PDB_ID
-            resp = requests.get(schema_uniprot_url)
-            if resp.status_code != 200:
-                print('Failed to get %s from rcsb uniprot information entry with code %s:'%(PDB_ID, resp.status_code))
-                ERROR = 1
-            schema_uniprot_dict = resp.json() #schema_uniprot_dict does not appear to be used
-        
+                  
             entry_id_dict = entry_dict['entry']
             ENTRY_ID = entry_id_dict['id']
             rcsb_entry_container_identifiers = entry_dict['rcsb_entry_container_identifiers']
@@ -344,7 +324,7 @@ class PDB_interface:
                 uniprot_dict = resp.json()
                 overall_uniprot_dict[each_entity_id] = uniprot_dict
         
-            return entry_dict, pubmed_dict, schema_dict, schema_uniprot_dict, overall_polymer_entity_dict, overall_uniprot_dict
+            return entry_dict, overall_polymer_entity_dict, overall_uniprot_dict
 
         def get_annotation(self, attribute, polymer_entity_id):
             """
