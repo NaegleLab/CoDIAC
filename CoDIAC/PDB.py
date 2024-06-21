@@ -645,6 +645,15 @@ def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
     #print(PDB_IDs)
     generateStructureRefFile(PDB_IDs, outputFile)    
 
+def progress_bar(current, total, bar_length=20):
+    fraction = current / total
+
+    arrow = int(fraction * bar_length - 1) * '-' + '>'
+    padding = int(bar_length - len(arrow)) * ' '
+
+    ending = '\n' if current == total else '\r'
+
+    print(f'Progress: [{arrow}{padding}] {int(fraction*100)}%', end=ending)
 
 def generateStructureRefFile(PDB_IDs, outputFile):
     '''
@@ -659,11 +668,17 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     -------
         .csv Structure reference file with relevant metadata
     '''
-
-    interface = PDB_interface(PDB_IDs)
-    interface.print_output_csv(outputFile)
-    #interface.get_output_xlsx(outputFile)
+    dict_list = []
+    for PDB_ID in PDB_IDs:
+        #This can have a lot of fetching time, we would like to print to let the user
+        # know what the status is of the job fetch. 
+        progress_bar(PDB_IDs.index(PDB_ID), len(PDB_IDs))
+        interface = PDB_interface(PDB_ID)
+        dict_list.append(interface.get_anno_dict())
     print('Structure Reference File successfully created!')
+
+    #interface.print_output_csv(outputFile)
+    return dict_list
     
 def download_cifFile(PDB_list, PATH):
     '''generates .cif files for PDB structures
