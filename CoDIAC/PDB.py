@@ -192,10 +192,11 @@ class PDB_interface:
             """
             anno_dict_list = []
             for entity_id in self.entry_dict['rcsb_entry_container_identifiers']['polymer_entity_ids']:
-                anno_dict = self.get_empty_anno_dict()
-                
-                for attribute in anno_dict:
-                    anno_dict[attribute] = self.get_annotation(attribute, entity_id)
+                anno_dict = self.return_anno_dict(entity_id)
+
+
+                #for attribute in anno_dict:
+                #    anno_dict[attribute] = self.get_annotation(attribute, entity_id)
 
                 anno_dict_list.append(anno_dict)
             return anno_dict_list
@@ -215,6 +216,304 @@ class PDB_interface:
             for meta in meta_data:
                 inner[meta] = ""
             return inner
+        
+        def return_anno_dict(self, polymer_entity_id):
+            """
+            Creates a dictionary with the attributes contained in meta_data as keys with empty values. 
+
+            Returns
+            -------
+            anno_dict : dictionary
+                updated anno_dict
+
+            """
+            anno_dict = self.get_empty_anno_dict()
+            polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
+
+
+            anno_dict['PDB_ID']= self.name
+            anno_dict['ENTITY_ID'] = polymer_entity_id
+
+            #CHAIN ID
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    CHAIN_ID = entity_poly['pdbx_strand_id']
+                    anno_dict['CHAIN_ID'] = CHAIN_ID
+            except:
+                anno_dict['CHAIN_ID'] = 'not found'
+
+            
+            #database name
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
+                    reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
+                    middle = reference_sequence_identifiers[0]
+                anno_dict['dabase_name'] = middle['database_name']
+            except KeyError:
+                anno_dict['dabase_name'] = 'not found'
+
+            #gene name
+
+            #elif (attribute == 'rcsb_gene_name'):
+            try:
+                rcsb_gene_nameS_list = []
+                if len(polymer_entity_dict) > 3:
+                    rcsb_entity_source_organism = polymer_entity_dict['rcsb_entity_source_organism']
+                    middle = rcsb_entity_source_organism[0]
+                    rcsb_gene_name = middle['rcsb_gene_name']
+                    for each_dict in rcsb_gene_name:
+                        gene_name = each_dict['value']
+                        if gene_name not in rcsb_gene_nameS_list:
+                            rcsb_gene_nameS_list.append(gene_name)
+                anno_dict['rcsb_gene_name'] = '; '.join(rcsb_gene_nameS_list)
+            except KeyError:
+                anno_dict['rcsb_gene_name'] = 'not found'
+               
+
+            #elif (attribute == 'database_accession'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
+                    reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
+                    middle = reference_sequence_identifiers[0]
+                anno_dict['database_accession'] = middle['database_accession']
+            except KeyError:
+                anno_dict['database_accession'] = 'not found'
+
+            #elif (attribute == 'pdbx_seq_one_letter_code'):
+            try:
+                pdbx_seq_one_letter_code = ''
+                if len(polymer_entity_dict)>3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    pdbx_seq_one_letter_code = entity_poly['pdbx_seq_one_letter_code']
+                anno_dict['pdbx_seq_one_letter_code'] = pdbx_seq_one_letter_code
+            except KeyError:
+                anno_dict['pdbx_seq_one_letter_code'] = 'not found'
+            
+            
+            #elif (attribute == 'rcsb_uniprot_protein_sequence'):
+            try:
+                uniprot_entity_dict = self.overall_uniprot_dict[polymer_entity_id]
+                SEQ = ''
+                if len(uniprot_entity_dict) < 3:
+                    middle = uniprot_entity_dict[0]
+                    rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
+                    SEQ = rcsb_uniprot_protein['sequence']
+                anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
+            except KeyError:
+                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+            
+            #elif (attribute == 'rcsb_sample_sequence_length'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    sequence_length = entity_poly['rcsb_sample_sequence_length']
+                anno_dict['rcsb_sample_sequence_length'] = sequence_length
+            except KeyError:
+                anno_dict['rcsb_sample_sequence_length'] = 'not found'
+            
+            
+            #elif (attribute == 'rcsb_entity_polymer_type'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['rcsb_entity_polymer_type'] = entity_poly['rcsb_entity_polymer_type']
+            except KeyError:
+                anno_dict['rcsb_entity_polymer_type'] = 'not found'
+            
+
+            #elif (attribute == 'macromolecular_type'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['macromolecular_type'] = entity_poly['type']
+            except KeyError:
+                anno_dict['macromolecular_type'] = 'not found'
+            
+            #elif (attribute == 'molecular_weight'):
+            entry_info = self.entry_dict['rcsb_entry_info']
+            anno_dict['molecular_weight'] = entry_info['molecular_weight']
+
+            #elif (attribute == 'experimental_method'):
+            entry_info = self.entry_dict['rcsb_entry_info']
+            anno_dict['experimental_method'] = entry_info['experimental_method']
+            
+            #elif (attribute == 'resolution_combined'):
+            try:
+                summary = self.entry_dict['rcsb_entry_info']
+                # need to check if more than one value is ever reported
+                anno_dict['rcsb_entry_info'] = summary['resolution_combined'][0]
+            except KeyError:
+                anno_dict['rcsb_entry_info'] = 'not found'
+
+            #elif (attribute == 'pdbx_seq_one_letter_code_can'):
+            try:
+                SEQ = ''
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    SEQ = entity_poly['pdbx_seq_one_letter_code_can']
+                anno_dict['pdbx_seq_one_letter_code_can']= SEQ
+            except KeyError:
+                anno_dict['pdbx_seq_one_letter_code_can']= 'not found'
+            
+            #elif (attribute == 'entity_beg_seq_id'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['entity_beg_seq_id'] = str(middle2['entity_beg_seq_id'])
+            except KeyError:
+                anno_dict['entity_beg_seq_id'] = 'not found'
+            
+            #elif (attribute == 'ref_beg_seq_id'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['ref_beg_seq_id'] = str(middle2['ref_beg_seq_id'])
+            except KeyError:
+                anno_dict['ref_beg_seq_id'] = 'not found'
+            
+            #elif (attribute == 'aligned_regions_length'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['aligned_regions_length'] = str(middle2['length'] )
+            except KeyError:
+                anno_dict['aligned_regions_length'] = 'not found'
+            
+            #elif (attribute == 'pdbx_gene_src_scientific_name'):
+            try:
+                if  len(polymer_entity_dict) > 3:
+                    entity_src_gen = polymer_entity_dict['entity_src_gen']
+                    middle = entity_src_gen[0]
+                    species = middle['pdbx_gene_src_scientific_name']
+                anno_dict['pdbx_gene_src_scientific_name'] = species
+            except KeyError:
+                anno_dict['pdbx_gene_src_scientific_name'] = 'not found'
+
+            #elif (attribute == 'mutations exist (Y/N)'):
+            mutation_count = 0
+            if len(polymer_entity_dict) > 3:
+                entity_poly = polymer_entity_dict['entity_poly']
+                mutation_count = entity_poly['rcsb_mutation_count']
+            if mutation_count != 0:
+                anno_dict['mutations exist (Y/N)'] = 'Y'
+            else:
+                anno_dict['mutations exist (Y/N)'] = 'N'
+                
+
+            #elif (attribute =='rcsb_mutation_count'):
+            if len(polymer_entity_dict) > 3:
+                entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['rcsb_mutation_count'] = entity_poly['rcsb_mutation_count']
+            #return mutation_count
+            
+            #elif (attribute =='modifications locations'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    locations = self.get_mod_locations(polymer_entity_id=polymer_entity_id)
+                    if len(locations)>0:
+                        anno_dict['modifications locations'] = '; '.join(locations)
+                    else:
+                        anno_dict['modifications locations'] = 'N/A'
+            except KeyError:
+                anno_dict['modifications locations'] = 'N/A'
+            
+
+            #elif (attribute =='modifications'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    types = self.get_mod_types(polymer_entity_id=polymer_entity_id)
+                    if len(types)>0:
+                        anno_dict['modifications'] = '; '.join(types)
+                    else:
+                        anno_dict['modifications'] = 'N/A'
+            except KeyError:
+                anno_dict['modifications'] = 'N/A'   
+
+           # elif (attribute =='mutations locations'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                    mutation = polymer_entity['pdbx_mutation'].split(', ')
+                    locations = []
+                    for item in mutation:
+                        locations.append(item[1:(len(item)-1)])
+                    anno_dict['mutations locations'] = '; '.join(locations)
+            except KeyError:
+                 anno_dict['mutations locations'] = 'N/A'
+            
+            #elif (attribute == 'pdbx_mutation joined'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                    mutation = polymer_entity['pdbx_mutation']
+                anno_dict['pdbx_mutation joined'] = mutation
+            except KeyError:
+                anno_dict['pdbx_mutation joined'] = 'N/A'
+            
+            #elif (attribute =='deposit_date'):
+                summary = self.entry_dict['rcsb_accession_info']
+                anno_dict['deposit_date'] = summary['deposit_date'][:10]            
+
+            #elif (attribute == 'audit_author_name'): #fixed
+            AUTHORS_LIST = []
+            temp_authors = self.entry_dict['audit_author']
+            for each in temp_authors:
+                name = each['name']
+                AUTHORS_LIST.append(name)
+            anno_dict['audit_author_name'] = ', '.join(AUTHORS_LIST)
+
+            #elif (attribute == 'title'):
+            citation = self.entry_dict['rcsb_primary_citation']
+            anno_dict['title'] = citation['title']
+
+            #elif (attribute =='pdbx_database_id_doi'):
+            try:
+                citation = self.entry_dict['rcsb_primary_citation']
+                DOI = citation['pdbx_database_id_doi']
+                anno_dict['pdbx_database_id_doi'] = DOI
+            except KeyError:
+                try:
+                    citation = self.entry_dict['citation']
+                    middle = citation[0]
+                    anno_dict['pdbx_database_id_doi'] = middle['pdbx_database_id_doi']
+                except KeyError:
+                    anno_dict['pdbx_database_id_doi'] = 'not found'
+            
+            #elif (attribute =='pdbx_database_id_pub_med'):
+            try:
+                citation = self.entry_dict['rcsb_primary_citation']
+                anno_dict['pdbx_database_id_pub_med'] = citation['pdbx_database_id_pub_med']
+            except KeyError:
+                try:
+                    citation = self.entry_dict['citation']
+                    middle = citation[0]
+                    anno_dict['pdbx_database_id_pub_med'] = middle['pdbx_database_id_PubMed']
+                except KeyError:
+                    anno_dict['pdbx_database_id_pub_med'] = 'not found'
+            
+            #elif (attribute == "pdbx_description"):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                anno_dict['pdbx_description'] = rcsb_polymer_entity['pdbx_description']
+            except KeyError:
+                anno_dict['pdbx_description'] =  'N/A'
+            return anno_dict
+
+
+           
     
         def find_mods(self, polymer_entity_id):
             polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
