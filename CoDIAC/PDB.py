@@ -299,7 +299,7 @@ class PDB_interface:
             #print("DEBUG: %s"%(resp.status_code))
             if resp.status_code != 200:
                 #print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
-                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found, bad response code'
+                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
             else: #in case we got a response, but it does not conform to json, try, except here
                 try:
                     uniprot_entity_dict = resp.json()
@@ -697,8 +697,11 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     df.to_csv(outputFile, index=False)
     
     print('Structure Reference File successfully created!')
-    print("Could not fetch the following PDBs, these encountered errors, despite retrying %d times:"%(max_attempts))
-    print(bad_PDBs)
+    if(len(bad_PDBs) == 0):
+        print('All PDBs successfully fetched')
+    else:
+        print("Could not fetch the following PDBs, these encountered errors, despite retrying %d times:"%(max_attempts))
+        print(bad_PDBs)
     #interface.print_output_csv(outputFile)
     return dict_list, bad_PDBs
     
