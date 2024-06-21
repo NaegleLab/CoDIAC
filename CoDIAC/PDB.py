@@ -58,9 +58,12 @@ class PDB_interface:
 
         Returns
         -------
-        overall_dict : dictionary
-            dictionary full of the annotations for all of the pdb ids from the inputted file
-
+        ERROR: bool
+            0 if no error, 1 if error
+        annotated_dict_list : list of dictionaries
+            list of each entitiy dictionary 
+            where the dictionary has PDB.COLUMNS keys and information for each entity
+            list is empty if error
         """
 
         #IDs = self.PDB_list
@@ -69,11 +72,14 @@ class PDB_interface:
         
 #        for each_id in IDs:
         try:
+            ERROR = 0
             metadata = self.PDB_metadata(self.PDB_ID)
-            annotated_dict = metadata.set_PDB_API_annotation()
+            annotated_dict_list = metadata.set_PDB_API_annotation()
+            return ERROR, annotated_dict_list
         except:
-            print(self.PDB_ID + ' could not be fetched')
-        return annotated_dict
+            #print(self.PDB_ID + ' could not be fetched')
+            ERROR = 1
+            return ERROR, []
 
 
     
@@ -92,7 +98,7 @@ class PDB_interface:
         None.
 
         """
-        overall_dict = self.get_anno_dict()
+        ERROR, overall_dict = self.get_anno_dict()
         data_list = []
         for each_key in overall_dict.keys():
             for each_entity in overall_dict[each_key]:
@@ -116,7 +122,7 @@ class PDB_interface:
 
         """
         csv_file_name = input('Enter a file name for the output csv file: ')
-        overall_dict = self.get_anno_dict()
+        ERROR, overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
         df.to_csv(csv_file_name + '.csv')
         return overall_dict
@@ -583,7 +589,7 @@ class PDB_interface:
             entry_url = "https://data.rcsb.org/rest/v1/core/entry/" + PDB_ID
             resp = requests.get(entry_url)
             if resp.status_code != 200:
-                print('Failed to get %s from rcsb entry with code %s:'%(PDB_ID, resp.status_code))
+                #print('Failed to get %s from rcsb entry with code %s:'%(PDB_ID, resp.status_code))
                 ERROR = 1
             entry_dict = resp.json() #THIS one is used!!
         
@@ -604,7 +610,7 @@ class PDB_interface:
                     ENTRY_ID + "/" + each_entity_id
                 resp = requests.get(polymer_entity_url)
                 if resp.status_code != 200:
-                    print('Failed to get %s from rcsb polymer entity with code %s:'%(PDB_ID, resp.status_code))
+                    #print('Failed to get %s from rcsb polymer entity with code %s:'%(PDB_ID, resp.status_code))
                     ERROR = 1
                 polymer_entity_dict = resp.json()
                 overall_polymer_entity_dict[each_entity_id] = polymer_entity_dict
@@ -669,21 +675,32 @@ def generateStructureRefFile(PDB_IDs, outputFile):
         .csv Structure reference file with relevant metadata
     '''
     dict_list = []
+    bad_PDBs = []
     for PDB_ID in PDB_IDs:
         #This can have a lot of fetching time, we would like to print to let the user
         # know what the status is of the job fetch. 
         progress_bar(PDB_IDs.index(PDB_ID), len(PDB_IDs))
         interface = PDB_interface(PDB_ID)
-        annotations = interface.get_anno_dict()
-        for annotation in annotations: #multiple entities can come back and each should become something in a dataframe
-            dict_list.append(annotation)
+        ERROR, annotations = interface.get_anno_dict()
+        # reiteration attempt - in case of connectivity issue. 
+        num_attempts = 0
+        max_attempts = 5
+        while ERROR and num_attempts < max_attempts:
+            ERROR, annotations = interface.get_anno_dict()
+            num_attempts += 1
+        if not ERROR:
+            for annotation in annotations: #multiple entities can come back and each should become something in a dataframe
+                dict_list.append(annotation)
+        else:
+            bad_PDBs.append(PDB_ID)
     df = pd.DataFrame(dict_list, columns=COLUMNS)
     df.to_csv(outputFile, index=False)
     
     print('Structure Reference File successfully created!')
-
+    print("Could not fetch the following PDBs, these encountered errors, despite retrying %d times:"%(max_attempts))
+    print(bad_PDBs)
     #interface.print_output_csv(outputFile)
-    return dict_list
+    return dict_list, bad_PDBs
     
 def download_cifFile(PDB_list, PATH):
     '''generates .cif files for PDB structures
