@@ -13,8 +13,8 @@ COLUMNS = ['PDB_ID', 'ENTITY_ID', 'CHAIN_ID', 'pdbx_description',  'rcsb_gene_na
 
 class PDB_interface:
     """
-    A class that obtains and outputs relevant metadata/annotations for individual PDB IDs in the form of a dictionary
-    and/or a csv file.
+    A class that obtains and outputs relevant metadata/annotations for a PDB ID in the form of a dictionary
+    and/or ability to write to a csv file.
     
     Attributes
     -----------
@@ -24,7 +24,8 @@ class PDB_interface:
     Methods
     --------
     get_anno_dict
-        Produces a dictionary full of the annotations for all of the PDB IDs from the inputted csv file.
+        Produces a dictionary full of the annotations for
+         the PDB ID.
     print_output_csv
         Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids
         from the inputted csv file.
@@ -34,21 +35,21 @@ class PDB_interface:
     
 	
 	"""
-    def __init__(self, PDB_list):
+    def __init__(self, PDB_ID):
         """
         Constructor for the PDB_interface class.
         
         Parameters
         ----------
-        PDB_list : list of strings
-            list of PDB IDs (4-character alphanumeric identifier) that the user wants to gather information on
+        PDB : list of strings
+            PDB ID (4-character alphanumeric identifier) that the user wants to gather information on
         
         Returns
         -------
         None.
 
         """
-        self.PDB_list = PDB_list
+        self.PDB_ID = PDB_ID
 
        
     def get_anno_dict(self):
@@ -57,23 +58,28 @@ class PDB_interface:
 
         Returns
         -------
-        overall_dict : dictionary
-            dictionary full of the annotations for all of the pdb ids from the inputted file
-
+        ERROR: bool
+            0 if no error, 1 if error
+        annotated_dict_list : list of dictionaries
+            list of each entitiy dictionary 
+            where the dictionary has PDB.COLUMNS keys and information for each entity
+            list is empty if error
         """
 
-        IDs = self.PDB_list
+        #IDs = self.PDB_list
         
         overall_dict = {}
         
-        for each_id in IDs:
-            try:
-                metadata = self.PDB_metadata(each_id)
-                annotated_dict = metadata.set_PDB_API_annotation()
-                overall_dict[each_id] = annotated_dict
-            except:
-                print(each_id + ' is not a valid PDB ID')
-        return overall_dict
+#        for each_id in IDs:
+        try:
+            ERROR = 0
+            metadata = self.PDB_metadata(self.PDB_ID)
+            annotated_dict_list = metadata.set_PDB_API_annotation()
+            return ERROR, annotated_dict_list
+        except:
+            #print(self.PDB_ID + ' could not be fetched')
+            ERROR = 1
+            return ERROR, []
 
 
     
@@ -92,7 +98,7 @@ class PDB_interface:
         None.
 
         """
-        overall_dict = self.get_anno_dict()
+        ERROR, overall_dict = self.get_anno_dict()
         data_list = []
         for each_key in overall_dict.keys():
             for each_entity in overall_dict[each_key]:
@@ -116,7 +122,7 @@ class PDB_interface:
 
         """
         csv_file_name = input('Enter a file name for the output csv file: ')
-        overall_dict = self.get_anno_dict()
+        ERROR, overall_dict = self.get_anno_dict()
         df = pd.DataFrame.from_dict(overall_dict)
         df.to_csv(csv_file_name + '.csv')
         return overall_dict
@@ -133,16 +139,8 @@ class PDB_interface:
             the PDB ID (4-character alphanumeric identifier) that the user wants to gather information on
         entry_dict : dictionary
             stores information from the entry service for the PDB_ID
-        pubmed_dict : dictionary
-            stores the pubmed annotations (data integrated from PubMed) for the PDB_ID
-        schema_dict : dictionary
-            stores information from the entry schema for the PDB_ID
-        schema_uniprot_dict : dictionary
-            stores information from the uniprot schema for the PDB_ID
         overall_polymer_entity_dict : dictionary
             stores polymer entity data for each entity id corresponding with the PDB_ID
-        overall_uniprot_dict : dictionary
-            stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)
                         
         Methods
         --------
@@ -178,7 +176,7 @@ class PDB_interface:
 
             self.name = PDB_ID
 
-            self.entry_dict, self.pubmed_dict, self.schema_dict, self.schema_uniprot_dict, self.overall_polymer_entity_dict, self.overall_uniprot_dict = self.get_all_dicts()
+            self.entry_dict, self.overall_polymer_entity_dict = self.get_all_dicts()
             self.mods = {}
             self.locs = {}
 
@@ -190,17 +188,14 @@ class PDB_interface:
 
             Returns
             -------
-            anno_dict : dictionary
+            anno_dict_list : list of dictionaries
                 dictionary storing all information for the PDB_ID
+                list is returned since multipel entities can be present in a single PDB file with different attributes
 
             """
             anno_dict_list = []
             for entity_id in self.entry_dict['rcsb_entry_container_identifiers']['polymer_entity_ids']:
-                anno_dict = self.get_empty_anno_dict()
-                
-                for attribute in anno_dict:
-                    anno_dict[attribute] = self.get_annotation(attribute, entity_id)
-
+                anno_dict = self.return_anno_dict(entity_id)
                 anno_dict_list.append(anno_dict)
             return anno_dict_list
 
@@ -219,6 +214,320 @@ class PDB_interface:
             for meta in meta_data:
                 inner[meta] = ""
             return inner
+        
+        def return_anno_dict(self, polymer_entity_id):
+            """
+            Creates a dictionary with the attributes contained in meta_data as keys with empty values. 
+
+            Returns
+            -------
+            anno_dict : dictionary
+                updated anno_dict
+
+            """
+            anno_dict = self.get_empty_anno_dict()
+            polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
+
+
+            anno_dict['PDB_ID']= self.name
+            anno_dict['ENTITY_ID'] = polymer_entity_id
+
+            #CHAIN ID
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    CHAIN_ID = entity_poly['pdbx_strand_id']
+                    anno_dict['CHAIN_ID'] = CHAIN_ID
+            except:
+                anno_dict['CHAIN_ID'] = 'not found'
+            
+            #database name
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
+                    reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
+                    middle = reference_sequence_identifiers[0]
+                anno_dict['database_name'] = middle['database_name']
+            except KeyError:
+                anno_dict['database_name'] = 'not found'
+
+            #gene name
+
+            #elif (attribute == 'rcsb_gene_name'):
+            try:
+                rcsb_gene_nameS_list = []
+                if len(polymer_entity_dict) > 3:
+                    rcsb_entity_source_organism = polymer_entity_dict['rcsb_entity_source_organism']
+                    middle = rcsb_entity_source_organism[0]
+                    rcsb_gene_name = middle['rcsb_gene_name']
+                    for each_dict in rcsb_gene_name:
+                        gene_name = each_dict['value']
+                        if gene_name not in rcsb_gene_nameS_list:
+                            rcsb_gene_nameS_list.append(gene_name)
+                anno_dict['rcsb_gene_name'] = '; '.join(rcsb_gene_nameS_list)
+            except KeyError:
+                anno_dict['rcsb_gene_name'] = 'not found'
+               
+
+            #elif (attribute == 'database_accession'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
+                    reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
+                    middle = reference_sequence_identifiers[0]
+                anno_dict['database_accession'] = middle['database_accession']
+            except KeyError:
+                anno_dict['database_accession'] = 'not found'
+
+            #elif (attribute == 'pdbx_seq_one_letter_code'):
+            try:
+                pdbx_seq_one_letter_code = ''
+                if len(polymer_entity_dict)>3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    pdbx_seq_one_letter_code = entity_poly['pdbx_seq_one_letter_code']
+                anno_dict['pdbx_seq_one_letter_code'] = pdbx_seq_one_letter_code
+            except KeyError:
+                anno_dict['pdbx_seq_one_letter_code'] = 'not found'
+            
+            
+            #elif (attribute == 'rcsb_uniprot_protein_sequence'):
+            entity_id =  anno_dict['ENTITY_ID']
+            uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
+                anno_dict['PDB_ID'] + "/" + entity_id
+            #print("DEBUG: %s"%(uniprot_url))
+            resp = requests.get(uniprot_url)
+            #print("DEBUG: %s"%(resp.status_code))
+            if resp.status_code != 200:
+                #print('Failed to get %s from rcsb uniprot with code %s:'%(PDB_ID, resp.status_code))
+                anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+            else: #in case we got a response, but it does not conform to json, try, except here
+                try:
+                    uniprot_entity_dict = resp.json()
+                    SEQ = ''
+
+                    if isinstance(uniprot_entity_dict, list): #len(uniprot_entity_dict) < 3:
+                        #print(len(uniprot_entity_dict))
+                        middle = uniprot_entity_dict[0]
+                        if isinstance(middle, dict):
+                            rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
+                            SEQ = rcsb_uniprot_protein['sequence']
+                            #print(SEQ)
+                            anno_dict['rcsb_uniprot_protein_sequence'] = SEQ
+                        else:
+                            anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+                except KeyError:
+                    anno_dict['rcsb_uniprot_protein_sequence'] = 'not found'
+            
+            #elif (attribute == 'rcsb_sample_sequence_length'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    sequence_length = entity_poly['rcsb_sample_sequence_length']
+                anno_dict['rcsb_sample_sequence_length'] = sequence_length
+            except KeyError:
+                anno_dict['rcsb_sample_sequence_length'] = 'not found'
+            
+            
+            #elif (attribute == 'rcsb_entity_polymer_type'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['rcsb_entity_polymer_type'] = entity_poly['rcsb_entity_polymer_type']
+            except KeyError:
+                anno_dict['rcsb_entity_polymer_type'] = 'not found'
+            
+
+            #elif (attribute == 'macromolecular_type'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['macromolecular_type'] = entity_poly['type']
+            except KeyError:
+                anno_dict['macromolecular_type'] = 'not found'
+            
+            #elif (attribute == 'molecular_weight'):
+            entry_info = self.entry_dict['rcsb_entry_info']
+            anno_dict['molecular_weight'] = entry_info['molecular_weight']
+
+            #elif (attribute == 'experimental_method'):
+            entry_info = self.entry_dict['rcsb_entry_info']
+            anno_dict['experimental_method'] = entry_info['experimental_method']
+            
+            #elif (attribute == 'resolution_combined'):
+            try:
+                summary = self.entry_dict['rcsb_entry_info']
+                # need to check if more than one value is ever reported
+                anno_dict['resolution_combined'] = summary['resolution_combined'][0]
+            except KeyError:
+                anno_dict['resolution_combined'] = 'not found'
+
+            #elif (attribute == 'pdbx_seq_one_letter_code_can'):
+            try:
+                SEQ = ''
+                if len(polymer_entity_dict) > 3:
+                    entity_poly = polymer_entity_dict['entity_poly']
+                    SEQ = entity_poly['pdbx_seq_one_letter_code_can']
+                anno_dict['pdbx_seq_one_letter_code_can']= SEQ
+            except KeyError:
+                anno_dict['pdbx_seq_one_letter_code_can']= 'not found'
+            
+            #elif (attribute == 'entity_beg_seq_id'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['entity_beg_seq_id'] = str(middle2['entity_beg_seq_id'])
+            except KeyError:
+                anno_dict['entity_beg_seq_id'] = 'not found'
+            
+            #elif (attribute == 'ref_beg_seq_id'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['ref_beg_seq_id'] = str(middle2['ref_beg_seq_id'])
+            except KeyError:
+                anno_dict['ref_beg_seq_id'] = 'not found'
+            
+            #elif (attribute == 'aligned_regions_length'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
+                    middle = entity_align[0]
+                    aligned_info = middle['aligned_regions']
+                    middle2 = aligned_info[0]
+                anno_dict['aligned_regions_length'] = str(middle2['length'] )
+            except KeyError:
+                anno_dict['aligned_regions_length'] = 'not found'
+            
+            #elif (attribute == 'pdbx_gene_src_scientific_name'):
+            try:
+                if  len(polymer_entity_dict) > 3:
+                    entity_src_gen = polymer_entity_dict['entity_src_gen']
+                    middle = entity_src_gen[0]
+                    species = middle['pdbx_gene_src_scientific_name']
+                anno_dict['pdbx_gene_src_scientific_name'] = species
+            except KeyError:
+                anno_dict['pdbx_gene_src_scientific_name'] = 'not found'
+
+            #elif (attribute == 'mutations exist (Y/N)'):
+            mutation_count = 0
+            if len(polymer_entity_dict) > 3:
+                entity_poly = polymer_entity_dict['entity_poly']
+                mutation_count = entity_poly['rcsb_mutation_count']
+            if mutation_count != 0:
+                anno_dict['mutations exist (Y/N)'] = 'Y'
+            else:
+                anno_dict['mutations exist (Y/N)'] = 'N'
+                
+
+            #elif (attribute =='rcsb_mutation_count'):
+            if len(polymer_entity_dict) > 3:
+                entity_poly = polymer_entity_dict['entity_poly']
+                anno_dict['rcsb_mutation_count'] = entity_poly['rcsb_mutation_count']
+            #return mutation_count
+            
+            #elif (attribute =='modifications locations'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    locations = self.get_mod_locations(polymer_entity_id=polymer_entity_id)
+                    if len(locations)>0:
+                        anno_dict['modifications locations'] = '; '.join(locations)
+                    else:
+                        anno_dict['modifications locations'] = 'N/A'
+            except KeyError:
+                anno_dict['modifications locations'] = 'N/A'
+            
+
+            #elif (attribute =='modifications'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    types = self.get_mod_types(polymer_entity_id=polymer_entity_id)
+                    if len(types)>0:
+                        anno_dict['modifications'] = '; '.join(types)
+                    else:
+                        anno_dict['modifications'] = 'N/A'
+            except KeyError:
+                anno_dict['modifications'] = 'N/A'   
+
+           # elif (attribute =='mutations locations'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                    mutation = polymer_entity['pdbx_mutation'].split(', ')
+                    locations = []
+                    for item in mutation:
+                        locations.append(item[1:(len(item)-1)])
+                    anno_dict['mutations locations'] = '; '.join(locations)
+            except KeyError:
+                 anno_dict['mutations locations'] = 'N/A'
+            
+            #elif (attribute == 'pdbx_mutation joined'):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                    mutation = polymer_entity['pdbx_mutation']
+                anno_dict['pdbx_mutation joined'] = mutation
+            except KeyError:
+                anno_dict['pdbx_mutation joined'] = 'N/A'
+            
+            #elif (attribute =='deposit_date'):
+            summary = self.entry_dict['rcsb_accession_info']
+            anno_dict['deposit_date'] = summary['deposit_date'][:10]            
+
+            #elif (attribute == 'audit_author_name'): #fixed
+            AUTHORS_LIST = []
+            temp_authors = self.entry_dict['audit_author']
+            for each in temp_authors:
+                name = each['name']
+                AUTHORS_LIST.append(name)
+            anno_dict['audit_author_name'] = ', '.join(AUTHORS_LIST)
+
+            #elif (attribute == 'title'):
+            citation = self.entry_dict['rcsb_primary_citation']
+            anno_dict['title'] = citation['title']
+
+            #elif (attribute =='pdbx_database_id_doi'):
+            try:
+                citation = self.entry_dict['rcsb_primary_citation']
+                DOI = citation['pdbx_database_id_doi']
+                anno_dict['pdbx_database_id_doi'] = DOI
+            except KeyError:
+                try:
+                    citation = self.entry_dict['citation']
+                    middle = citation[0]
+                    anno_dict['pdbx_database_id_doi'] = middle['pdbx_database_id_doi']
+                except KeyError:
+                    anno_dict['pdbx_database_id_doi'] = 'not found'
+            
+            #elif (attribute =='pdbx_database_id_pub_med'):
+            try:
+                citation = self.entry_dict['rcsb_primary_citation']
+                anno_dict['pdbx_database_id_pub_med'] = citation['pdbx_database_id_pub_med']
+            except KeyError:
+                try:
+                    citation = self.entry_dict['citation']
+                    middle = citation[0]
+                    anno_dict['pdbx_database_id_pub_med'] = middle['pdbx_database_id_PubMed']
+                except KeyError:
+                    anno_dict['pdbx_database_id_pub_med'] = 'not found'
+            
+            #elif (attribute == "pdbx_description"):
+            try:
+                if len(polymer_entity_dict) > 3:
+                    rcsb_polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
+                anno_dict['pdbx_description'] = rcsb_polymer_entity['pdbx_description']
+            except KeyError:
+                anno_dict['pdbx_description'] =  'N/A'
+
+            return anno_dict
+
+
+           
     
         def find_mods(self, polymer_entity_id):
             polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
@@ -273,29 +582,21 @@ class PDB_interface:
                 stores information from the uniprot schema for the PDB_ID
             overall_polymer_entity_dict : dictionary
                 stores polymer entity data for each entity id corresponding with the PDB_ID
-            overall_uniprot_dict : dictionary
-                stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)
 
             """
 
             PDB_ID = self.name
 
+            ERROR = 0
+            #check for repsonse issues, collecting errors and handling them
             entry_url = "https://data.rcsb.org/rest/v1/core/entry/" + PDB_ID
             resp = requests.get(entry_url)
-            entry_dict = resp.json()
+            if resp.status_code != 200:
+                #print('Failed to get %s from rcsb entry with code %s:'%(PDB_ID, resp.status_code))
+                ERROR = 1
+            entry_dict = resp.json() #THIS one is used!!
         
-            pubmed_url = "https://data.rcsb.org/rest/v1/core/pubmed/" + PDB_ID
-            resp = requests.get(pubmed_url)
-            pubmed_dict = resp.json()
-        
-            schema_url = "https://data.rcsb.org/rest/v1/schema/entry" + PDB_ID
-            resp = requests.get(schema_url)
-            schema_dict = resp.json()
-        
-            schema_uniprot_url = "https://data.rcsb.org/rest/v1/schema/uniprot" + PDB_ID
-            resp = requests.get(schema_uniprot_url)
-            schema_uniprot_dict = resp.json()
-        
+                  
             entry_id_dict = entry_dict['entry']
             ENTRY_ID = entry_id_dict['id']
             rcsb_entry_container_identifiers = entry_dict['rcsb_entry_container_identifiers']
@@ -311,354 +612,16 @@ class PDB_interface:
                 polymer_entity_url = "https://data.rcsb.org/rest/v1/core/polymer_entity/" + \
                     ENTRY_ID + "/" + each_entity_id
                 resp = requests.get(polymer_entity_url)
+                if resp.status_code != 200:
+                    #print('Failed to get %s from rcsb polymer entity with code %s:'%(PDB_ID, resp.status_code))
+                    ERROR = 1
                 polymer_entity_dict = resp.json()
                 overall_polymer_entity_dict[each_entity_id] = polymer_entity_dict
         
-            overall_uniprot_dict = {}
-            for each_entity_id in ENTITY_IDS:
-                uniprot_url = "https://data.rcsb.org/rest/v1/core/uniprot/" + \
-                    ENTRY_ID + "/" + each_entity_id
-                resp = requests.get(uniprot_url)
-                uniprot_dict = resp.json()
-                overall_uniprot_dict[each_entity_id] = uniprot_dict
         
-            return entry_dict, pubmed_dict, schema_dict, schema_uniprot_dict, overall_polymer_entity_dict, overall_uniprot_dict
+            return entry_dict, overall_polymer_entity_dict
 
-        def get_annotation(self, attribute, polymer_entity_id):
-            """
-            Finds and returns the corresponding information for the specified attribute of the PDB ID.
-
-            Parameters
-            ----------
-            attribute : string
-                each attribute is a specific piece of information wanted for the PDB_ID (attributes match the "keys" of the
-                dictionaries created for each PDB_ID)
-
-            Returns
-            -------
-            string
-                string containing the corresponding information for that attribute.
-                or string containing an error or N/A message when the desired information cannot be found/does not exist
-            int
-                int containing the corresponding information for that attribute.
-                
-            Raises
-            --------
-            KeyError if the desired information cannot be accessed, meaning a different pathway to access that information must be tried
-            or that the desired information cannot be found/does not exist
-
-            """
-            
-            PDB_ID = self.name
-            polymer_entity_dict = self.overall_polymer_entity_dict[polymer_entity_id]
-            if (attribute == 'PDB_ID'):
-                return PDB_ID
-            elif (attribute == 'ENTITY_ID'):
-                return polymer_entity_id
-            elif (attribute == 'CHAIN_ID'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                        CHAIN_ID = entity_poly['pdbx_strand_id']
-                    return CHAIN_ID
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'database_name'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
-                        reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
-                        middle = reference_sequence_identifiers[0]
-                    return middle['database_name']
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'rcsb_gene_name'):
-                try:
-                    rcsb_gene_nameS_list = []
-                    if len(polymer_entity_dict) > 3:
-                        rcsb_entity_source_organism = polymer_entity_dict['rcsb_entity_source_organism']
-                        middle = rcsb_entity_source_organism[0]
-                        rcsb_gene_name = middle['rcsb_gene_name']
-                        for each_dict in rcsb_gene_name:
-                            gene_name = each_dict['value']
-                            if gene_name not in rcsb_gene_nameS_list:
-                                rcsb_gene_nameS_list.append(gene_name)
-                    return '; '.join(rcsb_gene_nameS_list)
-                except KeyError:
-                    return 'not found'
-                    # try:
-                    #     rcsb_gene_nameS_list = []
-                    #     for each_dict in self.overall_polymer_entity_dict.values():
-                    #         if len(each_dict) > 3:
-                    #             entity_src_gen = each_dict['entity_src_gen']
-                    #             middle = entity_src_gen[0]
-                    #             all_names = (middle['pdbx_gene_src_gene']).split(', ')
-                    #             for each in all_names:
-                    #                 rcsb_gene_nameS_list.append(each)
-                    #     return ','.join(rcsb_gene_nameS_list)
-                    # except KeyError:
-                    #     try:
-                    #         for each_dict in self.overall_polymer_entity_dict.values():
-                    #             if len(each_dict) > 3:
-                    #                 rcsb_entity_source_organism = each_dict['rcsb_entity_source_organism']
-                    #                 middle = rcsb_entity_source_organism[0]
-                    #         return middle['source_type']
-                    #     except KeyError:
-                    #         return 'not found'
-            elif (attribute == 'database_accession'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
-                        reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
-                        middle = reference_sequence_identifiers[0]
-                    return middle['database_accession']
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'pdbx_seq_one_letter_code'):
-                try:
-                    pdbx_seq_one_letter_code = ''
-                    if len(polymer_entity_dict)>3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                        pdbx_seq_one_letter_code = entity_poly['pdbx_seq_one_letter_code']
-                    return pdbx_seq_one_letter_code
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'rcsb_uniprot_protein_sequence'):
-                try:
-                    uniprot_entity_dict = self.overall_uniprot_dict[polymer_entity_id]
-                    SEQ = ''
-                    if len(uniprot_entity_dict) < 3:
-                        middle = uniprot_entity_dict[0]
-                        rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
-                        SEQ = rcsb_uniprot_protein['sequence']
-                    return SEQ
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'rcsb_sample_sequence_length'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                        sequence_length = entity_poly['rcsb_sample_sequence_length']
-                    return sequence_length
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'rcsb_entity_polymer_type'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                    return entity_poly['rcsb_entity_polymer_type']
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'macromolecular_type'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                    return entity_poly['type']
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'molecular_weight'):
-                entry_info = self.entry_dict['rcsb_entry_info']
-                return entry_info['molecular_weight']
-            elif (attribute == 'experimental_method'):
-                entry_info = self.entry_dict['rcsb_entry_info']
-                return entry_info['experimental_method']
-            elif (attribute == 'resolution_combined'):
-                try:
-                    summary = self.entry_dict['rcsb_entry_info']
-                    # need to check if more than one value is ever reported
-                    return summary['resolution_combined'][0]
-                except KeyError:
-                    return 'not found'
-            # elif (attribute == 'pdbx_seq_one_letter_code_can'):
-            #     try:
-
-            #         for each_dict in self.overall_uniprot_dict.values():
-            #             if len(polymer_entity_dict) < 3:
-            #                 middle = each_dict[0]
-            #                 rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
-            #                 SEQ = rcsb_uniprot_protein['sequence']
-            #         REF_SEQ_POSITIONS_DICT = {'Beginning Position on PDB Sequence': '', 'Ref Sequence Length': ''}
-            #         for each_dict in self.overall_polymer_entity_dict.values():
-            #             if len(each_dict) > 3:
-            #                 entity_align = each_dict['rcsb_polymer_entity_align']
-            #                 middle = entity_align[0]
-            #                 aligned_info = middle['aligned_regions']
-            #                 middle2 = aligned_info[0]
-            #                 REF_SEQ_POSITIONS_DICT['Beginning Position on PDB Sequence'] = middle2['entity_beg_seq_id']
-            #                 REF_SEQ_POSITIONS_DICT['Ref Sequence Length'] = middle2['length']
-            #         beg_number = REF_SEQ_POSITIONS_DICT['Beginning Position on PDB Sequence']-1
-            #         end_number = beg_number + REF_SEQ_POSITIONS_DICT['Ref Sequence Length']
-            #         return SEQ[beg_number:end_number]
-            #     except KeyError:
-            #         return 'not found'
-            elif (attribute == 'pdbx_seq_one_letter_code_can'):
-                try:
-                    SEQ = ''
-                    if len(polymer_entity_dict) > 3:
-                        entity_poly = polymer_entity_dict['entity_poly']
-                        SEQ = entity_poly['pdbx_seq_one_letter_code_can']
-                    return SEQ
-                    # uniprot_entity_dict = self.overall_uniprot_dict[polymer_entity_id]
-                    # if len(uniprot_entity_dict) < 3:
-                    #     middle = each_dict[0]
-                    #     rcsb_uniprot_protein = middle['rcsb_uniprot_protein']
-                    #     SEQ = rcsb_uniprot_protein['sequence']
-                    # REF_SEQ_POSITIONS_DICT = {'Beginning Position on Cannonical Sequence': '', 'Ref Sequence Length': ''}
-                    # if len(polymer_entity_dict) > 3:
-                    #     entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
-                    #     middle = entity_align[0]
-                    #     aligned_info = middle['aligned_regions']
-                    #     middle2 = aligned_info[0]
-                    #     REF_SEQ_POSITIONS_DICT['Beginning Position on Cannonical Sequence'] = middle2['ref_beg_seq_id']
-                    #     REF_SEQ_POSITIONS_DICT['Ref Sequence Length'] = middle2['length']
-                    # beg_number = REF_SEQ_POSITIONS_DICT['Beginning Position on Cannonical Sequence']-1
-                    # end_number = beg_number + REF_SEQ_POSITIONS_DICT['Ref Sequence Length']
-                    # return SEQ[beg_number:end_number]
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'entity_beg_seq_id'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
-                        middle = entity_align[0]
-                        aligned_info = middle['aligned_regions']
-                        middle2 = aligned_info[0]
-                    return str(middle2['entity_beg_seq_id'])
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'ref_beg_seq_id'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
-                        middle = entity_align[0]
-                        aligned_info = middle['aligned_regions']
-                        middle2 = aligned_info[0]
-                    return str(middle2['ref_beg_seq_id'])
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'aligned_regions_length'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        entity_align = polymer_entity_dict['rcsb_polymer_entity_align']
-                        middle = entity_align[0]
-                        aligned_info = middle['aligned_regions']
-                        middle2 = aligned_info[0]
-                    return str(middle2['length'] )
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'pdbx_gene_src_scientific_name'):
-                try:
-                    if  len(polymer_entity_dict) > 3:
-                        entity_src_gen = polymer_entity_dict['entity_src_gen']
-                        middle = entity_src_gen[0]
-                        species = middle['pdbx_gene_src_scientific_name']
-                    return species
-                except KeyError:
-                    return 'not found'
-            elif (attribute == 'mutations exist (Y/N)'):
-                mutation_count = 0
-                if len(polymer_entity_dict) > 3:
-                    entity_poly = polymer_entity_dict['entity_poly']
-                    mutation_count = entity_poly['rcsb_mutation_count']
-                if mutation_count != 0:
-                    return 'Y'
-                else:
-                    return 'N'
-            elif (attribute =='rcsb_mutation_count'):
-                if len(polymer_entity_dict) > 3:
-                    entity_poly = polymer_entity_dict['entity_poly']
-                    mutation_count = entity_poly['rcsb_mutation_count']
-                return mutation_count
-            elif (attribute =='modifications locations'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        locations = self.get_mod_locations(polymer_entity_id=polymer_entity_id)
-                        if len(locations)>0:
-                            return '; '.join(locations)
-                        else:
-                            return 'N/A'
-                except KeyError:
-                    return 'N/A'
-            elif (attribute =='modifications'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        types = self.get_mod_types(polymer_entity_id=polymer_entity_id)
-                        if len(types)>0:
-                            return '; '.join(types)
-                        else:
-                            return 'N/A'
-                except KeyError:
-                    return 'N/A'                
-            elif (attribute =='mutations locations'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
-                        mutation = polymer_entity['pdbx_mutation'].split(', ')
-                        locations = []
-                        for item in mutation:
-                            locations.append(item[1:(len(item)-1)])
-                        location = '; '.join(locations)
-                    return location
-                except KeyError:
-                    return 'N/A'
-            elif (attribute == 'pdbx_mutation joined'):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
-                        mutation = polymer_entity['pdbx_mutation']
-                    return mutation
-                except KeyError:
-                    return 'N/A'
-            elif (attribute =='deposit_date'):
-                summary = self.entry_dict['rcsb_accession_info']
-                DEPOSITED_DATE = summary['deposit_date'][:10]
-                return DEPOSITED_DATE
-            elif (attribute == 'audit_author_name'): #fixed
-                AUTHORS_LIST = []
-                temp_authors = self.entry_dict['audit_author']
-                for each in temp_authors:
-                    name = each['name']
-                    AUTHORS_LIST.append(name)
-                final_string = ', '.join(AUTHORS_LIST)
-                return final_string
-            elif (attribute == 'title'):
-                citation = self.entry_dict['rcsb_primary_citation']
-                TITLE = citation['title']
-                return TITLE
-            elif (attribute =='pdbx_database_id_doi'):
-                try:
-                    citation = self.entry_dict['rcsb_primary_citation']
-                    DOI = citation['pdbx_database_id_doi']
-                    return DOI
-                except KeyError:
-                    try:
-                        citation = self.entry_dict['citation']
-                        middle = citation[0]
-                        DOI = middle['pdbx_database_id_doi']
-                    except KeyError:
-                        return 'not found'
-            elif (attribute =='pdbx_database_id_pub_med'):
-                try:
-                    citation = self.entry_dict['rcsb_primary_citation']
-                    PUBMED_ID = citation['pdbx_database_id_pub_med']
-                    return PUBMED_ID
-                except KeyError:
-                    try:
-                        citation = self.entry_dict['citation']
-                        middle = citation[0]
-                        DOI = middle['pdbx_database_id_PubMed']
-                    except KeyError:
-                        return 'not found'
-            elif (attribute == "pdbx_description"):
-                try:
-                    if len(polymer_entity_dict) > 3:
-                        rcsb_polymer_entity = polymer_entity_dict['rcsb_polymer_entity']
-                    return rcsb_polymer_entity['pdbx_description']
-                except KeyError:
-                    return 'N/A'
-
-
-
+        
 def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
     '''
     Creates a PDB Structure Reference File
@@ -691,6 +654,15 @@ def generateStructureRefFile_fromUniprotFile(uniprotRefFile, outputFile):
     #print(PDB_IDs)
     generateStructureRefFile(PDB_IDs, outputFile)    
 
+def progress_bar(current, total, bar_length=20):
+    fraction = current / total
+
+    arrow = int(fraction * bar_length - 1) * '-' + '>'
+    padding = int(bar_length - len(arrow)) * ' '
+
+    ending = '\n' if current == total else '\r'
+
+    print(f'Progress: [{arrow}{padding}] {int(fraction*100)}%', end=ending)
 
 def generateStructureRefFile(PDB_IDs, outputFile):
     '''
@@ -705,11 +677,36 @@ def generateStructureRefFile(PDB_IDs, outputFile):
     -------
         .csv Structure reference file with relevant metadata
     '''
-
-    interface = PDB_interface(PDB_IDs)
-    interface.print_output_csv(outputFile)
-    #interface.get_output_xlsx(outputFile)
+    dict_list = []
+    bad_PDBs = []
+    for PDB_ID in PDB_IDs:
+        #This can have a lot of fetching time, we would like to print to let the user
+        # know what the status is of the job fetch. 
+        progress_bar(PDB_IDs.index(PDB_ID), len(PDB_IDs))
+        interface = PDB_interface(PDB_ID)
+        ERROR, annotations = interface.get_anno_dict()
+        # reiteration attempt - in case of connectivity issue. 
+        num_attempts = 0
+        max_attempts = 5
+        while ERROR and num_attempts < max_attempts:
+            ERROR, annotations = interface.get_anno_dict()
+            num_attempts += 1
+        if not ERROR:
+            for annotation in annotations: #multiple entities can come back and each should become something in a dataframe
+                dict_list.append(annotation)
+        else:
+            bad_PDBs.append(PDB_ID)
+    df = pd.DataFrame(dict_list, columns=COLUMNS)
+    df.to_csv(outputFile, index=False)
+    
     print('Structure Reference File successfully created!')
+    if(len(bad_PDBs) == 0):
+        print('All PDBs successfully fetched')
+    else:
+        print("Could not fetch the following PDBs, these encountered errors, despite retrying %d times:"%(max_attempts))
+        print(bad_PDBs)
+    #interface.print_output_csv(outputFile)
+    return dict_list, bad_PDBs
     
 def download_cifFile(PDB_list, PATH):
     '''generates .cif files for PDB structures
