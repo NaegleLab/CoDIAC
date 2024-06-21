@@ -241,9 +241,9 @@ class PDB_interface:
                     rcsb_container_identifiers = polymer_entity_dict['rcsb_polymer_entity_container_identifiers']
                     reference_sequence_identifiers = rcsb_container_identifiers['reference_sequence_identifiers']
                     middle = reference_sequence_identifiers[0]
-                anno_dict['dabase_name'] = middle['database_name']
+                anno_dict['database_name'] = middle['database_name']
             except KeyError:
-                anno_dict['dabase_name'] = 'not found'
+                anno_dict['database_name'] = 'not found'
 
             #gene name
 
@@ -348,9 +348,9 @@ class PDB_interface:
             try:
                 summary = self.entry_dict['rcsb_entry_info']
                 # need to check if more than one value is ever reported
-                anno_dict['rcsb_entry_info'] = summary['resolution_combined'][0]
+                anno_dict['resolution_combined'] = summary['resolution_combined'][0]
             except KeyError:
-                anno_dict['rcsb_entry_info'] = 'not found'
+                anno_dict['resolution_combined'] = 'not found'
 
             #elif (attribute == 'pdbx_seq_one_letter_code_can'):
             try:
@@ -674,7 +674,12 @@ def generateStructureRefFile(PDB_IDs, outputFile):
         # know what the status is of the job fetch. 
         progress_bar(PDB_IDs.index(PDB_ID), len(PDB_IDs))
         interface = PDB_interface(PDB_ID)
-        dict_list.append(interface.get_anno_dict())
+        annotations = interface.get_anno_dict()
+        for annotation in annotations: #multiple entities can come back and each should become something in a dataframe
+            dict_list.append(annotation)
+    df = pd.DataFrame(dict_list, columns=COLUMNS)
+    df.to_csv(outputFile, index=False)
+    
     print('Structure Reference File successfully created!')
 
     #interface.print_output_csv(outputFile)
