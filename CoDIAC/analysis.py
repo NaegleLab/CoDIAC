@@ -211,7 +211,7 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                     if gene != 'N/A (Not Found In Reference)':
 
                         if domain != 'nan' and len(parse_domain) >1:
-
+                            parse_domain_updated = edit_domain_info(parse_domain)
                             caligned = contactMap.translate_chainMap_to_RefSeq(chain, pdbClass)
                             if hasattr(caligned, 'refseq'):
                                 value = True
@@ -223,7 +223,7 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                             dom_names = []
                             SH2_dom = []
                             other_dom = []
-                            for i in parse_domain:
+                            for i in parse_domain_updated:
                                 name, IPR, ranges = i.split(':')
                                 dom_names.append(name)
                                 if DOMAIN in name:
@@ -421,6 +421,68 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
 
     return fasta_header                                
                                 
+def edit_domain_info(parse_domain):
+    """ Edit the domain names and indicate indexes for a domain with identical names (like in teh case of tandem SH2 domains).
+
+    Parameters
+    ----------
+        parse_domain : list
+            list generated with domain headers that includes all details such as domain name, Interpro ID, start, stop, gaps and mutations from PDB reference file.
+
+    Returns
+    -------
+        final_domainlist : list
+            listof similar format of parse_domains but now with indices used to differentiate identical domain names."""
+        
+    tmp_domain_dict = {}
+    append_domains = []
+    index = 1
+    for entry in parse_domain:
+        domain_name = entry.split(':')[0]
+        append_domains.append(domain_name)
+        IPR_ID = entry.split(':')[1]
+        start = entry.split(':')[2].split(',')[0]
+        end = entry.split(':')[2].split(',')[1]
+        gap = entry.split(':')[2].split(',')[2]
+        mut = entry.split(':')[2].split(',')[3]
+        tmp_domain_dict[index] = [domain_name, int(start), int(end), int(gap), int(mut), IPR_ID]
+        index+=1
+
+    final_domain_dict = {}
+    for domain in set(append_domains):
+        domain_index = [k for k, v in tmp_domain_dict.items() if v[0] == domain]
+    
+        if len(domain_index) ==1:
+            domain_name = tmp_domain_dict[domain_index[0]][0]
+            final_domain_dict[domain_name] = [tmp_domain_dict[domain_index[0]][1],tmp_domain_dict[domain_index[0]][2], 
+                                             tmp_domain_dict[domain_index[0]][3],tmp_domain_dict[domain_index[0]][4],
+                                             tmp_domain_dict[domain_index[0]][5]]
+        
+        tmp_domain_start={}
+        if len(domain_index) >1:
+            for i in (domain_index):
+                tmp_domain_start[i] = tmp_domain_dict[i][1]
+                
+        sorted_domain_dict = dict(sorted(tmp_domain_start.items(), key=lambda item: item[1]))
+    
+        new_index = 1
+        for domain_index in sorted_domain_dict:
+            domain_name = tmp_domain_dict[domain_index][0]
+            update_dom_name = domain_name+'_'+str(new_index)
+            final_domain_dict[update_dom_name] = [tmp_domain_dict[domain_index][1],tmp_domain_dict[domain_index][2],
+                                                 tmp_domain_dict[domain_index][3],tmp_domain_dict[domain_index][4],
+                                                 tmp_domain_dict[domain_index][5]]
+            new_index+=1
+        # print(tmp_domain_dict,domain, domain_index, tmp_domain_start, sorted_domain_dict)
+    
+    final_domainlist = []
+    for newname in final_domain_dict:
+        ranges = str(final_domain_dict[newname][0])+','+str(final_domain_dict[newname][1])+','+str(final_domain_dict[newname][2])+','+str(final_domain_dict[newname][3])
+        domain_str = newname+':'+final_domain_dict[newname][4]+':'+ranges
+        final_domainlist.append(domain_str)
+    
+    return final_domainlist
+    
                                 
 def identityScore(aligned_sequences_list):
     '''finds a similarity score percent for a group of sequences '''
