@@ -406,6 +406,8 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
             index = j+1
             header = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)+'|'+DOI_IPR+'|'+start+'|'+end
 
+    find_str = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)
+
     fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
     for fasta in fasta_seq:
         name, sequence = fasta.id, str(fasta.seq)
@@ -417,6 +419,8 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
             if ref_uniprot_id == uniprot_id and ref_gene == gene:
                 if ROI_start in range(int(ref_start)-5, int(ref_start)+5) and ROI_end in range(int(ref_end)-5, int(ref_end)+5):
 #                 if ROI_start == int(ref_start) and ROI_end == int(ref_end):
+                    fasta_header = name
+                elif find_str in name:
                     fasta_header = name
 
     return fasta_header                                
