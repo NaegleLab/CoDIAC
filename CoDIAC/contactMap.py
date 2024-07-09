@@ -432,7 +432,8 @@ def return_interChain_adj(PATH, from_dict, to_dict):
     chains = [from_dict['entity'], to_dict['entity']]
     df_a_to_b = df[(df['Entity1']==from_dict['entity']) & (df['Entity2']==to_dict['entity'])]
     df_b_to_a = df[(df['Entity2']==from_dict['entity']) & (df['Entity1']==to_dict['entity'])]
-    df_multichain = df_a_to_b.append(df_b_to_a)
+    # df_multichain = df_a_to_b.append(df_b_to_a)
+    df_multichain = pd.concat([df_a_to_b, df_b_to_a])
     
     
     
