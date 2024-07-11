@@ -119,7 +119,38 @@ def OMIM(uniprot_refFile, api_key, output_featureFile):
             # print(ref_header, gene, sh2_mutations,'\n')
     print('OMIM mutation feature file created!')       
 
-
+def makeheader(gene, start, stop, ref_fastaFile):
+    '''Using the reference sequence fasta file, we retrive specific headers of SH2 domains. Here to handle the differences in start and stop positions between experiments and references, we use +- 5 amino acid cut off of start/end domain boundary positions and identify the right domain header
+    
+    Parameters
+    ----------
+        gene : str
+            gene of interest
+        start : int
+            start position of the sH2 domain
+        stop : int
+            end position of SH2 domain
+        ref_fastaFile : str
+            fasta file with unaligned reference sequences
+    Returns
+    -------
+        header : str
+            based on the input, thsi function identifies the fasta header from reference sequence fasta file '''
+        
+    ref_seq = SeqIO.parse(open(ref_fastaFile), 'fasta')
+    ref_headers = []
+    for fasta in ref_seq:
+        name, sequence = fasta.id, str(fasta.seq)
+        ref_headers.append(name)
+        
+    for entry in ref_headers:
+        uid, refgene, index, ref_start, ref_end = entry.split('|')
+        if gene == refgene:
+            if start in range(int(ref_start)-5, int(ref_start)+5) and stop in range(int(ref_end)-5, int(ref_end)+5):
+                header = entry
+            
+    return header
+    
 def get_transcriptID(uniprot_id):
     '''Fetch transcript ID that is associated to a specific UniProt ID
     
