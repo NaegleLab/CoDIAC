@@ -103,7 +103,7 @@ def OMIM(uniprot_refFile, api_key, output_featureFile):
                     if 'SH2' in domain:
                         # print(i, start, end)
                         for mut in mut_pos:
-                            print(mut)
+                            print(#mut)
                             if int(mut) in range(int(start), int(end)+1):
                                 feature_pos = int(mut) - int(start) + 1
                                 tmp_fea.append(feature_pos)
@@ -289,13 +289,13 @@ def get_omim_mutations(content):
             
             j1 = j.replace(" ", "")
             if j1[:3] in AA_dict.keys() and j1[-3:] in AA_dict.keys():
-                print(j)
+                #print(j)
                 numbers, chars = separateNumbersAlphabets(j)
                 
                 short = []
                 for c in chars:
                     if c.replace(" ", "") in AA_dict.keys():
-                        print('true')
+                        #print('true')
                         short.append(AA_dict[c.replace(" ", "")])
                         if j not in mutation_list:
                             mutation_list.append(j)
