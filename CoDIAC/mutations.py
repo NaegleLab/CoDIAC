@@ -64,7 +64,7 @@ def makeMutationFeafile(fastafile, downloads_path, csvfiles_dir, output_feafile)
                         file.write('mut\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'mut\n')
     print('Created Feature file with mutations')
 
-def OMIM(uniprot_refFile, api_key, output_featureFile): 
+def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_interest): 
     """Generates a feature file with mutations extracted from OMIM database.
 
     Parameters
@@ -73,6 +73,8 @@ def OMIM(uniprot_refFile, api_key, output_featureFile):
             input a uniprot reference file to get a list of uniprot IDs
         api_key : str
             this key needs to be generated through OMIM to be able to access their programmatic interface 
+        domain_of_interest : str
+            mutations on domains of interest (SH2 domains)
     Returns
     -------
         output_featureFile : str """
@@ -100,7 +102,7 @@ def OMIM(uniprot_refFile, api_key, output_featureFile):
                     start = int(i.split(':')[2])
                     end = int(i.split(':')[3])
                     tmp_fea=[]
-                    if 'SH2' in domain:
+                    if domain_of_interest in domain:
                         # print(i, start, end)
                         for mut in mut_pos:
                             print(#mut)
@@ -118,6 +120,95 @@ def OMIM(uniprot_refFile, api_key, output_featureFile):
             
             # print(ref_header, gene, sh2_mutations,'\n')
     print('OMIM mutation feature file created!')       
+
+def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
+    '''Generates a feature file for mutations extracted from PDB structures on the domain of interest.
+    Parameters
+    ----------
+        PDB_refFile : str
+            input PDB reference file path
+        output_featureFile : str
+            output feature file path
+        domain_of_interest : str
+            mutations on domains of interest (SH2 domains)
+    Returns
+    -------
+        feature file with mutations/variants reported in PDB structures that are present within the SH2 domain boundary '''
+    df = pd.read_csv(PDB_refFile)
+    j = 1
+    tmp_list = []
+    with open(output_featureFile,'w') as file:
+        file.write('PDB_Mutation\t44AA99\n')
+        for i in range(len(df)):
+            variants = df['ref:variants'][i]
+            uniprotid = df['database_accession'][i]
+            genename = df['ref:gene name'][i]
+            pdb_mutation = df['pdbx_mutation joined'][i]
+            if isinstance(variants, str) and isinstance(pdb_mutation,str):
+                if 'SH2' in str(df['ref:struct domain architecture'][i]):
+                    if '-' not in variants:
+                        if len(pdb_mutation.split(',')) == len(variants.split(';')):
+                            print(df['PDB_ID'][i], pdb_mutation, '---', variants)
+                            variant_list = variants.split(';')
+                            variant_pos = []
+                            for var in variant_list:
+                                posnum = re.findall('\d+', var)
+                                variant_pos.append(int(posnum[0]))
+                            print(variant_pos, df['PDB_ID'][i])
+                            domains = df['ref:domains'][i].split(';')
+                            domain_dict = {}
+                            for dom in domains:
+                                domname, iprid, ranges = dom.split(':')
+                                start, stop, gap, mut = ranges.split(',')
+                                if domain_of_interest in domname:
+                                    domain_dict[domname] = [start, stop]
+    
+                            for entry in domain_dict:
+                                (start), (stop) = domain_dict[entry]
+                                for varpos in variant_pos:
+                                    if varpos in range(int(start), int(stop)+1):
+                                        header = makeheader(genename, int(start), int(stop))
+                                        feature_pos = int(varpos) - int(start) + 1
+                                        print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos)
+                                        check_entry = header+':'+str(feature_pos)
+                                        if check_entry not in tmp_list:
+                                            tmp_list.append(check_entry)
+                                            file.write('PDB_Mutation\t'+str(header)+'\t-1\t'+str(feature_pos)+'\t'+str(feature_pos)+'\tPDB_Mutation\n')
+                                        j+=1
+    
+    
+                        if len(pdb_mutation.split(',')) != len(variants.split(';')):
+                            print(df['PDB_ID'][i], pdb_mutation, '---', variants)
+                            variant_list = variants.split(';')
+                            variant_pos = []
+                            for var in variant_list:
+                                posnum = re.findall('\d+', var)
+                                variant_pos.append(int(posnum[0]))
+                            print(vari
+ant_pos, df['PDB_ID'][i])
+                            domains = df['ref:domains'][i].split(';')
+                            domain_dict = {}
+                            for dom in domains:
+                                domname, iprid, ranges = dom.split(':')
+                                start, stop, gap, mut = ranges.split(',')
+                                if 'SH2' in domname:
+                                    domain_dict[domname] = [start, stop]
+    
+                            for entry in domain_dict:
+                                (start), (stop) = domain_dict[entry]
+                                for varpos in variant_pos:
+                                    if varpos in range(int(start), int(stop)+1):
+                                        header = makeheader(genename, int(start), int(stop))
+                                        feature_pos = int(varpos) - int(start) + 1
+                                        print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos,'\n')
+                                        check_entry = header+':'+str(feature_pos)
+                                        if check_entry not in tmp_list:
+                                            tmp_list.append(check_entry)
+                                            file.write('PDB_Mutation\t'+str(header)+'\t-1\t'+str(feature_pos)+'\t'+str(feature_pos)+'\tPDB_Mutation\n')
+                                        # else:
+                                        #     tmp_list.append(check_str)
+                                        j+=1
+
 
 def makeheader(gene, start, stop, ref_fastaFile):
     '''Using the reference sequence fasta file, we retrive specific headers of SH2 domains. Here to handle the differences in start and stop positions between experiments and references, we use +- 5 amino acid cut off of start/end domain boundary positions and identify the right domain header
