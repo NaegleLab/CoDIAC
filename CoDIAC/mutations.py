@@ -64,6 +64,61 @@ def makeMutationFeafile(fastafile, downloads_path, csvfiles_dir, output_feafile)
                         file.write('mut\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'mut\n')
     print('Created Feature file with mutations')
 
+def OMIM(uniprot_refFile, api_key, output_featureFile): 
+    """Generates a feature file with mutations extracted from OMIM database.
+
+    Parameters
+    ----------
+        uniprot_refFile : str
+            input a uniprot reference file to get a list of uniprot IDs
+        api_key : str
+            this key needs to be generated through OMIM to be able to access their programmatic interface 
+    Returns
+    -------
+        output_featureFile : str """
+        
+    df_ref = pd.read_csv(uniprot_refFile)
+    uniprot_ids = df_ref['UniProt ID'].tolist() 
+    mutation_dict = omim_mutation_dict(uniprot_ids, api_key)
+    
+    with open(output_featureFile,'w') as file:
+        file.write('OMIM_Mutation\tCC6677\n')
+        for entry in mutation_dict:
+            
+            uniprot_id = entry
+            gene = mutation_dict[entry][0]
+            mutations = mutation_dict[entry][1]
+            
+            sh2_mutations={} 
+            if gene != 'NA' and mutations != '':
+                mut_pos = mutations.split(',')
+                
+                interpro_domains = df_ref.loc[df_ref['Gene']==gene, 'Interpro Domains'].values[0].split(';')
+        
+                for i in interpro_domains:
+                    domain = i.split(':')[0]
+                    start = int(i.split(':')[2])
+                    end = int(i.split(':')[3])
+                    tmp_fea=[]
+                    if 'SH2' in domain:
+                        # print(i, start, end)
+                        for mut in mut_pos:
+                            print(mut)
+                            if int(mut) in range(int(start), int(end)+1):
+                                feature_pos = int(mut) - int(start) + 1
+                                tmp_fea.append(feature_pos)
+                        sh2_mutations[i] = tmp_fea
+        
+            for entry in sh2_mutations:
+                
+                # target = gene+'|'+entry.split(':')[2]+'|'+entry.split(':')[3]
+                ref_header= makeheader(gene, int(entry.split(':')[2]), int(entry.split(':')[3]))
+                for pos in sh2_mutations[entry]:
+                    file.write('OMIM_Mutation\t'+ref_header+'\t-1\t'+str(pos)+'\t'+str(pos)+'\tOMIM_mutation\n')
+            
+            # print(ref_header, gene, sh2_mutations,'\n')
+    print('OMIM mutation feature file created!')       
+
 
 def get_transcriptID(uniprot_id):
     '''Fetch transcript ID that is associated to a specific UniProt ID
@@ -169,4 +224,126 @@ def changeDirectory(csvfiles_dir, downloads_path):
         if file.startswith('gnomAD'):
             variant_csvfiles.append(file)
             shutil.move(downloads_path+'/'+file, csvfiles_dir)
+
+def get_MIMID(uniprot_id):
+    """ Returns the MIM ID (OMIM accession number) for a given UniProt ID """
+    get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{uniprot_id}')
+    if get_url.status_code == 200:
+        response = get_url.json()
+    mim_id = ''  
+    for i in range(len(response['dbReferences'])):
+        for j in response['dbReferences']:
+            if 'MIM' in j.values():
+                if response['dbReferences'][i]['type'] == 'MIM':
+                    if response['dbReferences'][i]['properties']['type'] == 'gene':
+                        mim_id = int(response['dbReferences'][i]['id'])   
+            
+    return mim_id
+    
+def separateNumbersAlphabets(str):
+    ''' separates numeric and characters in a string'''
+	numbers = []
+	alphabets = []
+	res = re.split('(\d+)', str)
+	
+	for i in res:
+		if i >= '0' and i <= '9':
+			numbers.append(i)
+		else:
+			alphabets.append(i)
+			
+	return numbers, alphabets
+
+def get_omim_content(api_key, mim_id):
+    ''' downloading content from OMIM '''
+    api_url = f'https://api.omim.org/api/entry/allelicVariantList?mimNumber={mim_id}'
+    headers = {'apiKey':f'{api_key}'}
+    response = requests.get(api_url, headers=headers)
+    content = response.__dict__['_content']
+    return content
+
+def get_omim_mutations(content):
+    ''' extracts gene specific mutation from OMIM database
+    
+    Parameters
+    ----------
+        content : bytes
+            The response object returned for a MIM ID is parsed to extract mutations associated to the MIM ID 
+    Returns
+    -------
+        Outputs a list of mutations for specific gene'''
+    
+    dat = minidom.parseString(content)
+    mutation_list = []
+    mutation_positions =[]
+    if (dat.getElementsByTagName('mutations')) == []:
+        gene = ''
+    for i in range(len(dat.getElementsByTagName('mutations'))):
+        tagname = dat.getElementsByTagName('mutations')[i].firstChild.nodeValue
+        values = tagname.split(',')
+        gene = values[0] 
+        mutations = values[1:]
+        # print(tagname)
+        mut = [] 
+        for j in mutations:
+            
+            j1 = j.replace(" ", "")
+            if j1[:3] in AA_dict.keys() and j1[-3:] in AA_dict.keys():
+                print(j)
+                numbers, chars = separateNumbersAlphabets(j)
+                
+                short = []
+                for c in chars:
+                    if c.replace(" ", "") in AA_dict.keys():
+                        print('true')
+                        short.append(AA_dict[c.replace(" ", "")])
+                        if j not in mutation_list:
+                            mutation_list.append(j)
+         
+                for n in numbers:
+                    if n not in mutation_positions:
+                        mutation_positions.append(int(n))
+        
+    return(gene, mutation_positions)
+
+def listToString(s):
+ 
+    str1 = " "
+ 
+    # return string
+    return (str1.join(str(s)))
+
+def omim_mutation_dict(uniprot_ids, api_key):
+    ''' Creates a dictionary to identify what mutations are extracted for a UniProt ID from OMIM 
+    
+    Parameters 
+    ----------
+        uniprot_ids : list
+            list of uniprot IDS to assess
+        api_key : str
+            this key needs to be generated through OMIM to be able to access their programmatic interface 
+    Returns
+    -------
+        mutation_dict : dict
+            dictionary whose keys are uniprot IDS and values are a list of gene name and mutation list in the form of a string
+            '''
+    mutation_dict = {}
+    for id in uniprot_ids:
+        print(id)
+        mim_id = get_MIMID(id)
+        # print(mim_id)
+        
+        if mim_id != '': 
+            api_url = f'https://api.omim.org/api/entry/allelicVariantList?mimNumber={mim_id}' 
+            headers = {'apiKey':f'{api_key}'}  
+            response = requests.get(api_url, headers=headers) 
+            content = response.__dict__['_content'] 
+            gene, mutation_list = get_omim_mutations(content) 
+            mut_list_str = ','.join(map(str, set(mutation_list))) 
+            # print(id, gene, mutation_list, mut_list_str) 
+            mutation_dict[id] = [gene, mut_list_str]
+            
+    return mutation_dict
+
+    
             
