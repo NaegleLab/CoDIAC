@@ -57,7 +57,7 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
     listfiles = os.listdir(csvfiles_dir)
     
     header_EnsmblID_dict = ensembleID_dict(fastafile)
-    
+    tmp=[]
     with open(output_feafile,'w') as file:
         file.write('gnomAD_Mutation\t882255\n')
         for csvfile in listfiles:
@@ -84,7 +84,9 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
                           
                                 if int(mut_resid[0]) in range(start, end+1):
                                     resid_upd = int(mut_resid[0]) - start + 1
-                                    file.write('gnomAD_Mutation\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'gnomAD_Mutation\n')
+                                    if header+':'+str(resid_upd) not in tmp:
+                                        tmp.append(header+':'+str(resid_upd))
+                                        file.write('gnomAD_Mutation\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'gnomAD_Mutation\n')
     print('GnomAD mutation feature file created!')
     
 
