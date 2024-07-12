@@ -172,13 +172,13 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
                 if 'SH2' in str(df['ref:struct domain architecture'][i]):
                     if '-' not in variants:
                         if len(pdb_mutation.split(',')) == len(variants.split(';')):
-                            print(df['PDB_ID'][i], pdb_mutation, '---', variants)
+                            print(df['PDB_ID'][i])
                             variant_list = variants.split(';')
                             variant_pos = []
                             for var in variant_list:
                                 posnum = re.findall('\d+', var)
                                 variant_pos.append(int(posnum[0]))
-                            print(variant_pos, df['PDB_ID'][i])
+                            # print(variant_pos, df['PDB_ID'][i])
                             domains = df['ref:domains'][i].split(';')
                             domain_dict = {}
                             for dom in domains:
@@ -193,7 +193,7 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
                                     if varpos in range(int(start), int(stop)+1):
                                         header = makeheader(genename, int(start), int(stop))
                                         feature_pos = int(varpos) - int(start) + 1
-                                        print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos)
+                                        # print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos)
                                         check_entry = header+':'+str(feature_pos)
                                         if check_entry not in tmp_list:
                                             tmp_list.append(check_entry)
@@ -202,14 +202,13 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
     
     
                         if len(pdb_mutation.split(',')) != len(variants.split(';')):
-                            print(df['PDB_ID'][i], pdb_mutation, '---', variants)
+                            print(df['PDB_ID'][i])
                             variant_list = variants.split(';')
                             variant_pos = []
                             for var in variant_list:
                                 posnum = re.findall('\d+', var)
                                 variant_pos.append(int(posnum[0]))
-                            print(vari
-ant_pos, df['PDB_ID'][i])
+                           
                             domains = df['ref:domains'][i].split(';')
                             domain_dict = {}
                             for dom in domains:
@@ -224,7 +223,7 @@ ant_pos, df['PDB_ID'][i])
                                     if varpos in range(int(start), int(stop)+1):
                                         header = makeheader(genename, int(start), int(stop))
                                         feature_pos = int(varpos) - int(start) + 1
-                                        print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos,'\n')
+                                        # print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos,'\n')
                                         check_entry = header+':'+str(feature_pos)
                                         if check_entry not in tmp_list:
                                             tmp_list.append(check_entry)
@@ -232,7 +231,7 @@ ant_pos, df['PDB_ID'][i])
                                         # else:
                                         #     tmp_list.append(check_str)
                                         j+=1
-
+    print('PDB Mutation feature file created!')
 
 def makeheader(gene, start, stop, ref_fastaFile):
     '''Using the reference sequence fasta file, we retrive specific headers of SH2 domains. Here to handle the differences in start and stop positions between experiments and references, we use +- 5 amino acid cut off of start/end domain boundary positions and identify the right domain header
