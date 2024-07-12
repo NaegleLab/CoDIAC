@@ -285,6 +285,26 @@ def reference_Dict(fastafile):
     
     return uniprot_dict
 
+def ensembleID_dict(fasta_refFile):
+    ''' Using an input fasta reference file, this function generates a dictionary with keys as Ensemble ID (associated to Uniprot ID) and values are list of headers. For tandem SH2 domain proteins, we will find more than one header linked to a single Uniprot/Ensemble ID. '''
+    df_id = pd.DataFrame()
+    ensmbl_id = []
+    headerlist = []
+    file = SeqIO.parse(open(fasta_refFile), 'fasta')
+    for fasta in file:
+        name, sequence = fasta.id, str(fasta.seq)
+        uniprot_id = name.split('|')[0]
+        ensmbl_id.append(get_transcriptID(uniprot_id))
+        headerlist.append(name)
+    df_id['header'] = headerlist
+    df_id['ensmbl_id'] = ensmbl_id
+
+    header_EnsmblID_dict ={}
+    for name, group in df_id.groupby('ensmbl_id'):
+        header_EnsmblID_dict[name]= group['header'].unique().tolist()
+
+    return header_EnsmblID_dict
+
 def check_exists_by_xpath(driver):
     '''Checks whether GnomAD has mutations recorded for specific transcript ID. For the ones that do not have any information available, it pops up 'Gene not found' error. And we use this to identify Uniprot IDs/genes for which data doesnt exist on GnomAD.
     Parameters
