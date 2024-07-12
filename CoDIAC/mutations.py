@@ -9,6 +9,7 @@ import re
 import pandas as pd
 from Bio import SeqIO
 from pybiomart import Dataset
+from xml.dom import minidom
 
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
                'Likely risk allele']
