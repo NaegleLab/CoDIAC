@@ -13,6 +13,27 @@ from pybiomart import Dataset
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
                'Likely risk allele']
 
+AA_dict = {"ALA":'A',
+                  "ARG":'R',
+                  "ASN":'N',
+                  "ASP":'D',
+                  "CYS":'C',
+                  "GLU":'E',
+                  "GLN":'Q',
+                  "GLY":'G',
+                  "HIS":'H',
+                  "ILE":'I',
+                  "LEU":'L',
+                  "LYS":'K',
+                  "MET":'M',
+                  "PHE":'F',
+                  "PRO":'P',
+                  "SER":'S',
+                  "THR":'T',
+                  "TRP":'W',
+                  "TYR":'Y',
+                  "VAL":'V'}
+
 def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
     '''make a feature file with mutations recorded as features. mutations extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID.
     Parameters
