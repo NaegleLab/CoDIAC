@@ -13,7 +13,7 @@ from pybiomart import Dataset
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
                'Likely risk allele']
 
-def makeMutationFeafile(fastafile, downloads_path, csvfiles_dir, output_feafile):
+def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
     '''make a feature file with mutations recorded as features. mutations extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID.
     Parameters
     ----------
@@ -35,34 +35,37 @@ def makeMutationFeafile(fastafile, downloads_path, csvfiles_dir, output_feafile)
     
     listfiles = os.listdir(csvfiles_dir)
     
+    header_EnsmblID_dict = ensembleID_dict(fastafile)
+    
     with open(output_feafile,'w') as file:
+        file.write('gnomAD_Mutation\t882255\n')
         for csvfile in listfiles:
             csv_path = csvfiles_dir + csvfile
             if csvfile.startswith('gnomAD'):
                 ensembleID = csvfile.split('_')[2]
-                
-                uniprot_dict = reference_Dict(fastafile)
-                
-                for key, values in uniprot_dict.items():
-                    if ensembleID == values[1]:
-                        header = values[0]
-                        
-                start = int(header.split('|')[3])
-                end = int(header.split('|')[4])
         
-                df = pd.read_csv(csv_path)
-                df_missense = df.loc[df['VEP Annotation']=='missense_variant']
-                df_sig = df_missense.loc[df_missense['ClinVar Clinical Significance'].isin(clinvar_sig)]
-                mutation = df_sig['HGVS Consequence'].tolist()
-                significance = set(df_missense['ClinVar Clinical Significance'].tolist())
-                
-                for m in mutation:
-                    mut_resid = (re.findall(r'\d+', m))
-              
-                    if int(mut_resid[0]) in range(start, end+1):
-                        resid_upd = int(mut_resid[0]) - start + 1
-                        file.write('mut\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'mut\n')
-    print('Created Feature file with mutations')
+                for key, values in header_EnsmblID_dict.items():
+                    if ensembleID == key:
+                        for fasta_header in values:
+                            header = fasta_header
+                            start = int(header.split('|')[3])
+                            end = int(header.split('|')[4])
+                            print(key)
+                           
+                            df = pd.read_csv(csv_path)
+                            df_missense = df.loc[df['VEP Annotation']=='missense_variant']
+                            df_sig = df_missense.loc[df_missense['ClinVar Clinical Significance'].isin(clinvar_sig)]
+                            mutation = df_sig['HGVS Consequence'].tolist()
+                            significance = set(df_missense['ClinVar Clinical Significance'].tolist())
+                            
+                            for m in mutation:
+                                mut_resid = (re.findall(r'\d+', m))
+                          
+                                if int(mut_resid[0]) in range(start, end+1):
+                                    resid_upd = int(mut_resid[0]) - start + 1
+                                    file.write('gnomAD_Mutation\t'+str(header)+'\t-1\t'+str(resid_upd)+'\t'+str(resid_upd)+'\t'+'gnomAD_Mutation\n')
+    print('GnomAD mutation feature file created!')
+    
 
 def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_interest): 
     """Generates a feature file with mutations extracted from OMIM database.
