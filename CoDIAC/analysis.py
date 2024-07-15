@@ -71,7 +71,7 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                         transDict_stripped.append(i)
                     
                     if PTM in transDict.values():
-                        if check_mutation != mutation:
+                        if check_mutation[0] != mutation:
                             list_of_uniprotids.append(uniprot_id[0])
 
                             pdbClass = entities.pdb_dict[lig_entity]
