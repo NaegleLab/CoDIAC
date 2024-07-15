@@ -10,6 +10,7 @@ import pandas as pd
 from Bio import SeqIO
 from pybiomart import Dataset
 from xml.dom import minidom
+import requests
 
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
                'Likely risk allele']
@@ -35,7 +36,7 @@ AA_dict = {"ALA":'A',
                   "TYR":'Y',
                   "VAL":'V'}
 
-def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
+def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_offse=0, C_offset=0):
     '''make a feature file with mutations recorded as features. mutations extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID.
     Parameters
     ----------
@@ -47,6 +48,10 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
             path of the directory where we would like to move and save the downloaded variant csv files from the downloads folder
         output_feafile : str
             the path to save the output feature file
+        N_offset : int
+            number of residues to add or remove from the N terminal end of the domain boundary
+        C_offset : int
+            number of residues to add or remove from the C terminal end of the domain boundary
 
     Returns
     -------
@@ -83,7 +88,7 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
                             for m in mutation:
                                 mut_resid = (re.findall(r'\d+', m))
                           
-                                if int(mut_resid[0]) in range(start, end+1):
+                                if int(mut_resid[0]) in range(start+N_offset, end+1+C_offset):
                                     resid_upd = int(mut_resid[0]) - start + 1
                                     if header+':'+str(resid_upd) not in tmp:
                                         tmp.append(header+':'+str(resid_upd))
@@ -91,7 +96,7 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile):
     print('GnomAD mutation feature file created!')
     
 
-def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_interest): 
+def OMIM_mutations(uniprot_refFile, api_key, ref_fastaFile, output_featureFile, domain_of_interest,N_offset=0, C_offset=0): 
     """Generates a feature file with mutations extracted from OMIM database.
 
     Parameters
@@ -100,8 +105,14 @@ def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_inter
             input a uniprot reference file to get a list of uniprot IDs
         api_key : str
             this key needs to be generated through OMIM to be able to access their programmatic interface 
+        ref_fastaFile : str
+            fasta file with reference sequences of the domains
         domain_of_interest : str
             mutations on domains of interest (SH2 domains)
+        N_offset : int
+            number of residues to add or remove from the N terminal end of the domain boundary
+        C_offset : int
+            number of residues to add or remove from the C terminal end of the domain boundary
     Returns
     -------
         output_featureFile : str """
@@ -128,12 +139,14 @@ def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_inter
                     domain = i.split(':')[0]
                     start = int(i.split(':')[2])
                     end = int(i.split(':')[3])
+                    query_start = int(start)+N_offset
+                    query_stop = int(end)+1+C_offset
                     tmp_fea=[]
                     if domain_of_interest in domain:
                         # print(i, start, end)
                         for mut in mut_pos:
-                            print(#mut)
-                            if int(mut) in range(int(start), int(end)+1):
+                            # print(mut)
+                            if int(mut) in range(query_start, query_stop):
                                 feature_pos = int(mut) - int(start) + 1
                                 tmp_fea.append(feature_pos)
                         sh2_mutations[i] = tmp_fea
@@ -141,23 +154,29 @@ def OMIM_mutations(uniprot_refFile, api_key, output_featureFile, domain_of_inter
             for entry in sh2_mutations:
                 
                 # target = gene+'|'+entry.split(':')[2]+'|'+entry.split(':')[3]
-                ref_header= makeheader(gene, int(entry.split(':')[2]), int(entry.split(':')[3]))
+                ref_header= makeheader(gene, int(entry.split(':')[2]), int(entry.split(':')[3]), ref_fastaFile)
                 for pos in sh2_mutations[entry]:
                     file.write('OMIM_Mutation\t'+ref_header+'\t-1\t'+str(pos)+'\t'+str(pos)+'\tOMIM_mutation\n')
             
             # print(ref_header, gene, sh2_mutations,'\n')
     print('OMIM mutation feature file created!')       
 
-def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
+def PDB_mutations(PDB_refFile,ref_fastaFile, output_featureFile, domain_of_interest,N_offset=0, C_offset=0):
     '''Generates a feature file for mutations extracted from PDB structures on the domain of interest.
     Parameters
     ----------
         PDB_refFile : str
             input PDB reference file path
+        ref_fastaFile : str
+            fasta file with reference sequences of the domains
         output_featureFile : str
             output feature file path
         domain_of_interest : str
             mutations on domains of interest (SH2 domains)
+        N_offset : int
+            number of residues to add or remove from the N terminal end of the domain boundary
+        C_offset : int
+            number of residues to add or remove from the C terminal end of the domain boundary
     Returns
     -------
         feature file with mutations/variants reported in PDB structures that are present within the SH2 domain boundary '''
@@ -184,17 +203,24 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
                             # print(variant_pos, df['PDB_ID'][i])
                             domains = df['ref:domains'][i].split(';')
                             domain_dict = {}
+                            # for dom in domains:
+                            #     domname, iprid, ranges = dom.split(':')
+                            #     start, stop, gap, mut = ranges.split(',')
+                            #     if domain_of_interest in domname:
+                            #         domain_dict[domname] = [start, stop]
+                            dom_index = 1
                             for dom in domains:
                                 domname, iprid, ranges = dom.split(':')
                                 start, stop, gap, mut = ranges.split(',')
                                 if domain_of_interest in domname:
-                                    domain_dict[domname] = [start, stop]
-    
+                                    domain_dict[dom_index] = [domname, start, stop]
+                                dom_index += 1
+                                
                             for entry in domain_dict:
-                                (start), (stop) = domain_dict[entry]
+                                domain_id, (start), (stop) = domain_dict[entry]
                                 for varpos in variant_pos:
-                                    if varpos in range(int(start), int(stop)+1):
-                                        header = makeheader(genename, int(start), int(stop))
+                                    if varpos in range(int(start)+N_offset, int(stop)+1+C_offset):
+                                        header = makeheader(genename, int(start), int(stop),ref_fastaFile)
                                         feature_pos = int(varpos) - int(start) + 1
                                         # print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos)
                                         check_entry = header+':'+str(feature_pos)
@@ -205,7 +231,7 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
     
     
                         if len(pdb_mutation.split(',')) != len(variants.split(';')):
-                            print(df['PDB_ID'][i])
+                            print(df['PDB_ID'][i], variants)
                             variant_list = variants.split(';')
                             variant_pos = []
                             for var in variant_list:
@@ -214,17 +240,19 @@ def PDB_mutations(PDB_refFile, output_featureFile, domain_of_interest):
                            
                             domains = df['ref:domains'][i].split(';')
                             domain_dict = {}
+                            dom_index = 1
                             for dom in domains:
                                 domname, iprid, ranges = dom.split(':')
                                 start, stop, gap, mut = ranges.split(',')
-                                if 'SH2' in domname:
-                                    domain_dict[domname] = [start, stop]
-    
+                                if domain_of_interest in domname:
+                                    domain_dict[dom_index] = [domname, start, stop]
+                                dom_index += 1
+                            print(domain_dict)
                             for entry in domain_dict:
-                                (start), (stop) = domain_dict[entry]
+                                domain_id, (start), (stop) = domain_dict[entry]
                                 for varpos in variant_pos:
-                                    if varpos in range(int(start), int(stop)+1):
-                                        header = makeheader(genename, int(start), int(stop))
+                                    if varpos in range(int(start)+N_offset, int(stop)+1+C_offset):
+                                        header = makeheader(genename, int(start), int(stop),ref_fastaFile)
                                         feature_pos = int(varpos) - int(start) + 1
                                         # print(j,df['PDB_ID'][i], varpos, start, stop, genename, header, feature_pos,'\n')
                                         check_entry = header+':'+str(feature_pos)
@@ -410,17 +438,17 @@ def get_MIMID(uniprot_id):
     
 def separateNumbersAlphabets(str):
     ''' separates numeric and characters in a string'''
-	numbers = []
-	alphabets = []
-	res = re.split('(\d+)', str)
-	
-	for i in res:
-		if i >= '0' and i <= '9':
-			numbers.append(i)
-		else:
-			alphabets.append(i)
-			
-	return numbers, alphabets
+    numbers = []
+    alphabets = []
+    res = re.split('(\d+)', str)
+    
+    for i in res:
+        if i >= '0' and i <= '9':
+            numbers.append(i)
+        else:
+            alphabets.append(i)
+            
+    return numbers, alphabets
 
 def get_omim_content(api_key, mim_id):
     ''' downloading content from OMIM '''
