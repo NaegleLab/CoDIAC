@@ -372,9 +372,8 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
                         feature_temp = {}
                         feature_temp[int(feature)] =  map_to_ref[int(feature)-1]+1 #this maps the input feature to the output feature.
                         validated_features.append(feature_temp)
-                        #print("DEBUG: %s feature %d mapped to %d"%(input_header, int(feature)-1, map_to_ref[int(feature)-1]))
-                        if int(feature)-1 != map_to_ref[int(feature)-1]:
-                            print("DEBUG: %s feature %d mapped to %d"%(input_header, int(feature), map_to_ref[int(feature)]))
+                        #if int(feature)-1 != map_to_ref[int(feature)-1]:
+                            #print("DEBUG: %s feature %d mapped to %d"%(input_header, int(feature), map_to_ref[int(feature)]))
                 except:
                     print("ERROR: position %d is out of range for match %s to %s"%(int(feature), input_header, output_header))
 
