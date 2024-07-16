@@ -36,7 +36,7 @@ AA_dict = {"ALA":'A',
                   "TYR":'Y',
                   "VAL":'V'}
 
-def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_offse=0, C_offset=0):
+def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_offset=0, C_offset=0):
     '''make a feature file with mutations recorded as features. mutations extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID.
     Parameters
     ----------
