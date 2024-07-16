@@ -4,6 +4,7 @@ import logging
 import os
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 import csv
+import shutil
 
 def makeRefFile(refUniprot_file, cifFile_path, outputFile):
     '''make a structure reference file for alphafodl structures
@@ -22,6 +23,9 @@ def makeRefFile(refUniprot_file, cifFile_path, outputFile):
         
     df = pd.read_csv(refUniprot_file)
     uniprot_ids = df['UniProt ID'].tolist()
+    col_headers = ['PDB_ID','ENTITY_ID', 'CHAIN_ID', 'pdbx_description', 'rcsb_gene_name', 'pdbx_gene_src_scientific_name','pdbx_seq_one_letter_code', 'pdbx_seq_one_letter_code_can', 'rcsb_sample_sequence_length', 'modifications locations','modifications', 'rcsb_entity_polymer_type', 'macromolecular_type', 'database_name', 'database_accession','rcsb_uniprot_protein_sequence','entity_beg_seq_id', 'ref_beg_seq_id', 'aligned_regions_length', 'mutations exist (Y/N)','rcsb_mutation_count', 'mutations locations', 'pdbx_mutation joined', 'molecular_weight', 'experimental_method', 'resolution_combined','deposit_date', 'audit_author_name', 'title', 'pdbx_database_id_doi', 'pdbx_database_id_pub_med', 'ref:gene name', 'ref:struct/ref sequence','ref:reference range','ref:start position offset','Gaps ref:struct','Gaps struct:ref','ref:variants', 'ref:domains','ref:struct domain architecture','ref:full protein domain','ref:protein domain architecture',
+ 'domains_AF', 'struct_dom_arch_AF', 'pro_dom_arch_AF']
+    print(col_headers)
     
     with open(outputFile,'w') as f:
         writer = csv.writer(f)
@@ -81,9 +85,9 @@ def makeRefFile(refUniprot_file, cifFile_path, outputFile):
             data.append(0.0)
             data.append(0.0)
             data.append('')
-            data.append(reference_arch(gene)[0])
-            data.append(reference_arch(gene)[1])
-            data.append(reference_arch(gene)[1])
+            data.append(reference_arch(refUniprot_file,gene)[0])
+            data.append(reference_arch(refUniprot_file,gene)[1])
+            data.append(reference_arch(refUniprot_file,gene)[1])
             domain_list = []
             struct_arch = []
             for entry in range(len(response['features'])):          
@@ -148,8 +152,10 @@ def get_cifFile(refUniprot_file, outputDir):
     for i in uniprot_ids:
         Uniprot_id = i
         alphafold_id = 'AF-'+Uniprot_id+'-F1'
-        path = outputDir + alphafold_id
+        path = outputDir +alphafold_id
         database_ver = 'v2'
         model_url = f'https://alphafold.ebi.ac.uk/files/{alphafold_id}-model_{database_ver}.cif'
-        os.system(f'curl {model_url} -o {path}.cif')
-
+        os.system(f'curl {model_url} -o {alphafold_id}.cif')
+        os.mkdir(path)
+        # new_cifpath = path+'/'+alphafold_id+'.cif'
+        shutil.move('./'+alphafold_id+'.cif', path)
