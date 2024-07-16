@@ -366,17 +366,30 @@ def return_translated_features(feature_dict, feature_trans_dict, percent_match_t
                 # at that aligned position.
                 try:
                     if aa[int(feature)-1][0] == aa[int(feature)-1][1]:  # amino acids are the same
-                        validated_features.append(map_to_ref[int(feature)-1]+1) #validated features are integer values
+                        #validated_features.append(map_to_ref[int(feature)-1]+1) #validated features are integer values
+                        #validated features is an array of validated mappings from the input sequence to the output sequence. This is 
+                        # using the sequence based one counting. 
+                        feature_temp = {}
+                        feature_temp[int(feature)] =  map_to_ref[int(feature)-1]+1 #this maps the input feature to the output feature.
+                        validated_features.append(feature_temp)
+                        #print("DEBUG: %s feature %d mapped to %d"%(input_header, int(feature)-1, map_to_ref[int(feature)-1]))
+                        if int(feature)-1 != map_to_ref[int(feature)-1]:
+                            print("DEBUG: %s feature %d mapped to %d"%(input_header, int(feature), map_to_ref[int(feature)]))
                 except:
-                    print("ERROR: position%d is out of range for match %s to %s"%(int(feature), input_header, output_header))
+                    print("ERROR: position %d is out of range for match %s to %s"%(int(feature), input_header, output_header))
 
             ## feature_dict_output[output_header]=validated_features
             #having found the features that can be translated, rebuild the output feature_dictionary, keeping the construct 
             # of the input dictionary format
-            for feature in validated_features:
-                if output_header not in feature_dict_output:
-                    feature_dict_output[output_header] = {}
-                feature_dict_output[output_header][str(feature)] = feature_dict[input_header][str(feature)] #copy the feature type
+            for feature_dict_temp in validated_features:
+                for input_feature in feature_dict_temp.keys():
+                    output_feature = feature_dict_temp[input_feature]
+                    if output_header not in feature_dict_output:
+                        feature_dict_output[output_header] = {}
+                    #if str(feature) not in feature_dict[input_header]:
+                    #    print("ERROR: %s did not have feature %d"%(input_header, feature))
+                    #else:
+                    feature_dict_output[output_header][str(output_feature)] = feature_dict[input_header][str(input_feature)] #copy the feature type
         else:
             print("LOG: %s did not have sufficent match that meant %0.2f"%(input_header, percent_match_threshold))
     return feature_dict_output
