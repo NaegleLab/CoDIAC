@@ -262,7 +262,7 @@ class chainMap:
     return arr
 
 
-  def print_fasta_feature_files(self, featureStart, featureEnd, contactFromStart, contactFromEnd, fastaHeader, contactLabel, outputFileBase, threshold = 1, append = True, color = '117733', use_ref_seq_aligned=True):
+  def print_fasta_feature_files(self, featureStart, N_offset1,featureEnd, C_offset1,contactFromStart, N_offset2,contactFromEnd, C_offset2,fastaHeader, contactLabel, outputFileBase, threshold = 1, append = True, color = '117733', use_ref_seq_aligned=True):
     """
     Create a feature file for the ROI_1 that has contacts to ROI_2 of protein. 
 
@@ -300,7 +300,7 @@ class chainMap:
     else:
       seq = self.structSeq #right now there might be unmodeled regions 
 
-    print_fasta_feature_files(self.arr, seq, featureStart, featureEnd, minRes, contactFromStart, contactFromEnd, minRes, fastaHeader, contactLabel, outputFileBase, threshold, append, color)
+    print_fasta_feature_files(self.arr, seq, featureStart, N_offset1, featureEnd,C_offset1, minRes, contactFromStart,N_offset2,contactFromEnd, C_offset2,minRes, fastaHeader, contactLabel, outputFileBase, threshold, append, color)
     
 
   def generateAnnotatedHeatMap(self, xStart, xEnd, yStart, yEnd, remove_no_contacts=True, text_annotate = 'on', use_ref_seq_aligned=True):
@@ -837,7 +837,7 @@ def return_longest_string(resNums, unmodeled_list):
     length_longest_str = stringSizes[pos_start_longest_str]
   return pos_start_longest_str, length_longest_str, stringSizes
 
-def print_fasta_feature_files(contact_arr, seq, featureStart, featureEnd, feature_minRes, contactFromStart, contactFromEnd, contact_minRes, fastaHeader, contactLabel, outputFileBase, threshold = 1, append = True, color = '117733', use_ref_seq_aligned=True):
+def print_fasta_feature_files(contact_arr, seq, featureStart, N_offset1, featureEnd, C_offset1, feature_minRes, contactFromStart, N_offset2, contactFromEnd, C_offset2,contact_minRes, fastaHeader, contactLabel, outputFileBase, threshold = 1, append = True, color = '117733', use_ref_seq_aligned=True):
   """
   Create a feature file for the ROI_1 (Region of Interest) that has contacts to ROI_2 of an array of interest. This assumes that the region of interest is represented in the rows of 
   the contact_arr.
@@ -916,15 +916,16 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, featureEnd, featur
       feature_file.write("%s\t %s \n"%(contactLabel, color)) #this really needs to be added to the top of the file
 
   
-  arr = contact_arr[featureStart:featureEnd, contactFromStart:contactFromEnd]
+  arr = contact_arr[featureStart+N_offset1:featureEnd+1+C_offset1, contactFromStart+N_offset2:contactFromEnd+1+C_offset2]
   arr = arr == threshold
   arr_sum = arr.sum(axis=1)
-  featureLength = featureEnd - featureStart
+  featureLength = featureEnd +N_offset1- featureStart +1+C_offset1
+  # print(featureLength,len(arr_sum))
   #contactLength = contactFromEnd - contactFromStart 
   for i in range(featureLength):
     if arr_sum[i]: #if we wanted, could require arr_sum[i] >= NumResiduesContacted
       feature_file.write("%s\t%s\t-1\t%s\t%s\t%s\n"%(contactLabel, fastaHeader, str(i+1), str(i+1), contactLabel))
-
+      # print(i)
       #for j in range(contactLength):
           #if arr[i][j] > threshold:
            #   feature_file.write("%s\t%s\t-1\t%s\t%s\t%s\n"%(contactLabel, fastaHeader, str(i+1), str(i+1), contactLabel))
@@ -937,7 +938,7 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, featureEnd, featur
   #if use_ref_seq_aligned:
   #  seq = self.refseq[featureStart:featureEnd]
   #else:
-  seq_sub = seq[featureStart:featureEnd] #right now there might be unmodeled regions 
+  seq_sub = seq[featureStart+N_offset1:featureEnd+1+C_offset1] #right now there might be unmodeled regions 
   fasta_file.write(seq_sub+'\n')
   fasta_file.close()
 
