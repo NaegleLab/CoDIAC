@@ -174,12 +174,18 @@ def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_o
         value: sequence of the domain
     
     """
-    if n_term_offset < 0 or n_term_offset > 20:
-        print("ERROR: resetting n_term_offset to a default number, should be between 0 and 20")
-        n_term_offset = 5
-    if c_term_offset < 0 or c_term_offset> 20:
-        print("ERROR: resetting c_term_offset to a default number, should be between 0 and 20")
-        c_term_offset = 5
+    if not isinstance(n_term_offset, int):
+        print("ERROR: rounding n_term_offset to an integer")
+        n_term_offset = int(n_term_offset)
+    if not isinstance(c_term_offset, int):
+        print("ERROR: rounding n_term_offset to an integer")
+        c_term_offset = int(c_term_offset)
+    # if n_term_offset < 0 or n_term_offset > 20:
+    #     print("ERROR: resetting n_term_offset to a default number, should be between 0 and 20")
+    #     n_term_offset = 5
+    # if c_term_offset < 0 or c_term_offset> 20:
+    #     print("ERROR: resetting c_term_offset to a default number, should be between 0 and 20")
+    #     c_term_offset = 5
     print("n offset is %d and c offset is %d"%(n_term_offset, c_term_offset))
 
     domain_dict = {}
@@ -210,6 +216,7 @@ def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_o
                 domain_seq = seq[new_start-1:new_end] #0 based indexing for python access of protein indexes for start, then the 1
                 #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
                 #print("DEBUG: >%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
+                
                 header = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end)
                 domain_dict[header] = domain_seq
     return domain_dict
@@ -247,7 +254,7 @@ def print_domain_fasta_file(reference_csv, Interpro_ID, output_file, n_term_offs
 
     '''
 
-    domain_fasta_dict = make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_offset=0)
+    domain_fasta_dict = make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=n_term_offset, c_term_offset=c_term_offset)
 
     if not APPEND:
         f = open(output_file, "w")
