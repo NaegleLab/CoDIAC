@@ -5,8 +5,7 @@ import numpy as np
 from Bio import SeqIO
 import os
 
-def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq = True, PTM='PTR', mutation=False, 
-                      domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
+def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, append_refSeq = True, PTM='PTR', mutation=False, domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
     '''Generates contact features that are present across interprotein interfaces (between a domain and it sligand partner)
     
     Parameters
@@ -114,11 +113,13 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                                 if lig_entity == SH2_entity:
 
 
-                                                    cm_aligned.print_fasta_feature_files(SH2_start, SH2_stop, res_start, res_end,
+                                                    cm_aligned.print_fasta_feature_files(SH2_start,Noffset1, SH2_stop, Coffset1,
+                                                                                         res_start,Noffset2, res_end,Coffset2,
                                                              fasta_header, 'pTyr',PTM_file, append=True, 
                                                                 use_ref_seq_aligned=value)
 
-                                                    cm_aligned.print_fasta_feature_files(res_start, res_end, SH2_start, SH2_stop,
+                                                    cm_aligned.print_fasta_feature_files(res_start, Noffset1,res_end, Coffset1, 
+                                                                                         SH2_start, Noffset2, SH2_stop,Coffset2,
                                                              fasta_header, 'SH2',SH2_file, append=True, 
                                                                 use_ref_seq_aligned=value)
 
@@ -126,19 +127,18 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                                 if lig_entity != SH2_entity:
                                                     if hasattr(to_dict['cm_aligned'], 'refseq'):
                                                         contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
-                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            SH2_start, Noffset1, SH2_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start, Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(),
                                                             fasta_header,'pTyr', PTM_file, threshold=1, append=True)
                                                     else:
                                                         contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
-                                                            SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(), 
-                                                            res_start, res_end, from_dict['cm_aligned'].return_min_residue(),
+                                                            SH2_start,  Noffset1, SH2_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(), 
+                                                            res_start,  Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(),
                                                             fasta_header,'pTyr', PTM_file, threshold=1, append=True)
 
 
                                                     contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
-                                                                 res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
-                                                                 SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue(),
+                                                                 res_start, Noffset1, res_end, Coffset1, from_dict['cm_aligned'].return_min_residue(), SH2_start, Noffset2, SH2_stop, Coffset2, to_dict['cm_aligned'].return_min_residue(),
                                                                 fasta_header,'SH2', SH2_file, threshold=1, append=True )
 
 
@@ -155,8 +155,7 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                         file.write('>'+name+'\n'+sequence+'\n')
 
 
-def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, append_refSeq=True, mutation = False, DOMAIN = 'SH2', 
-                         filename='SH2_NC'):
+def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, append_refSeq=True, mutation = False, DOMAIN = 'SH2', filename='SH2_NC'):
     '''Generates contact features that are present across intraprotein interfaces (between two domains part of teh same protein) 
     
     Parameters
@@ -242,7 +241,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
     #                                     fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                     fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
                                     feature_header = header_2
-                                    caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                    caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                      fasta_header, feature_header,filename, append=True, 
                                                                        use_ref_seq_aligned=value)
 
@@ -256,7 +256,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                 fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
     #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
-                                caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=value)
 
@@ -267,7 +268,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                 fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
     #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
-                                caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=value)
 
@@ -284,7 +286,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                         fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
     #                                         fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                         feature_header = header_2
-                                        caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                        caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=value)
 
@@ -295,7 +298,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                 fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
     #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
-                                caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                  fasta_header, feature_header,filename, append=True, 
                                                                     use_ref_seq_aligned=value)
 
@@ -306,7 +310,8 @@ def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                 fasta_header = makeHeader(PDB_ID, entity_id,int(ROI_10), int(ROI_11),DOMAIN,pdb_ann_file, reference_fastafile)+'|'+header_2+'|'+PDB_ID
     #                                 fasta_header = uniprot_ID+'|'+gene+'|'+header_1+'|'+header_2+'|'+PDB_ID
                                 feature_header = header_2
-                                caligned.print_fasta_feature_files(int(ROI_10), int(ROI_11), int(ROI_20), int(ROI_21),
+                                caligned.print_fasta_feature_files(int(ROI_10), Noffset1, int(ROI_11), Coffset1, 
+                                                                   int(ROI_20), Noffset2, int(ROI_21), Coffset2,
                                                                  fasta_header, feature_header,filename, append=True, use_ref_seq_aligned=value)
 
     if append_refSeq:
