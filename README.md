@@ -7,4 +7,6 @@ Python version 3.0 or greater is required to use CoDIAC.
 
 Documentation: https://naeglelab.github.io/CoDIAC/index.html
 
-Authors: The Naegle Lab, including: Kristen M. Naegle, Alekhya Kandoor, Saqib Rizvi, Julianna Hitchock, and Gabi Martinez
+Authors: The Naegle Lab, including: Kristen M. Naegle, Alekhya Kandoor, Saqib Rizvi, Julianna Hitchock, Logan Campbell, and Gabi Martinez
+
+How to Cite: Please cite our [BioRxiv paper](https://www.biorxiv.org/content/10.1101/2024.07.18.604100v1)
