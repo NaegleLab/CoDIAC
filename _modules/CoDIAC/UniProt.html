@@ -139,8 +139,15 @@
                         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                             <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span>
                                 <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;DOMAIN&#39;</span><span class="p">:</span>
-                                    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;begin&#39;</span><span class="p">])</span>
-                                    <span class="n">end</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+                                    <span class="n">start_str</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;begin&#39;</span><span class="p">]</span>
+                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">start_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                                        <span class="n">start_str</span> <span class="o">=</span> <span class="n">start_str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                                    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_str</span><span class="p">)</span>
+
+                                    <span class="n">end_str</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">end_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                                        <span class="n">end_str</span> <span class="o">=</span> <span class="n">end_str</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                                    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_str</span><span class="p">)</span>
                                     <span class="n">name</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
                                     <span class="n">domdict</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span>
 
@@ -209,12 +216,18 @@
 <span class="sd">        value: sequence of the domain</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">n_term_offset</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">n_term_offset</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: resetting n_term_offset to a default number, should be between 0 and 20&quot;</span><span class="p">)</span>
-        <span class="n">n_term_offset</span> <span class="o">=</span> <span class="mi">5</span>
-    <span class="k">if</span> <span class="n">c_term_offset</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">c_term_offset</span><span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: resetting c_term_offset to a default number, should be between 0 and 20&quot;</span><span class="p">)</span>
-        <span class="n">c_term_offset</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_term_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: rounding n_term_offset to an integer&quot;</span><span class="p">)</span>
+        <span class="n">n_term_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_term_offset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c_term_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: rounding n_term_offset to an integer&quot;</span><span class="p">)</span>
+        <span class="n">c_term_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c_term_offset</span><span class="p">)</span>
+    <span class="c1"># if n_term_offset &lt; 0 or n_term_offset &gt; 20:</span>
+    <span class="c1">#     print(&quot;ERROR: resetting n_term_offset to a default number, should be between 0 and 20&quot;)</span>
+    <span class="c1">#     n_term_offset = 5</span>
+    <span class="c1"># if c_term_offset &lt; 0 or c_term_offset&gt; 20:</span>
+    <span class="c1">#     print(&quot;ERROR: resetting c_term_offset to a default number, should be between 0 and 20&quot;)</span>
+    <span class="c1">#     c_term_offset = 5</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;n offset is </span><span class="si">%d</span><span class="s2"> and c offset is </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">n_term_offset</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="p">))</span>
 
     <span class="n">domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -242,9 +255,10 @@
                 <span class="k">if</span> <span class="n">new_end</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
                     <span class="n">new_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTICE: </span><span class="si">%s</span><span class="s2"> c-term offset capped at end of protein&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">ID</span><span class="p">))</span>
-                <span class="n">domain_seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">new_start</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">new_end</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1">#0 based indexing for python access of protein indexes</span>
+                <span class="n">domain_seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">new_start</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">new_end</span><span class="p">]</span> <span class="c1">#0 based indexing for python access of protein indexes for start, then the 1</span>
                 <span class="c1">#uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end</span>
                 <span class="c1">#print(&quot;DEBUG: &gt;%s|%s|%s|%s|%d|%s|%d|%d\n&quot;%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))</span>
+                
                 <span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;&gt;</span><span class="si">%s</span><span class="s2">|</span><span class="si">%s</span><span class="s2">|</span><span class="si">%s</span><span class="s2">|</span><span class="si">%s</span><span class="s2">|</span><span class="si">%d</span><span class="s2">|</span><span class="si">%s</span><span class="s2">|</span><span class="si">%d</span><span class="s2">|</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">,</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">,</span> <span class="n">domainNum</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">new_start</span><span class="p">,</span> <span class="n">new_end</span><span class="p">)</span>
                 <span class="n">domain_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_seq</span>
     <span class="k">return</span> <span class="n">domain_dict</span>
@@ -284,7 +298,7 @@
 
 <span class="sd">    &#39;&#39;&#39;</span>
 
-    <span class="n">domain_fasta_dict</span> <span class="o">=</span> <span class="n">make_domain_fasta_dict</span><span class="p">(</span><span class="n">reference_csv</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">domain_fasta_dict</span> <span class="o">=</span> <span class="n">make_domain_fasta_dict</span><span class="p">(</span><span class="n">reference_csv</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">n_term_offset</span><span class="o">=</span><span class="n">n_term_offset</span><span class="p">,</span> <span class="n">c_term_offset</span><span class="o">=</span><span class="n">c_term_offset</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">APPEND</span><span class="p">:</span>
         <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>

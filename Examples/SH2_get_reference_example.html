@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Fetch all reference files for an Interpro_ID of interest &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    
+    <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Fetch all reference files for an Interpro_ID of interest</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="Fetch-all-reference-files-for-an-Interpro_ID-of-interest">
+<h1>Fetch all reference files for an Interpro_ID of interest<a class="headerlink" href="#Fetch-all-reference-files-for-an-Interpro_ID-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">CoDIAC</span>
+
+<span class="n">Interpro_ID</span> <span class="o">=</span> <span class="s1">&#39;IPR000980&#39;</span> <span class="c1">#IPR000980 is the SH2 domain superfamily</span>
+
+<span class="c1">#We will be creating a lot of files, this is how we would like them to be named</span>
+<span class="n">data_root</span> <span class="o">=</span> <span class="s1">&#39;Data/Example_All_IPR/&#39;</span>
+<span class="n">name_root</span> <span class="o">=</span> <span class="s1">&#39;SH2_&#39;</span><span class="o">+</span><span class="n">Interpro_ID</span>
+
+<span class="c1"># The files we will make in this process (so that different pieces of code can be run below as needed)</span>
+<span class="n">uniprot_reference_file</span> <span class="o">=</span> <span class="n">data_root</span><span class="o">+</span><span class="s1">&#39;Uniprot_Reference/&#39;</span><span class="o">+</span><span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;_uniprot_reference.csv&#39;</span> <span class="c1"># The uniprot reference</span>
+<span class="n">fasta_long_header_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;Uniprot_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;_long_header.fasta&#39;</span>
+<span class="n">fasta_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;Uniprot_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;.fasta&#39;</span>
+<span class="c1">#note: in addition to these 3 files, this also makes a mapping file for movng between fasta_long_header_file and fasta_file</span>
+
+<span class="c1">#PDB Files we&#39;ll make in this process</span>
+<span class="n">PDB_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB.csv&#39;</span>
+<span class="n">PDB_file_annotated</span> <span class="o">=</span> <span class="n">data_root</span><span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB_annotated.csv&#39;</span>
+<span class="n">PDB_file_filtered</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB_reference.csv&#39;</span> <span class="c1">#The final PDB structure file, containing only filtered proteins</span>
+
+<span class="c1"># PTMs feature directory location</span>
+<span class="n">feature_dir</span> <span class="o">=</span> <span class="n">data_root</span><span class="o">+</span><span class="s1">&#39;Uniprot_Reference/Features_relative_to_reference/PTM_features/&#39;</span>
+
+<span class="c1"># You can set offsets here for the family, used to reduce the</span>
+<span class="n">N_OFFSET</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">C_OFFSET</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<br/></pre></div>
+</div>
+</div>
+<section id="STEP-1:-Get-all-Uniprot-IDs-that-match-a-family-of-interest">
+<h2>STEP 1: Get all Uniprot IDs that match a family of interest<a class="headerlink" href="#STEP-1:-Get-all-Uniprot-IDs-that-match-a-family-of-interest" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">uniprot_IDs</span><span class="p">,</span> <span class="n">species_dict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">InterPro</span><span class="o">.</span><span class="n">fetch_uniprotids</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">REVIEWED</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;Homo sapiens&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fetched 109 Uniprot IDs linked to IPR000980, where count expected to be 109
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">
+<h2>STEP 2: Make a human reference file of the family of interest<a class="headerlink" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># These uniprot_IDs (list) came from fetching all uniprot IDs for an Interpro ID, but</span>
+<span class="c1"># this could be a fixed list of interest, or even all unique IDs in a proteome</span>
+<span class="n">uniprot_df</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">UniProt</span><span class="o">.</span><span class="n">makeRefFile</span><span class="p">(</span><span class="n">uniprot_IDs</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Domain Reference File successfully created!
+Adding Interpro Domains
+Fetching domains..
+Appending domains to file..
+Interpro metadata succesfully incorporated
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest">
+<h2>STEP 3: Get information about all PDB IDs that exist for the reference proteins of interest<a class="headerlink" href="#STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDB</span><span class="o">.</span><span class="n">generateStructureRefFile_fromUniprotFile</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Structure Reference File successfully created!
+All PDBs successfully fetched
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">
+<h2>STEP 4: Annotate the structure file with reference, for domain annotation<a class="headerlink" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">struct_df_out</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">IntegrateStructure_Reference</span><span class="o">.</span><span class="n">add_reference_info_to_struct_file</span><span class="p">(</span><span class="n">PDB_file</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file_annotated</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">
+<h2>STEP 5: Reduce the structure file to just those that contain the domain of interest<a class="headerlink" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now with an appended PDB File, create an output that contains only the lines that have SH2 domains</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">IntegrateStructure_Reference</span><span class="o">.</span><span class="n">filter_structure_file</span><span class="p">(</span><span class="n">PDB_file_annotated</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">PDB_file_filtered</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Made Data/Example_All_IPR/PDB_Reference/SH2_IPR000980_PDB_reference.csv file: 475 structures retained of 1478 total
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest">
+<h2>STEP 6: Create the FASTA Reference file for domain of interest<a class="headerlink" href="#STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Given the SH2 domain file, create the fasta reference file (using INTERPRO as default)</span>
+
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">UniProt</span><span class="o">.</span><span class="n">print_domain_fasta_file</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">fasta_long_header_file</span><span class="p">,</span> <span class="n">N_OFFSET</span><span class="p">,</span> <span class="n">C_OFFSET</span><span class="p">,</span> <span class="n">APPEND</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Shortening the fasta headers, still unique for each domain/protein pair</span>
+<span class="c1"># dropping the redundant information about the domains printed. This creates a shorter header, useful for reading and processing</span>
+<span class="n">key_array_order</span><span class="o">=</span> <span class="p">[</span><span class="s1">&#39;uniprot&#39;</span><span class="p">,</span> <span class="s1">&#39;gene&#39;</span><span class="p">,</span> <span class="s1">&#39;domain_num&#39;</span><span class="p">,</span> <span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">]</span>
+<span class="c1">#translation creates a mapping file</span>
+<span class="n">output_fasta</span><span class="p">,</span> <span class="n">mapping_file</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">UniProt</span><span class="o">.</span><span class="n">translate_fasta_to_new_headers</span><span class="p">(</span><span class="n">fasta_long_header_file</span><span class="p">,</span> <span class="n">fasta_file</span><span class="p">,</span> <span class="n">key_array_order</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+n offset is 0 and c offset is -1
+Created files: Data/Example_All_IPR/Uniprot_Reference/SH2_IPR000980.fasta and Data/Example_All_IPR/Uniprot_Reference/SH2_IPR000980_mapping.csv
+</pre></div></div>
+</div>
+<section id="STEP-7-Create-the-PTM-feature-files">
+<h3>STEP 7 Create the PTM feature files<a class="headerlink" href="#STEP-7-Create-the-PTM-feature-files" title="Link to this heading">¶</a></h3>
+<section id="STEP-7a-create-the-ProteomeScout-based-Features-files">
+<h4>STEP 7a create the ProteomeScout based Features files<a class="headerlink" href="#STEP-7a-create-the-ProteomeScout-based-Features-files" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">feature_dir_prot</span> <span class="o">=</span> <span class="n">feature_dir</span><span class="o">+</span><span class="s1">&#39;ProteomeScout/&#39;</span>
+<span class="n">ptm_feature_file_list_pscout</span><span class="p">,</span> <span class="n">ptm_count_dict</span><span class="p">,</span> <span class="n">ptm_feature_dict</span><span class="p">,</span> <span class="n">mapping_dict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">PTM</span><span class="o">.</span><span class="n">write_PTM_features</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">feature_dir_prot</span><span class="p">,</span> <span class="n">mapping_file</span><span class="p">,</span> <span class="n">N_OFFSET</span><span class="p">,</span> <span class="n">C_OFFSET</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">num_PTM_threshold</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Wrote these feature files:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ptm_feature_file_list_pscout</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;These belong to the following fasta file:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">output_fasta</span><span class="p">)</span> <span class="c1">#comes from block above - the short header format of the fasta header</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ptm_count_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+n offset is 0 and c offset is -1
+n offset is 0 and c offset is -1
+Error: PTM record not found by Q7Z4S9
+Error: PTM record not found by Q7Z4S9
+Error: PTM record not found by Q8TC17
+Error: PTM record not found by Q8TC17
+Wrote these feature files:
+[&#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_Phosphotyrosine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_N6-acetyllysine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_Phosphothreonine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_Phosphoserine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_Ubiquitination.feature&#39;]
+These belong to the following fasta file:
+Data/Example_All_IPR/Uniprot_Reference/SH2_IPR000980.fasta
+{&#39;Phosphotyrosine&#39;: 182, &#39;N6-acetyllysine&#39;: 32, &#39;Phosphothreonine&#39;: 61, &#39;Phosphoserine&#39;: 149, &#39;Ubiquitination&#39;: 59, &#39;Sumoylation&#39;: 3, &#39;Methylation&#39;: 1, &#39;N6,N6-dimethyllysine&#39;: 2}
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-7b-create-the-PhosphoSite-based-Features-files">
+<h4>STEP 7b create the PhosphoSite based Features files<a class="headerlink" href="#STEP-7b-create-the-PhosphoSite-based-Features-files" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">feature_dir_psite</span> <span class="o">=</span> <span class="n">feature_dir</span> <span class="o">+</span> <span class="s1">&#39;PHOSPHOSITE_PLUS/&#39;</span>
+<span class="n">ptm_feature_file_list_psite</span><span class="p">,</span> <span class="n">ptm_count_dict</span><span class="p">,</span> <span class="n">ptm_feature_dict</span><span class="p">,</span> <span class="n">mapping_dict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">PTM</span><span class="o">.</span><span class="n">write_PTM_features</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">feature_dir_psite</span><span class="p">,</span> <span class="n">mapping_file</span><span class="p">,</span> <span class="n">N_OFFSET</span><span class="p">,</span> <span class="n">C_OFFSET</span><span class="p">,</span> <span class="n">gap_threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">num_PTM_threshold</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">PHOSPHOSITE_PLUS</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Wrote these feature files:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ptm_feature_file_list_psite</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;These belong to the following fasta file:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">output_fasta</span><span class="p">)</span> <span class="c1">#comes from block above - the short header format of the fasta header</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ptm_count_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+n offset is 0 and c offset is -1
+n offset is 0 and c offset is -1
+Found no mods for Q7Z4S9
+Found no mods for Q9HBL0
+Using an isoform for PTMs Q9HBL0-1, found mods
+S2-Phosphoserine;S4-Phosphoserine;T68-Phosphothreonine;T84-Phosphothreonine;S92-Phosphoserine;S170-Phosphoserine;Y210-Phosphotyrosine;Y217-Phosphotyrosine;S257-Phosphoserine;Y327-Phosphotyrosine;T329-Phosphothreonine;S330-Phosphoserine;S338-Phosphoserine;Y339-Phosphotyrosine;S343-Phosphoserine;T357-Phosphothreonine;S364-Phosphoserine;Y366-Phosphotyrosine;S374-Phosphoserine;S378-Phosphoserine;T379-Phosphothreonine;S390-Phosphoserine;T399-Phosphothreonine;S401-Phosphoserine;S403-Phosphoserine;S404-Phosphoserine;S406-Phosphoserine;S433-Phosphoserine;S445-Phosphoserine;Y458-Phosphotyrosine;T460-Phosphothreonine;S465-Phosphoserine;S471-Phosphoserine;S475-Phosphoserine;T498-Phosphothreonine;S512-Phosphoserine;T518-Phosphothreonine;S538-Phosphoserine;S547-Phosphoserine;Y561-Phosphotyrosine;T575-Phosphothreonine;Y582-Phosphotyrosine;S583-Phosphoserine;Y591-Phosphotyrosine;T605-Phosphothreonine;T606-Phosphothreonine;S607-Phosphoserine;Y609-Phosphotyrosine;S614-Phosphoserine;S619-Phosphoserine;S621-Phosphoserine;S623-Phosphoserine;S638-Phosphoserine;S649-Phosphoserine;S674-Phosphoserine;S681-Phosphoserine;T688-Phosphothreonine;S692-Phosphoserine;S701-Phosphoserine;S708-Phosphoserine;T711-Phosphothreonine;S731-Phosphoserine;S733-Phosphoserine;S742-Phosphoserine;S746-Phosphoserine;S756-Phosphoserine;S762-Phosphoserine;S764-Phosphoserine;Y766-Phosphotyrosine;S769-Phosphoserine;S772-Phosphoserine;T775-Phosphothreonine;S783-Phosphoserine;S786-Phosphoserine;Y793-Phosphotyrosine;S794-Phosphoserine;Y796-Phosphotyrosine;Y798-Phosphotyrosine;S813-Phosphoserine;S838-Phosphoserine;T843-Phosphothreonine;S849-Phosphoserine;T854-Phosphothreonine;S855-Phosphoserine;S858-Phosphoserine;T860-Phosphothreonine;S899-Phosphoserine;Y903-Phosphotyrosine;S907-Phosphoserine;T911-Phosphothreonine;S912-Phosphoserine;S915-Phosphoserine;S920-Phosphoserine;S926-Phosphoserine;S948-Phosphoserine;T959-Phosphothreonine;S960-Phosphoserine;S962-Phosphoserine;S963-Phosphoserine;S967-Phosphoserine;S971-Phosphoserine;S981-Phosphoserine;S1019-Phosphoserine;S1024-Phosphoserine;Y1025-Phosphotyrosine;S1046-Phosphoserine;S1048-Phosphoserine;Y1055-Phosphotyrosine;T1105-Phosphothreonine;T1107-Phosphothreonine;S1113-Phosphoserine;S1117-Phosphoserine;S1119-Phosphoserine;S1124-Phosphoserine;S1126-Phosphoserine;Y1131-Phosphotyrosine;S1135-Phosphoserine;T1139-Phosphothreonine;S1142-Phosphoserine;S1143-Phosphoserine;Y1144-Phosphotyrosine;S1145-Phosphoserine;S1146-Phosphoserine;Y1149-Phosphotyrosine;S1150-Phosphoserine;S1155-Phosphoserine;S1156-Phosphoserine;S1157-Phosphoserine;S1160-Phosphoserine;S1167-Phosphoserine;T1173-Phosphothreonine;S1177-Phosphoserine;T1184-Phosphothreonine;T1189-Phosphothreonine;S1192-Phosphoserine;S1209-Phosphoserine;S1232-Phosphoserine;S1243-Phosphoserine;Y1254-Phosphotyrosine;S1257-Phosphoserine;T1265-Phosphothreonine;T1266-Phosphothreonine;S1269-Phosphoserine;S1271-Phosphoserine;S1294-Phosphoserine;S1297-Phosphoserine;S1307-Phosphoserine;S1309-Phosphoserine;S1314-Phosphoserine;Y1323-Phosphotyrosine;Y1326-Phosphotyrosine;S1327-Phosphoserine;T1328-Phosphothreonine;T1335-Phosphothreonine;S1337-Phosphoserine;S1340-Phosphoserine;S1341-Phosphoserine;S1343-Phosphoserine;Y1345-Phosphotyrosine;S1349-Phosphoserine;S1352-Phosphoserine;Y1359-Phosphotyrosine;S1371-Phosphoserine;S1381-Phosphoserine;T1383-Phosphothreonine;S1393-Phosphoserine;S1400-Phosphoserine;Y1404-Phosphotyrosine;T1406-Phosphothreonine;S1413-Phosphoserine;S1417-Phosphoserine;S1420-Phosphoserine;S1421-Phosphoserine;S1423-Phosphoserine;S1426-Phosphoserine;Y1440-Phosphotyrosine;S1441-Phosphoserine;S1446-Phosphoserine;Y1462-Phosphotyrosine;S1490-Phosphoserine;S1492-Phosphoserine;T1509-Phosphothreonine;S1579-Phosphoserine;S1583-Phosphoserine;S1588-Phosphoserine;T1589-Phosphothreonine;T1665-Phosphothreonine;T1667-Phosphothreonine;K69-Ubiquitination;K249-Ubiquitination;K290-Ubiquitination;K437-Ubiquitination;K1454-Ubiquitination;K1580-Ubiquitination;R781-Methylation
+[(1019, &#39;S&#39;, &#39;Phosphoserine&#39;, &#39;different amino acid&#39;)]
+Wrote these feature files:
+[&#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/PHOSPHOSITE_PLUS/IPR000980_Phosphotyrosine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/PHOSPHOSITE_PLUS/IPR000980_Ubiquitination.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/PHOSPHOSITE_PLUS/IPR000980_Acetylation.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/PHOSPHOSITE_PLUS/IPR000980_Phosphothreonine.feature&#39;, &#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/PHOSPHOSITE_PLUS/IPR000980_Phosphoserine.feature&#39;]
+These belong to the following fasta file:
+Data/Example_All_IPR/Uniprot_Reference/SH2_IPR000980.fasta
+{&#39;Phosphotyrosine&#39;: 178, &#39;Ubiquitination&#39;: 165, &#39;Acetylation&#39;: 34, &#39;Phosphothreonine&#39;: 63, &#39;Phosphoserine&#39;: 148, &#39;Sumoylation&#39;: 4, &#39;Methylation&#39;: 3, &#39;Dimethylation&#39;: 2}
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+<section id="Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks.">
+<h2>Step 8 combine feature files from ProteomeScout and PhosphoSitePlus and generate annotation tracks.<a class="headerlink" href="#Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks." title="Link to this heading">¶</a></h2>
+<p>#paired list</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pairs</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">proteomescout_base</span> <span class="o">=</span> <span class="n">feature_dir_prot</span><span class="o">+</span><span class="s1">&#39;/IPR000980_&#39;</span>
+<span class="n">PSP_base</span> <span class="o">=</span> <span class="n">feature_dir_psite</span><span class="o">+</span><span class="s1">&#39;/IPR000980_&#39;</span>
+<span class="n">pairs</span><span class="p">[</span><span class="s1">&#39;N6-acetyllysine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">proteomescout_base</span><span class="o">+</span><span class="s1">&#39;N6-acetyllysine.feature&#39;</span><span class="p">,</span> <span class="n">PSP_base</span><span class="o">+</span><span class="s1">&#39;Acetylation.feature&#39;</span><span class="p">]</span>
+<span class="n">pairs</span><span class="p">[</span><span class="s1">&#39;Phosphoserine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">proteomescout_base</span><span class="o">+</span><span class="s1">&#39;Phosphoserine.feature&#39;</span><span class="p">,</span> <span class="n">PSP_base</span><span class="o">+</span><span class="s1">&#39;Phosphoserine.feature&#39;</span><span class="p">]</span>
+<span class="n">pairs</span><span class="p">[</span><span class="s1">&#39;Phosphothreonine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">proteomescout_base</span><span class="o">+</span><span class="s1">&#39;Phosphothreonine.feature&#39;</span><span class="p">,</span> <span class="n">PSP_base</span><span class="o">+</span><span class="s1">&#39;Phosphothreonine.feature&#39;</span><span class="p">]</span>
+<span class="n">pairs</span><span class="p">[</span><span class="s1">&#39;Phosphotyrosine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">proteomescout_base</span><span class="o">+</span><span class="s1">&#39;Phosphotyrosine.feature&#39;</span><span class="p">,</span> <span class="n">PSP_base</span><span class="o">+</span><span class="s1">&#39;Phosphotyrosine.feature&#39;</span><span class="p">]</span>
+<span class="n">pairs</span><span class="p">[</span><span class="s1">&#39;Ubiquitination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">proteomescout_base</span><span class="o">+</span><span class="s1">&#39;Ubiquitination.feature&#39;</span><span class="p">,</span> <span class="n">PSP_base</span><span class="o">+</span><span class="s1">&#39;Ubiquitination.feature&#39;</span><span class="p">]</span>
+
+<span class="n">output_dir</span> <span class="o">=</span> <span class="n">feature_dir</span><span class="o">+</span><span class="s1">&#39;Combined/&#39;</span>
+<span class="n">new_feature_files</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">pairs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="n">feature_file</span> <span class="o">=</span> <span class="n">output_dir</span><span class="o">+</span><span class="s1">&#39;SH2_IPR000980_&#39;</span><span class="o">+</span><span class="n">mod</span><span class="o">+</span><span class="s1">&#39;.feature&#39;</span>
+    <span class="n">feature_combined</span><span class="p">,</span> <span class="n">feature_color_dict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">jalviewFunctions</span><span class="o">.</span><span class="n">combine_feature_files</span><span class="p">(</span><span class="n">feature_file</span><span class="p">,</span> <span class="n">pairs</span><span class="p">[</span><span class="n">mod</span><span class="p">])</span>
+    <span class="n">new_feature_files</span><span class="p">[</span><span class="n">mod</span><span class="p">]</span> <span class="o">=</span> <span class="n">feature_file</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">FileNotFoundError</span>                         Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[24], line 16</span>
+<span class="ansi-green-intense-fg ansi-bold">     14</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> mod <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> pairs<span style="color: rgb(98,98,98)">.</span>keys():
+<span class="ansi-green-intense-fg ansi-bold">     15</span>     feature_file <span style="color: rgb(98,98,98)">=</span> output_dir<span style="color: rgb(98,98,98)">+</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">SH2_IPR000980_</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(98,98,98)">+</span>mod<span style="color: rgb(98,98,98)">+</span><span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">.feature</span><span style="color: rgb(175,0,0)">&#39;</span>
+<span class="ansi-green-fg">---&gt; 16</span>     feature_combined, feature_color_dict <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">CoDIAC</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">jalviewFunctions</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">combine_feature_files</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">feature_file</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">pairs</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg">mod</span><span class="ansi-yellow-bg">]</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     17</span>     new_feature_files[mod] <span style="color: rgb(98,98,98)">=</span> feature_file
+
+File <span class="ansi-green-fg">~/GIT/public/CoDIAC/CoDIAC/jalviewFunctions.py:379</span>, in <span class="ansi-cyan-fg">combine_feature_files</span><span class="ansi-blue-fg">(output_file, feature_file_list)</span>
+<span class="ansi-green-intense-fg ansi-bold">    377</span> feature_dict_arr <span style="color: rgb(98,98,98)">=</span> []
+<span class="ansi-green-intense-fg ansi-bold">    378</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> file <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> feature_file_list:
+<span class="ansi-green-fg">--&gt; 379</span>     color, feature_dict <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">return_features_from_file</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">file</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    380</span>     feature_colors<span style="color: rgb(98,98,98)">.</span>append(color)
+<span class="ansi-green-intense-fg ansi-bold">    381</span>     feature_dict_arr<span style="color: rgb(98,98,98)">.</span>append(feature_dict)
+
+File <span class="ansi-green-fg">~/GIT/public/CoDIAC/CoDIAC/jalviewFunctions.py:41</span>, in <span class="ansi-cyan-fg">return_features_from_file</span><span class="ansi-blue-fg">(file)</span>
+<span class="ansi-green-intense-fg ansi-bold">     39</span> feature_colors <span style="color: rgb(98,98,98)">=</span> {}
+<span class="ansi-green-intense-fg ansi-bold">     40</span> seq_dict <span style="color: rgb(98,98,98)">=</span> {}
+<span class="ansi-green-fg">---&gt; 41</span> lines <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">open</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">file</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">r</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     42</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> line <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> lines:
+<span class="ansi-green-intense-fg ansi-bold">     43</span>     line <span style="color: rgb(98,98,98)">=</span> line<span style="color: rgb(98,98,98)">.</span>strip()
+
+<span class="ansi-red-fg">FileNotFoundError</span>: [Errno 2] No such file or directory: &#39;Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/ProteomeScout/IPR000980_N6-acetyllysine.feature&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">feature_dir</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Data/Example_All_IPR/Uniprot_Reference/Features_relative_to_reference/PTM_features/&#39;
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Fetch all reference files for an Interpro_ID of interest</a><ul>
+<li><a class="reference internal" href="#STEP-1:-Get-all-Uniprot-IDs-that-match-a-family-of-interest">STEP 1: Get all Uniprot IDs that match a family of interest</a></li>
+<li><a class="reference internal" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">STEP 2: Make a human reference file of the family of interest</a></li>
+<li><a class="reference internal" href="#STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest">STEP 3: Get information about all PDB IDs that exist for the reference proteins of interest</a></li>
+<li><a class="reference internal" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">STEP 4: Annotate the structure file with reference, for domain annotation</a></li>
+<li><a class="reference internal" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">STEP 5: Reduce the structure file to just those that contain the domain of interest</a></li>
+<li><a class="reference internal" href="#STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest">STEP 6: Create the FASTA Reference file for domain of interest</a><ul>
+<li><a class="reference internal" href="#STEP-7-Create-the-PTM-feature-files">STEP 7 Create the PTM feature files</a><ul>
+<li><a class="reference internal" href="#STEP-7a-create-the-ProteomeScout-based-Features-files">STEP 7a create the ProteomeScout based Features files</a></li>
+<li><a class="reference internal" href="#STEP-7b-create-the-PhosphoSite-based-Features-files">STEP 7b create the PhosphoSite based Features files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks.">Step 8 combine feature files from ProteomeScout and PhosphoSitePlus and generate annotation tracks.</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/Examples/SH2_get_reference_example.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Fetch all reference files for an Interpro_ID of interest</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

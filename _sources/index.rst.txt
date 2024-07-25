@@ -4,7 +4,6 @@ CoDIAC
 	:maxdepth: 2
 	:caption: Contents:
 
-	Supporting
 	Examples/Examples
 	Dependencies
 	Installation
@@ -44,6 +43,7 @@ Reference Setup
 
     UniProt
     PDB
+    AlphaFold
     InterPro
     IntegrateStructure_Reference
 	include_readme.rst
@@ -53,6 +53,13 @@ Reference Setup
 
 Structure Analysis
 ------------------
+.. toctree::
+	:maxdepth: 2
+	:caption: Contents:
+
+    contactMap
+    AdjacencyFiles
+
 
 .. _annotations:
 
@@ -63,15 +70,18 @@ Annotation tools
 	:caption: Contents: 
     
     PTM
+	mutations
 
 .. _jalview:
 
-Jalview tools
--------------
+Jalview and Feature tools
+-------------------------
 .. toctree::
 	:maxdepth: 2
 	:caption: Contents: 
     
-    jalview
+    jalviewFunctions
+    translateFeatures
+
 
 

@@ -3,11 +3,11 @@
 Examples
 =========================================
 
-Demo Notebook Header
----------------------
+Demo of the CoDIAC package - the full pipeline
+----------------------------------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   Demo.ipynb
-  
+   SH2_get_specific_proteins_example.ipynb
+   AdjacencyFiles_generation.ipynb

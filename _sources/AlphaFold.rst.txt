@@ -1,0 +1,5 @@
+AlphaFold
+---------
+
+.. automodule:: CoDIAC.AlphaFold
+    :members: makeRefFile

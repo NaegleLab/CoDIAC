@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.AlphaFold &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.AlphaFold</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.AlphaFold</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">Bio.PDB.MMCIF2Dict</span> <span class="kn">import</span> <span class="n">MMCIF2Dict</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<div class="viewcode-block" id="makeRefFile">
+<a class="viewcode-back" href="../../AlphaFold.html#CoDIAC.AlphaFold.makeRefFile">[docs]</a>
+<span class="k">def</span> <span class="nf">makeRefFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">cifFile_path</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;make a structure reference file for alphafodl structures</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        refUniprot_file : str</span>
+<span class="sd">            input uniprot reference file</span>
+<span class="sd">        cifFile_path : str</span>
+<span class="sd">            input path to find mmcif files downloaded for AlphaFold structures</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        outputFile : str</span>
+<span class="sd">            file path for output reference csv file</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+        
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">)</span>
+    <span class="n">uniprot_ids</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">col_headers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">,</span><span class="s1">&#39;ENTITY_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;CHAIN_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_description&#39;</span><span class="p">,</span> <span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">,</span><span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">,</span> <span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">,</span> <span class="s1">&#39;modifications locations&#39;</span><span class="p">,</span><span class="s1">&#39;modifications&#39;</span><span class="p">,</span> <span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">,</span> <span class="s1">&#39;macromolecular_type&#39;</span><span class="p">,</span> <span class="s1">&#39;database_name&#39;</span><span class="p">,</span> <span class="s1">&#39;database_accession&#39;</span><span class="p">,</span><span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">,</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">,</span> <span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">,</span> <span class="s1">&#39;aligned_regions_length&#39;</span><span class="p">,</span> <span class="s1">&#39;mutations exist (Y/N)&#39;</span><span class="p">,</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">,</span> <span class="s1">&#39;mutations locations&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_mutation joined&#39;</span><span class="p">,</span> <span class="s1">&#39;molecular_weight&#39;</span><span class="p">,</span> <span class="s1">&#39;experimental_method&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_combined&#39;</span><span class="p">,</span><span class="s1">&#39;deposit_date&#39;</span><span class="p">,</span> <span class="s1">&#39;audit_author_name&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">,</span> <span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">,</span> <span class="s1">&#39;ref:gene name&#39;</span><span class="p">,</span> <span class="s1">&#39;ref:struct/ref sequence&#39;</span><span class="p">,</span><span class="s1">&#39;ref:reference range&#39;</span><span class="p">,</span><span class="s1">&#39;ref:start position offset&#39;</span><span class="p">,</span><span class="s1">&#39;Gaps ref:struct&#39;</span><span class="p">,</span><span class="s1">&#39;Gaps struct:ref&#39;</span><span class="p">,</span><span class="s1">&#39;ref:variants&#39;</span><span class="p">,</span> <span class="s1">&#39;ref:domains&#39;</span><span class="p">,</span><span class="s1">&#39;ref:struct domain architecture&#39;</span><span class="p">,</span><span class="s1">&#39;ref:full protein domain&#39;</span><span class="p">,</span><span class="s1">&#39;ref:protein domain architecture&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;domains_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;struct_dom_arch_AF&#39;</span><span class="p">,</span> <span class="s1">&#39;pro_dom_arch_AF&#39;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">col_headers</span><span class="p">)</span>
+    
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">col_headers</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">uniprot_id</span> <span class="ow">in</span> <span class="n">uniprot_ids</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">PDB_ID</span> <span class="o">=</span> <span class="s1">&#39;AF-&#39;</span><span class="o">+</span><span class="n">uniprot_id</span><span class="o">+</span><span class="s1">&#39;-F1&#39;</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;AF-&#39;</span><span class="o">+</span><span class="n">uniprot_id</span><span class="o">+</span><span class="s1">&#39;-F1&#39;</span><span class="p">)</span>
+            <span class="c1"># print(PDB_ID)</span>
+            
+            <span class="n">cif_file</span> <span class="o">=</span> <span class="n">MMCIF2Dict</span><span class="p">(</span><span class="n">cifFile_path</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cif_file</span><span class="p">[</span><span class="s1">&#39;_entity_poly.entity_id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cif_file</span><span class="p">[</span><span class="s1">&#39;_entity_poly.pdbx_strand_id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    
+            <span class="n">get_url</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;http://www.ebi.ac.uk/proteins/api/proteins/</span><span class="si">{</span><span class="n">uniprot_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">get_url</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">gene</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;gene&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">gene</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;protein&#39;</span><span class="p">][</span><span class="s1">&#39;recommendedName&#39;</span><span class="p">][</span><span class="s1">&#39;fullName&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;gene&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;Homo sapiens&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;sequence&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;sequence&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;length&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;Protein&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;proteinExistence&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;AlphaFold&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;sequence&#39;</span><span class="p">])</span>
+    
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">][</span><span class="n">entry</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CHAIN&#39;</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">][</span><span class="n">entry</span><span class="p">][</span><span class="s1">&#39;begin&#39;</span><span class="p">])</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">][</span><span class="n">entry</span><span class="p">][</span><span class="s1">&#39;begin&#39;</span><span class="p">])</span>
+    
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;length&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;AlphaFold&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;version&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;modified&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;NA&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;gene&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;sequence&#39;</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">][</span><span class="s1">&#39;length&#39;</span><span class="p">])))</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference_arch</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span><span class="n">gene</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference_arch</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span><span class="n">gene</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reference_arch</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span><span class="n">gene</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">domain_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">struct_arch</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">])):</span>          
+                <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">][</span><span class="n">entry</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;DOMAIN&#39;</span><span class="p">:</span>
+                    <span class="n">domain_entry</span> <span class="o">=</span> <span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">][</span><span class="n">entry</span><span class="p">])</span> 
+    
+                    <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
+                    <span class="n">domain_start</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="p">[</span><span class="s1">&#39;begin&#39;</span><span class="p">]</span>
+                    <span class="n">domain_end</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+    
+                    <span class="n">domain_range</span> <span class="o">=</span> <span class="n">domain_name</span><span class="o">+</span><span class="s1">&#39;:IPR000980:&#39;</span><span class="o">+</span><span class="n">domain_start</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="n">domain_end</span><span class="o">+</span><span class="s1">&#39;,0,0&#39;</span>
+                    <span class="n">domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_range</span><span class="p">)</span>
+                    <span class="n">struct_arch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_name</span><span class="p">)</span>
+            <span class="n">separator1</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span>
+            <span class="n">separator2</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">separator1</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">domain_list</span><span class="p">))</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">separator2</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">struct_arch</span><span class="p">))</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">separator2</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">struct_arch</span><span class="p">))</span>
+            <span class="c1"># print(gene, reference_arch(gene)[0], reference_arch(gene)[1])</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+
+
+<span class="k">def</span> <span class="nf">reference_arch</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">gene</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;This retrieves the interpro domain architecture for a specific gene &#39;&#39;&#39;</span>
+        
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">)</span>
+    <span class="n">identical_domains</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">arch_with_index</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ref_arch</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Gene&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">gene</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ref_ranges</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Gene&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">gene</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Interpro Domains&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">parse1</span> <span class="o">=</span> <span class="n">ref_ranges</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+    <span class="n">update_ranges</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">parse1</span><span class="p">:</span>
+        <span class="n">sh2</span><span class="p">,</span> <span class="n">ipr</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+        <span class="n">new_str</span> <span class="o">=</span> <span class="n">sh2</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">ipr</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,0,0&#39;</span>
+        <span class="n">update_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_str</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">update_ranges</span><span class="p">),</span> <span class="n">ref_arch</span>
+
+
+<span class="k">def</span> <span class="nf">get_cifFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Downloads .cif files for AlphaFold structures using database version 2</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        refUniprot_file : cstr</span>
+<span class="sd">            uniprot reference file input</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        outputDir : str</span>
+<span class="sd">            Location to store the .cif files</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># inputFile = &#39;UniProt_IDs.csv&#39;</span>
+    <span class="c1"># df = pd.read_csv(inputFile)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">)</span>
+    <span class="n">uniprot_ids</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">uniprot_ids</span><span class="p">:</span>
+        <span class="n">Uniprot_id</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">alphafold_id</span> <span class="o">=</span> <span class="s1">&#39;AF-&#39;</span><span class="o">+</span><span class="n">Uniprot_id</span><span class="o">+</span><span class="s1">&#39;-F1&#39;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">outputDir</span> <span class="o">+</span><span class="n">alphafold_id</span>
+        <span class="n">database_ver</span> <span class="o">=</span> <span class="s1">&#39;v2&#39;</span>
+        <span class="n">model_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://alphafold.ebi.ac.uk/files/</span><span class="si">{</span><span class="n">alphafold_id</span><span class="si">}</span><span class="s1">-model_</span><span class="si">{</span><span class="n">database_ver</span><span class="si">}</span><span class="s1">.cif&#39;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;curl </span><span class="si">{</span><span class="n">model_url</span><span class="si">}</span><span class="s1"> -o </span><span class="si">{</span><span class="n">alphafold_id</span><span class="si">}</span><span class="s1">.cif&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="c1"># new_cifpath = path+&#39;/&#39;+alphafold_id+&#39;.cif&#39;</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="s1">&#39;./&#39;</span><span class="o">+</span><span class="n">alphafold_id</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.AlphaFold</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

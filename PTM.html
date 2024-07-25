@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>PTMS via ProteomeScout &#8212; CoDIAC 1 documentation</title>
+    <title>PTMS &#8212; CoDIAC 1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
     
@@ -16,7 +16,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Jalview Tools" href="jalview.html" />
+    <link rel="next" title="Jalview Tools" href="jalviewFunctions.html" />
     <link rel="prev" title="Integrate the Structure and Reference files" href="IntegrateStructure_Reference.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -29,13 +29,13 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="jalview.html" title="Jalview Tools"
+          <a href="jalviewFunctions.html" title="Jalview Tools"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">PTMS via ProteomeScout</a></li> 
+        <li class="nav-item nav-item-this"><a href="">PTMS</a></li> 
       </ul>
     </div>  
 
@@ -45,53 +45,7 @@
           <div class="body" role="main">
             
   <section id="module-CoDIAC.PTM">
-<span id="ptms-via-proteomescout"></span><h1>PTMS via ProteomeScout<a class="headerlink" href="#module-CoDIAC.PTM" title="Link to this heading">¶</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="CoDIAC.PTM.write_PTM_features">
-<span class="sig-prename descclassname"><span class="pre">CoDIAC.PTM.</span></span><span class="sig-name descname"><span class="pre">write_PTM_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Interpro_ID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uniprot_ref_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_term_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_term_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_PTM_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/PTM.html#write_PTM_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.PTM.write_PTM_features" title="Link to this definition">¶</a></dt>
-<dd><p>Writes all PTM features from ProteomeScout on Interpro domains from a uniprot reference file, if there are more
-than num_PTM_threshold that occur across all domains of that type in the reference. Returns the ptm_count_dict for reference
-and the feature dict that is generated to write the files. Files are named Interpro_ID_&lt;PTM_Type&gt;.fea
-and the reference fasta is also generated so that it is clear the features are attached to that 
-particular run of the domains.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>Interpro_ID: string</strong></dt><dd><p>Interpro ID - for example in a reference line such as 
-SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
-the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980</p>
-</dd>
-<dt><strong>uniprot_reference_file: string</strong></dt><dd><p>File location that contains the reference of interest (like produced from Uniprot.makeRefFile)</p>
-</dd>
-<dt><strong>feature_dir: string</strong></dt><dd><p>Feature Directory to place files in</p>
-</dd>
-<dt><strong>mapping_file: string</strong></dt><dd><p>A CSV file location, if wanted, that holds a translation of the long header into a shorter header
-If this is an empty string, then it will not attempt mapping</p>
-</dd>
-<dt><strong>n_term_offset: int</strong></dt><dd><p>Number of amino acids to extend in the n-term direction (up to start of protein)</p>
-</dd>
-<dt><strong>c_term_offset: int</strong></dt><dd><p>Number of amino acids to extend in the c-term direction (up to end of protein)</p>
-</dd>
-<dt><strong>gap_threshold: float</strong></dt><dd><p>fraction gap allowed before dispanding with PTM translation from ProteomeScout</p>
-</dd>
-<dt><strong>num_PTM_threshold: int</strong></dt><dd><p>Number of PTMs in all domains of a type required to generate a feature file</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>file_list: list</dt><dd><p>List of files generated as features</p>
-</dd>
-<dt>ptm_count_dict: dict</dt><dd><p>keys are the modification type and values are total number encountered</p>
-</dd>
-<dt>domain_feature_dict: dict of dicts</dt><dd><p>keys are the fasta headers 
-Inner dict keys are the modification types and the values of this is a list of zero-based positions.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
+<span id="ptms"></span><h1>PTMS<a class="headerlink" href="#module-CoDIAC.PTM" title="Link to this heading">¶</a></h1>
 </section>
 
 
@@ -102,23 +56,13 @@ Inner dict keys are the modification types and the values of this is a list of z
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <div>
-    <h3><a href="index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">PTMS via ProteomeScout</a><ul>
-<li><a class="reference internal" href="#CoDIAC.PTM.write_PTM_features"><code class="docutils literal notranslate"><span class="pre">write_PTM_features()</span></code></a></li>
-</ul>
-</li>
-</ul>
-
-  </div>
-  <div>
     <h4>Previous topic</h4>
     <p class="topless"><a href="IntegrateStructure_Reference.html"
                           title="previous chapter">Integrate the Structure and Reference files</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="jalview.html"
+    <p class="topless"><a href="jalviewFunctions.html"
                           title="next chapter">Jalview Tools</a></p>
   </div>
   <div role="note" aria-label="source link">
@@ -152,13 +96,13 @@ Inner dict keys are the modification types and the values of this is a list of z
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="jalview.html" title="Jalview Tools"
+          <a href="jalviewFunctions.html" title="Jalview Tools"
              >next</a> |</li>
         <li class="right" >
           <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">PTMS via ProteomeScout</a></li> 
+        <li class="nav-item nav-item-this"><a href="">PTMS</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

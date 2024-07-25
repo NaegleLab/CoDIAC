@@ -95,7 +95,11 @@
                 <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">feature_set</span><span class="p">:</span>
-                        <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">feat</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span>
+                            <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feat</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1">#position has already been set, so append to the list of features seen at this position</span>
+                <span class="k">if</span> <span class="n">feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]:</span> <span class="c1"># avoid adding a duplicate feature  </span>
+                    <span class="n">seq_dict</span><span class="p">[</span><span class="n">seq_id</span><span class="p">][</span><span class="n">pos</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span> <span class="c1">#will get a list of features. </span>
         <span class="k">elif</span> <span class="o">~</span><span class="nb">len</span><span class="p">(</span><span class="n">line_arr</span><span class="p">):</span>
             <span class="k">continue</span>
         <span class="k">else</span><span class="p">:</span>
@@ -546,6 +550,37 @@
         <span class="n">df_filter</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> specific Feature file created!&#39;</span><span class="o">%</span><span class="n">domain_of_interest_edit</span><span class="p">)</span>
         
+
+<span class="k">def</span> <span class="nf">return_array_from_annotation</span><span class="p">(</span><span class="n">ann_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an annotation file, return the array of values from the annotation file bar graph track</span>
+<span class="sd">    This is useful for plotting the bar graph track in matplotlib or counting the total number of </span>
+<span class="sd">    features along an alignment. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ann_file: str</span>
+<span class="sd">        Name of the annotation file to parse the bar graph of</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    arr: np.array</span>
+<span class="sd">        Array of values from the bar graph track in the annotation file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ann_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="n">bar_graph_line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">bar_graph</span> <span class="o">=</span> <span class="n">bar_graph_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">bar_graph</span> <span class="o">=</span> <span class="n">bar_graph</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">bar_graph</span> <span class="o">=</span> <span class="n">bar_graph</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">bar_graph_vals</span> <span class="o">=</span> <span class="n">bar_graph</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="n">val_arr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bar_graph_vals</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">bar_graph_vals</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="n">val_arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>  
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">val_arr</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">arr</span>
 </pre></div>
 
             <div class="clearer"></div>

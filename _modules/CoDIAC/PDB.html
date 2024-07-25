@@ -50,12 +50,10 @@
             <span class="s1">&#39;molecular_weight&#39;</span><span class="p">,</span> <span class="s1">&#39;experimental_method&#39;</span><span class="p">,</span> <span class="s1">&#39;resolution_combined&#39;</span><span class="p">,</span> 
             <span class="s1">&#39;deposit_date&#39;</span><span class="p">,</span> <span class="s1">&#39;audit_author_name&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">,</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span>
 
-<div class="viewcode-block" id="PDB_interface">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface">[docs]</a>
 <span class="k">class</span> <span class="nc">PDB_interface</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A class that obtains and outputs relevant metadata/annotations for individual PDB IDs in the form of a dictionary</span>
-<span class="sd">    and/or a csv file.</span>
+<span class="sd">    A class that obtains and outputs relevant metadata/annotations for a PDB ID in the form of a dictionary</span>
+<span class="sd">    and/or ability to write to a csv file.</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes</span>
 <span class="sd">    -----------</span>
@@ -65,7 +63,8 @@
 <span class="sd">    Methods</span>
 <span class="sd">    --------</span>
 <span class="sd">    get_anno_dict</span>
-<span class="sd">        Produces a dictionary full of the annotations for all of the PDB IDs from the inputted csv file.</span>
+<span class="sd">        Produces a dictionary full of the annotations for</span>
+<span class="sd">         the PDB ID.</span>
 <span class="sd">    print_output_csv</span>
 <span class="sd">        Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids</span>
 <span class="sd">        from the inputted csv file.</span>
@@ -75,54 +74,54 @@
 <span class="sd">    </span>
 <span class="sd">	</span>
 <span class="sd">	&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">PDB_list</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructor for the PDB_interface class.</span>
 <span class="sd">        </span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        PDB_list : list of strings</span>
-<span class="sd">            list of PDB IDs (4-character alphanumeric identifier) that the user wants to gather information on</span>
+<span class="sd">        PDB : list of strings</span>
+<span class="sd">            PDB ID (4-character alphanumeric identifier) that the user wants to gather information on</span>
 <span class="sd">        </span>
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        None.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PDB_list</span> <span class="o">=</span> <span class="n">PDB_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PDB_ID</span> <span class="o">=</span> <span class="n">PDB_ID</span>
 
        
-<div class="viewcode-block" id="PDB_interface.get_anno_dict">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.get_anno_dict">[docs]</a>
     <span class="k">def</span> <span class="nf">get_anno_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produces a dictionary full of the annotations for all of the PDB IDs from the PDB List of IDs used to instantiate the object</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        overall_dict : dictionary</span>
-<span class="sd">            dictionary full of the annotations for all of the pdb ids from the inputted file</span>
-
+<span class="sd">        ERROR: bool</span>
+<span class="sd">            0 if no error, 1 if error</span>
+<span class="sd">        annotated_dict_list : list of dictionaries</span>
+<span class="sd">            list of each entitiy dictionary </span>
+<span class="sd">            where the dictionary has PDB.COLUMNS keys and information for each entity</span>
+<span class="sd">            list is empty if error</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">IDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDB_list</span>
+        <span class="c1">#IDs = self.PDB_list</span>
         
         <span class="n">overall_dict</span> <span class="o">=</span> <span class="p">{}</span>
         
-        <span class="k">for</span> <span class="n">each_id</span> <span class="ow">in</span> <span class="n">IDs</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDB_metadata</span><span class="p">(</span><span class="n">each_id</span><span class="p">)</span>
-                <span class="n">annotated_dict</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">set_PDB_API_annotation</span><span class="p">()</span>
-                <span class="n">overall_dict</span><span class="p">[</span><span class="n">each_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotated_dict</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">each_id</span> <span class="o">+</span> <span class="s1">&#39; is not a valid PDB ID&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">overall_dict</span></div>
-
+<span class="c1">#        for each_id in IDs:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDB_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PDB_ID</span><span class="p">)</span>
+            <span class="n">annotated_dict_list</span> <span class="o">=</span> <span class="n">metadata</span><span class="o">.</span><span class="n">set_PDB_API_annotation</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">ERROR</span><span class="p">,</span> <span class="n">annotated_dict_list</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c1">#print(self.PDB_ID + &#39; could not be fetched&#39;)</span>
+            <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">ERROR</span><span class="p">,</span> <span class="p">[]</span>
 
 
     
-<div class="viewcode-block" id="PDB_interface.print_output_csv">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.print_output_csv">[docs]</a>
     <span class="k">def</span> <span class="nf">print_output_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produces a csv file (to the location of the inputted file path) full of the annotations for all of the pdb ids</span>
@@ -138,7 +137,7 @@
 <span class="sd">        None.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">overall_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
+        <span class="n">ERROR</span><span class="p">,</span> <span class="n">overall_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
         <span class="n">data_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">each_key</span> <span class="ow">in</span> <span class="n">overall_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">each_entity</span> <span class="ow">in</span> <span class="n">overall_dict</span><span class="p">[</span><span class="n">each_key</span><span class="p">]:</span>
@@ -148,11 +147,8 @@
         <span class="k">if</span> <span class="n">outputFile</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outputFile</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
-
+            <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outputFile</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         
-<div class="viewcode-block" id="PDB_interface.get_all">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.get_all">[docs]</a>
     <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Produces a dictionary and csv file  full of the annotations</span>
@@ -165,14 +161,11 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">csv_file_name</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">&#39;Enter a file name for the output csv file: &#39;</span><span class="p">)</span>
-        <span class="n">overall_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
+        <span class="n">ERROR</span><span class="p">,</span> <span class="n">overall_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">overall_dict</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">csv_file_name</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">overall_dict</span></div>
+        <span class="k">return</span> <span class="n">overall_dict</span>
 
-
-<div class="viewcode-block" id="PDB_interface.PDB_metadata">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.PDB_metadata">[docs]</a>
     <span class="k">class</span> <span class="nc">PDB_metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A class that stores relevant metadata for individual PDB IDs.</span>
@@ -185,16 +178,8 @@
 <span class="sd">            the PDB ID (4-character alphanumeric identifier) that the user wants to gather information on</span>
 <span class="sd">        entry_dict : dictionary</span>
 <span class="sd">            stores information from the entry service for the PDB_ID</span>
-<span class="sd">        pubmed_dict : dictionary</span>
-<span class="sd">            stores the pubmed annotations (data integrated from PubMed) for the PDB_ID</span>
-<span class="sd">        schema_dict : dictionary</span>
-<span class="sd">            stores information from the entry schema for the PDB_ID</span>
-<span class="sd">        schema_uniprot_dict : dictionary</span>
-<span class="sd">            stores information from the uniprot schema for the PDB_ID</span>
 <span class="sd">        overall_polymer_entity_dict : dictionary</span>
 <span class="sd">            stores polymer entity data for each entity id corresponding with the PDB_ID</span>
-<span class="sd">        overall_uniprot_dict : dictionary</span>
-<span class="sd">            stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)</span>
 <span class="sd">                        </span>
 <span class="sd">        Methods</span>
 <span class="sd">        --------</span>
@@ -230,12 +215,10 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">PDB_ID</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pubmed_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema_uniprot_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_polymer_entity_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_uniprot_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_dicts</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_polymer_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_dicts</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mods</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">locs</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="PDB_interface.PDB_metadata.set_PDB_API_annotation">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.PDB_metadata.set_PDB_API_annotation">[docs]</a>
         <span class="k">def</span> <span class="nf">set_PDB_API_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Utilizes other class methods to generate dictionaries of information for a PDB ID, find the correct information</span>
@@ -244,23 +227,17 @@
 
 <span class="sd">            Returns</span>
 <span class="sd">            -------</span>
-<span class="sd">            anno_dict : dictionary</span>
+<span class="sd">            anno_dict_list : list of dictionaries</span>
 <span class="sd">                dictionary storing all information for the PDB_ID</span>
+<span class="sd">                list is returned since multipel entities can be present in a single PDB file with different attributes</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">anno_dict_list</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">entity_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_container_identifiers&#39;</span><span class="p">][</span><span class="s1">&#39;polymer_entity_ids&#39;</span><span class="p">]:</span>
-                <span class="n">anno_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_empty_anno_dict</span><span class="p">()</span>
-                
-                <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">anno_dict</span><span class="p">:</span>
-                    <span class="n">anno_dict</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_annotation</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">)</span>
-
+                <span class="n">anno_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_anno_dict</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span>
                 <span class="n">anno_dict_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anno_dict</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">anno_dict_list</span></div>
+            <span class="k">return</span> <span class="n">anno_dict_list</span>
 
-
-<div class="viewcode-block" id="PDB_interface.PDB_metadata.get_empty_anno_dict">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.PDB_metadata.get_empty_anno_dict">[docs]</a>
         <span class="k">def</span> <span class="nf">get_empty_anno_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Creates a dictionary with the attributes contained in meta_data as keys with empty values. </span>
@@ -275,8 +252,321 @@
             <span class="n">meta_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_data_categories</span>
             <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">meta_data</span><span class="p">:</span>
                 <span class="n">inner</span><span class="p">[</span><span class="n">meta</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">return</span> <span class="n">inner</span></div>
+            <span class="k">return</span> <span class="n">inner</span>
+        
+        <span class="k">def</span> <span class="nf">return_anno_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polymer_entity_id</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Creates a dictionary with the attributes contained in meta_data as keys with empty values. </span>
 
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            anno_dict : dictionary</span>
+<span class="sd">                updated anno_dict</span>
+
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">anno_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_empty_anno_dict</span><span class="p">()</span>
+            <span class="n">polymer_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_polymer_entity_dict</span><span class="p">[</span><span class="n">polymer_entity_id</span><span class="p">]</span>
+
+
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;ENTITY_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">polymer_entity_id</span>
+
+            <span class="c1">#CHAIN ID</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                    <span class="n">CHAIN_ID</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_strand_id&#39;</span><span class="p">]</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;CHAIN_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CHAIN_ID</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;CHAIN_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#database name</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">rcsb_container_identifiers</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_container_identifiers&#39;</span><span class="p">]</span>
+                    <span class="n">reference_sequence_identifiers</span> <span class="o">=</span> <span class="n">rcsb_container_identifiers</span><span class="p">[</span><span class="s1">&#39;reference_sequence_identifiers&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">reference_sequence_identifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+
+            <span class="c1">#gene name</span>
+
+            <span class="c1">#elif (attribute == &#39;rcsb_gene_name&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rcsb_gene_nameS_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">rcsb_entity_source_organism</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_source_organism&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">rcsb_entity_source_organism</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">rcsb_gene_name</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">each_dict</span> <span class="ow">in</span> <span class="n">rcsb_gene_name</span><span class="p">:</span>
+                        <span class="n">gene_name</span> <span class="o">=</span> <span class="n">each_dict</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">gene_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rcsb_gene_nameS_list</span><span class="p">:</span>
+                            <span class="n">rcsb_gene_nameS_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gene_name</span><span class="p">)</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rcsb_gene_nameS_list</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+               
+
+            <span class="c1">#elif (attribute == &#39;database_accession&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">rcsb_container_identifiers</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_container_identifiers&#39;</span><span class="p">]</span>
+                    <span class="n">reference_sequence_identifiers</span> <span class="o">=</span> <span class="n">rcsb_container_identifiers</span><span class="p">[</span><span class="s1">&#39;reference_sequence_identifiers&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">reference_sequence_identifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+
+            <span class="c1">#elif (attribute == &#39;pdbx_seq_one_letter_code&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pdbx_seq_one_letter_code</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                    <span class="n">pdbx_seq_one_letter_code</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pdbx_seq_one_letter_code</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            
+            <span class="c1">#elif (attribute == &#39;rcsb_uniprot_protein_sequence&#39;):</span>
+            <span class="n">entity_id</span> <span class="o">=</span>  <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;ENTITY_ID&#39;</span><span class="p">]</span>
+            <span class="n">uniprot_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/uniprot/&quot;</span> <span class="o">+</span> \
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">entity_id</span>
+            <span class="c1">#print(&quot;DEBUG: %s&quot;%(uniprot_url))</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uniprot_url</span><span class="p">)</span>
+            <span class="c1">#print(&quot;DEBUG: %s&quot;%(resp.status_code))</span>
+            <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="c1">#print(&#39;Failed to get %s from rcsb uniprot with code %s:&#39;%(PDB_ID, resp.status_code))</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1">#in case we got a response, but it does not conform to json, try, except here</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">uniprot_entity_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                    <span class="n">SEQ</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uniprot_entity_dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1">#len(uniprot_entity_dict) &lt; 3:</span>
+                        <span class="c1">#print(len(uniprot_entity_dict))</span>
+                        <span class="n">middle</span> <span class="o">=</span> <span class="n">uniprot_entity_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">middle</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                            <span class="n">rcsb_uniprot_protein</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein&#39;</span><span class="p">]</span>
+                            <span class="n">SEQ</span> <span class="o">=</span> <span class="n">rcsb_uniprot_protein</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">]</span>
+                            <span class="c1">#print(SEQ)</span>
+                            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEQ</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;rcsb_sample_sequence_length&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                    <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence_length</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            
+            <span class="c1">#elif (attribute == &#39;rcsb_entity_polymer_type&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+
+            <span class="c1">#elif (attribute == &#39;macromolecular_type&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;macromolecular_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;macromolecular_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;molecular_weight&#39;):</span>
+            <span class="n">entry_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry_info</span><span class="p">[</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">]</span>
+
+            <span class="c1">#elif (attribute == &#39;experimental_method&#39;):</span>
+            <span class="n">entry_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;experimental_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry_info</span><span class="p">[</span><span class="s1">&#39;experimental_method&#39;</span><span class="p">]</span>
+            
+            <span class="c1">#elif (attribute == &#39;resolution_combined&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
+                <span class="c1"># need to check if more than one value is ever reported</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;resolution_combined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;resolution_combined&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;resolution_combined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+
+            <span class="c1">#elif (attribute == &#39;pdbx_seq_one_letter_code_can&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">SEQ</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                    <span class="n">SEQ</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">SEQ</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">]</span><span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;entity_beg_seq_id&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
+                    <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;ref_beg_seq_id&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
+                    <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;aligned_regions_length&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
+                    <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;aligned_regions_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;aligned_regions_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;pdbx_gene_src_scientific_name&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">entity_src_gen</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_src_gen&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_src_gen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">species</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">species</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+
+            <span class="c1">#elif (attribute == &#39;mutations exist (Y/N)&#39;):</span>
+            <span class="n">mutation_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                <span class="n">mutation_count</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">mutation_count</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;mutations exist (Y/N)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Y&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;mutations exist (Y/N)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+                
+
+            <span class="c1">#elif (attribute ==&#39;rcsb_mutation_count&#39;):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">]</span>
+            <span class="c1">#return mutation_count</span>
+            
+            <span class="c1">#elif (attribute ==&#39;modifications locations&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mod_locations</span><span class="p">(</span><span class="n">polymer_entity_id</span><span class="o">=</span><span class="n">polymer_entity_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                        <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications locations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications locations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications locations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+            
+
+            <span class="c1">#elif (attribute ==&#39;modifications&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mod_types</span><span class="p">(</span><span class="n">polymer_entity_id</span><span class="o">=</span><span class="n">polymer_entity_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                        <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">types</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;modifications&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>   
+
+           <span class="c1"># elif (attribute ==&#39;mutations locations&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
+                    <span class="n">mutation</span> <span class="o">=</span> <span class="n">polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+                    <span class="n">locations</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">mutation</span><span class="p">:</span>
+                        <span class="n">locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:(</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;mutations locations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                 <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;mutations locations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+            
+            <span class="c1">#elif (attribute == &#39;pdbx_mutation joined&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
+                    <span class="n">mutation</span> <span class="o">=</span> <span class="n">polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mutation</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+            
+            <span class="c1">#elif (attribute ==&#39;deposit_date&#39;):</span>
+            <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_accession_info&#39;</span><span class="p">]</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;deposit_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;deposit_date&#39;</span><span class="p">][:</span><span class="mi">10</span><span class="p">]</span>            
+
+            <span class="c1">#elif (attribute == &#39;audit_author_name&#39;): #fixed</span>
+            <span class="n">AUTHORS_LIST</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">temp_authors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;audit_author&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">temp_authors</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">each</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                <span class="n">AUTHORS_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;audit_author_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">AUTHORS_LIST</span><span class="p">)</span>
+
+            <span class="c1">#elif (attribute == &#39;title&#39;):</span>
+            <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
+            <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
+
+            <span class="c1">#elif (attribute ==&#39;pdbx_database_id_doi&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
+                <span class="n">DOI</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DOI</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;citation&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute ==&#39;pdbx_database_id_pub_med&#39;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;citation&#39;</span><span class="p">]</span>
+                    <span class="n">middle</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_PubMed&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not found&#39;</span>
+            
+            <span class="c1">#elif (attribute == &quot;pdbx_description&quot;):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">rcsb_polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rcsb_polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_description&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">anno_dict</span><span class="p">[</span><span class="s1">&#39;pdbx_description&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="s1">&#39;N/A&#39;</span>
+
+            <span class="k">return</span> <span class="n">anno_dict</span>
+
+
+           
     
         <span class="k">def</span> <span class="nf">find_mods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polymer_entity_id</span><span class="p">):</span>
             <span class="n">polymer_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_polymer_entity_dict</span><span class="p">[</span><span class="n">polymer_entity_id</span><span class="p">]</span>
@@ -315,8 +605,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">locs</span><span class="p">[</span><span class="n">polymer_entity_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">locs</span>                
             <span class="k">return</span> <span class="n">mods</span>
 
-<div class="viewcode-block" id="PDB_interface.PDB_metadata.get_all_dicts">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.PDB_metadata.get_all_dicts">[docs]</a>
         <span class="k">def</span> <span class="nf">get_all_dicts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Obtains information from the PDB API for a specific PDB ID and stores it in dictionaries.</span>
@@ -333,29 +621,21 @@
 <span class="sd">                stores information from the uniprot schema for the PDB_ID</span>
 <span class="sd">            overall_polymer_entity_dict : dictionary</span>
 <span class="sd">                stores polymer entity data for each entity id corresponding with the PDB_ID</span>
-<span class="sd">            overall_uniprot_dict : dictionary</span>
-<span class="sd">                stores UniProt annotations for a given macromolecular entity (each entity id corresponding with the PDB_ID)</span>
 
 <span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="n">PDB_ID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
 
+            <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1">#check for repsonse issues, collecting errors and handling them</span>
             <span class="n">entry_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/entry/&quot;</span> <span class="o">+</span> <span class="n">PDB_ID</span>
             <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entry_url</span><span class="p">)</span>
-            <span class="n">entry_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="c1">#print(&#39;Failed to get %s from rcsb entry with code %s:&#39;%(PDB_ID, resp.status_code))</span>
+                <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">entry_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span> <span class="c1">#THIS one is used!!</span>
         
-            <span class="n">pubmed_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/pubmed/&quot;</span> <span class="o">+</span> <span class="n">PDB_ID</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pubmed_url</span><span class="p">)</span>
-            <span class="n">pubmed_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        
-            <span class="n">schema_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/schema/entry&quot;</span> <span class="o">+</span> <span class="n">PDB_ID</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">schema_url</span><span class="p">)</span>
-            <span class="n">schema_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        
-            <span class="n">schema_uniprot_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/schema/uniprot&quot;</span> <span class="o">+</span> <span class="n">PDB_ID</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">schema_uniprot_url</span><span class="p">)</span>
-            <span class="n">schema_uniprot_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        
+                  
             <span class="n">entry_id_dict</span> <span class="o">=</span> <span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;entry&#39;</span><span class="p">]</span>
             <span class="n">ENTRY_ID</span> <span class="o">=</span> <span class="n">entry_id_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
             <span class="n">rcsb_entry_container_identifiers</span> <span class="o">=</span> <span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_container_identifiers&#39;</span><span class="p">]</span>
@@ -371,360 +651,16 @@
                 <span class="n">polymer_entity_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/polymer_entity/&quot;</span> <span class="o">+</span> \
                     <span class="n">ENTRY_ID</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">each_entity_id</span>
                 <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">polymer_entity_url</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="c1">#print(&#39;Failed to get %s from rcsb polymer entity with code %s:&#39;%(PDB_ID, resp.status_code))</span>
+                    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="n">polymer_entity_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
                 <span class="n">overall_polymer_entity_dict</span><span class="p">[</span><span class="n">each_entity_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span>
         
-            <span class="n">overall_uniprot_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">each_entity_id</span> <span class="ow">in</span> <span class="n">ENTITY_IDS</span><span class="p">:</span>
-                <span class="n">uniprot_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/uniprot/&quot;</span> <span class="o">+</span> \
-                    <span class="n">ENTRY_ID</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">each_entity_id</span>
-                <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uniprot_url</span><span class="p">)</span>
-                <span class="n">uniprot_dict</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-                <span class="n">overall_uniprot_dict</span><span class="p">[</span><span class="n">each_entity_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">uniprot_dict</span>
         
-            <span class="k">return</span> <span class="n">entry_dict</span><span class="p">,</span> <span class="n">pubmed_dict</span><span class="p">,</span> <span class="n">schema_dict</span><span class="p">,</span> <span class="n">schema_uniprot_dict</span><span class="p">,</span> <span class="n">overall_polymer_entity_dict</span><span class="p">,</span> <span class="n">overall_uniprot_dict</span></div>
+            <span class="k">return</span> <span class="n">entry_dict</span><span class="p">,</span> <span class="n">overall_polymer_entity_dict</span>
 
-
-<div class="viewcode-block" id="PDB_interface.PDB_metadata.get_annotation">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.PDB_interface.PDB_metadata.get_annotation">[docs]</a>
-        <span class="k">def</span> <span class="nf">get_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">polymer_entity_id</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Finds and returns the corresponding information for the specified attribute of the PDB ID.</span>
-
-<span class="sd">            Parameters</span>
-<span class="sd">            ----------</span>
-<span class="sd">            attribute : string</span>
-<span class="sd">                each attribute is a specific piece of information wanted for the PDB_ID (attributes match the &quot;keys&quot; of the</span>
-<span class="sd">                dictionaries created for each PDB_ID)</span>
-
-<span class="sd">            Returns</span>
-<span class="sd">            -------</span>
-<span class="sd">            string</span>
-<span class="sd">                string containing the corresponding information for that attribute.</span>
-<span class="sd">                or string containing an error or N/A message when the desired information cannot be found/does not exist</span>
-<span class="sd">            int</span>
-<span class="sd">                int containing the corresponding information for that attribute.</span>
-<span class="sd">                </span>
-<span class="sd">            Raises</span>
-<span class="sd">            --------</span>
-<span class="sd">            KeyError if the desired information cannot be accessed, meaning a different pathway to access that information must be tried</span>
-<span class="sd">            or that the desired information cannot be found/does not exist</span>
-
-<span class="sd">            &quot;&quot;&quot;</span>
-            
-            <span class="n">PDB_ID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
-            <span class="n">polymer_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_polymer_entity_dict</span><span class="p">[</span><span class="n">polymer_entity_id</span><span class="p">]</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;PDB_ID&#39;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">PDB_ID</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;ENTITY_ID&#39;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="n">polymer_entity_id</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;CHAIN_ID&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                        <span class="n">CHAIN_ID</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_strand_id&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">CHAIN_ID</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;database_name&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">rcsb_container_identifiers</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_container_identifiers&#39;</span><span class="p">]</span>
-                        <span class="n">reference_sequence_identifiers</span> <span class="o">=</span> <span class="n">rcsb_container_identifiers</span><span class="p">[</span><span class="s1">&#39;reference_sequence_identifiers&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">reference_sequence_identifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">rcsb_gene_nameS_list</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">rcsb_entity_source_organism</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_source_organism&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">rcsb_entity_source_organism</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">rcsb_gene_name</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;rcsb_gene_name&#39;</span><span class="p">]</span>
-                        <span class="k">for</span> <span class="n">each_dict</span> <span class="ow">in</span> <span class="n">rcsb_gene_name</span><span class="p">:</span>
-                            <span class="n">gene_name</span> <span class="o">=</span> <span class="n">each_dict</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
-                            <span class="k">if</span> <span class="n">gene_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rcsb_gene_nameS_list</span><span class="p">:</span>
-                                <span class="n">rcsb_gene_nameS_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gene_name</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rcsb_gene_nameS_list</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-                    <span class="c1"># try:</span>
-                    <span class="c1">#     rcsb_gene_nameS_list = []</span>
-                    <span class="c1">#     for each_dict in self.overall_polymer_entity_dict.values():</span>
-                    <span class="c1">#         if len(each_dict) &gt; 3:</span>
-                    <span class="c1">#             entity_src_gen = each_dict[&#39;entity_src_gen&#39;]</span>
-                    <span class="c1">#             middle = entity_src_gen[0]</span>
-                    <span class="c1">#             all_names = (middle[&#39;pdbx_gene_src_gene&#39;]).split(&#39;, &#39;)</span>
-                    <span class="c1">#             for each in all_names:</span>
-                    <span class="c1">#                 rcsb_gene_nameS_list.append(each)</span>
-                    <span class="c1">#     return &#39;,&#39;.join(rcsb_gene_nameS_list)</span>
-                    <span class="c1"># except KeyError:</span>
-                    <span class="c1">#     try:</span>
-                    <span class="c1">#         for each_dict in self.overall_polymer_entity_dict.values():</span>
-                    <span class="c1">#             if len(each_dict) &gt; 3:</span>
-                    <span class="c1">#                 rcsb_entity_source_organism = each_dict[&#39;rcsb_entity_source_organism&#39;]</span>
-                    <span class="c1">#                 middle = rcsb_entity_source_organism[0]</span>
-                    <span class="c1">#         return middle[&#39;source_type&#39;]</span>
-                    <span class="c1">#     except KeyError:</span>
-                    <span class="c1">#         return &#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;database_accession&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">rcsb_container_identifiers</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_container_identifiers&#39;</span><span class="p">]</span>
-                        <span class="n">reference_sequence_identifiers</span> <span class="o">=</span> <span class="n">rcsb_container_identifiers</span><span class="p">[</span><span class="s1">&#39;reference_sequence_identifiers&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">reference_sequence_identifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">pdbx_seq_one_letter_code</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                        <span class="n">pdbx_seq_one_letter_code</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">pdbx_seq_one_letter_code</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;rcsb_uniprot_protein_sequence&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">uniprot_entity_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overall_uniprot_dict</span><span class="p">[</span><span class="n">polymer_entity_id</span><span class="p">]</span>
-                    <span class="n">SEQ</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniprot_entity_dict</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">uniprot_entity_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">rcsb_uniprot_protein</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;rcsb_uniprot_protein&#39;</span><span class="p">]</span>
-                        <span class="n">SEQ</span> <span class="o">=</span> <span class="n">rcsb_uniprot_protein</span><span class="p">[</span><span class="s1">&#39;sequence&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">SEQ</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                        <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_sample_sequence_length&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">sequence_length</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_entity_polymer_type&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;macromolecular_type&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;molecular_weight&#39;</span><span class="p">):</span>
-                <span class="n">entry_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">entry_info</span><span class="p">[</span><span class="s1">&#39;molecular_weight&#39;</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;experimental_method&#39;</span><span class="p">):</span>
-                <span class="n">entry_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">entry_info</span><span class="p">[</span><span class="s1">&#39;experimental_method&#39;</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;resolution_combined&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_info&#39;</span><span class="p">]</span>
-                    <span class="c1"># need to check if more than one value is ever reported</span>
-                    <span class="k">return</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;resolution_combined&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="c1"># elif (attribute == &#39;pdbx_seq_one_letter_code_can&#39;):</span>
-            <span class="c1">#     try:</span>
-
-            <span class="c1">#         for each_dict in self.overall_uniprot_dict.values():</span>
-            <span class="c1">#             if len(polymer_entity_dict) &lt; 3:</span>
-            <span class="c1">#                 middle = each_dict[0]</span>
-            <span class="c1">#                 rcsb_uniprot_protein = middle[&#39;rcsb_uniprot_protein&#39;]</span>
-            <span class="c1">#                 SEQ = rcsb_uniprot_protein[&#39;sequence&#39;]</span>
-            <span class="c1">#         REF_SEQ_POSITIONS_DICT = {&#39;Beginning Position on PDB Sequence&#39;: &#39;&#39;, &#39;Ref Sequence Length&#39;: &#39;&#39;}</span>
-            <span class="c1">#         for each_dict in self.overall_polymer_entity_dict.values():</span>
-            <span class="c1">#             if len(each_dict) &gt; 3:</span>
-            <span class="c1">#                 entity_align = each_dict[&#39;rcsb_polymer_entity_align&#39;]</span>
-            <span class="c1">#                 middle = entity_align[0]</span>
-            <span class="c1">#                 aligned_info = middle[&#39;aligned_regions&#39;]</span>
-            <span class="c1">#                 middle2 = aligned_info[0]</span>
-            <span class="c1">#                 REF_SEQ_POSITIONS_DICT[&#39;Beginning Position on PDB Sequence&#39;] = middle2[&#39;entity_beg_seq_id&#39;]</span>
-            <span class="c1">#                 REF_SEQ_POSITIONS_DICT[&#39;Ref Sequence Length&#39;] = middle2[&#39;length&#39;]</span>
-            <span class="c1">#         beg_number = REF_SEQ_POSITIONS_DICT[&#39;Beginning Position on PDB Sequence&#39;]-1</span>
-            <span class="c1">#         end_number = beg_number + REF_SEQ_POSITIONS_DICT[&#39;Ref Sequence Length&#39;]</span>
-            <span class="c1">#         return SEQ[beg_number:end_number]</span>
-            <span class="c1">#     except KeyError:</span>
-            <span class="c1">#         return &#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">SEQ</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                        <span class="n">SEQ</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;pdbx_seq_one_letter_code_can&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">SEQ</span>
-                    <span class="c1"># uniprot_entity_dict = self.overall_uniprot_dict[polymer_entity_id]</span>
-                    <span class="c1"># if len(uniprot_entity_dict) &lt; 3:</span>
-                    <span class="c1">#     middle = each_dict[0]</span>
-                    <span class="c1">#     rcsb_uniprot_protein = middle[&#39;rcsb_uniprot_protein&#39;]</span>
-                    <span class="c1">#     SEQ = rcsb_uniprot_protein[&#39;sequence&#39;]</span>
-                    <span class="c1"># REF_SEQ_POSITIONS_DICT = {&#39;Beginning Position on Cannonical Sequence&#39;: &#39;&#39;, &#39;Ref Sequence Length&#39;: &#39;&#39;}</span>
-                    <span class="c1"># if len(polymer_entity_dict) &gt; 3:</span>
-                    <span class="c1">#     entity_align = polymer_entity_dict[&#39;rcsb_polymer_entity_align&#39;]</span>
-                    <span class="c1">#     middle = entity_align[0]</span>
-                    <span class="c1">#     aligned_info = middle[&#39;aligned_regions&#39;]</span>
-                    <span class="c1">#     middle2 = aligned_info[0]</span>
-                    <span class="c1">#     REF_SEQ_POSITIONS_DICT[&#39;Beginning Position on Cannonical Sequence&#39;] = middle2[&#39;ref_beg_seq_id&#39;]</span>
-                    <span class="c1">#     REF_SEQ_POSITIONS_DICT[&#39;Ref Sequence Length&#39;] = middle2[&#39;length&#39;]</span>
-                    <span class="c1"># beg_number = REF_SEQ_POSITIONS_DICT[&#39;Beginning Position on Cannonical Sequence&#39;]-1</span>
-                    <span class="c1"># end_number = beg_number + REF_SEQ_POSITIONS_DICT[&#39;Ref Sequence Length&#39;]</span>
-                    <span class="c1"># return SEQ[beg_number:end_number]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
-                        <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;entity_beg_seq_id&#39;</span><span class="p">])</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
-                        <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;ref_beg_seq_id&#39;</span><span class="p">])</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;aligned_regions_length&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_align</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity_align&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_align</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">aligned_info</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;aligned_regions&#39;</span><span class="p">]</span>
-                        <span class="n">middle2</span> <span class="o">=</span> <span class="n">aligned_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">middle2</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span> <span class="p">)</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">entity_src_gen</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_src_gen&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">entity_src_gen</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">species</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_gene_src_scientific_name&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">species</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;mutations exist (Y/N)&#39;</span><span class="p">):</span>
-                <span class="n">mutation_count</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                    <span class="n">mutation_count</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">mutation_count</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;Y&#39;</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="n">entity_poly</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">]</span>
-                    <span class="n">mutation_count</span> <span class="o">=</span> <span class="n">entity_poly</span><span class="p">[</span><span class="s1">&#39;rcsb_mutation_count&#39;</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">mutation_count</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;modifications locations&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mod_locations</span><span class="p">(</span><span class="n">polymer_entity_id</span><span class="o">=</span><span class="n">polymer_entity_id</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-                            <span class="k">return</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;modifications&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mod_types</span><span class="p">(</span><span class="n">polymer_entity_id</span><span class="o">=</span><span class="n">polymer_entity_id</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">types</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-                            <span class="k">return</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">types</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>                
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;mutations locations&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
-                        <span class="n">mutation</span> <span class="o">=</span> <span class="n">polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
-                        <span class="n">locations</span> <span class="o">=</span> <span class="p">[]</span>
-                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">mutation</span><span class="p">:</span>
-                            <span class="n">locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:(</span><span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
-                        <span class="n">location</span> <span class="o">=</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">location</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;pdbx_mutation joined&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
-                        <span class="n">mutation</span> <span class="o">=</span> <span class="n">polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">mutation</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;deposit_date&#39;</span><span class="p">):</span>
-                <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_accession_info&#39;</span><span class="p">]</span>
-                <span class="n">DEPOSITED_DATE</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s1">&#39;deposit_date&#39;</span><span class="p">][:</span><span class="mi">10</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">DEPOSITED_DATE</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;audit_author_name&#39;</span><span class="p">):</span> <span class="c1">#fixed</span>
-                <span class="n">AUTHORS_LIST</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">temp_authors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;audit_author&#39;</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">each</span> <span class="ow">in</span> <span class="n">temp_authors</span><span class="p">:</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="n">each</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
-                    <span class="n">AUTHORS_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="n">final_string</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">AUTHORS_LIST</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">final_string</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s1">&#39;title&#39;</span><span class="p">):</span>
-                <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
-                <span class="n">TITLE</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">TITLE</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
-                    <span class="n">DOI</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">DOI</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;citation&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">DOI</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_doi&#39;</span><span class="p">]</span>
-                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_primary_citation&#39;</span><span class="p">]</span>
-                    <span class="n">PUBMED_ID</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_pub_med&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">PUBMED_ID</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">citation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entry_dict</span><span class="p">[</span><span class="s1">&#39;citation&#39;</span><span class="p">]</span>
-                        <span class="n">middle</span> <span class="o">=</span> <span class="n">citation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">DOI</span> <span class="o">=</span> <span class="n">middle</span><span class="p">[</span><span class="s1">&#39;pdbx_database_id_PubMed&#39;</span><span class="p">]</span>
-                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="s1">&#39;not found&#39;</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">attribute</span> <span class="o">==</span> <span class="s2">&quot;pdbx_description&quot;</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">polymer_entity_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">rcsb_polymer_entity</span> <span class="o">=</span> <span class="n">polymer_entity_dict</span><span class="p">[</span><span class="s1">&#39;rcsb_polymer_entity&#39;</span><span class="p">]</span>
-                    <span class="k">return</span> <span class="n">rcsb_polymer_entity</span><span class="p">[</span><span class="s1">&#39;pdbx_description&#39;</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="s1">&#39;N/A&#39;</span></div>
-</div>
-</div>
-
-
-
-
+        
 <div class="viewcode-block" id="generateStructureRefFile_fromUniprotFile">
 <a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.generateStructureRefFile_fromUniprotFile">[docs]</a>
 <span class="k">def</span> <span class="nf">generateStructureRefFile_fromUniprotFile</span><span class="p">(</span><span class="n">uniprotRefFile</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">):</span>
@@ -760,9 +696,16 @@
     <span class="n">generateStructureRefFile</span><span class="p">(</span><span class="n">PDB_IDs</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">)</span>    </div>
 
 
+<span class="k">def</span> <span class="nf">progress_bar</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">bar_length</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="n">fraction</span> <span class="o">=</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span>
 
-<div class="viewcode-block" id="generateStructureRefFile">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.generateStructureRefFile">[docs]</a>
+    <span class="n">arrow</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fraction</span> <span class="o">*</span> <span class="n">bar_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="s1">&#39;&gt;&#39;</span>
+    <span class="n">padding</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bar_length</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">arrow</span><span class="p">))</span> <span class="o">*</span> <span class="s1">&#39; &#39;</span>
+
+    <span class="n">ending</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">total</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Progress: [</span><span class="si">{</span><span class="n">arrow</span><span class="si">}{</span><span class="n">padding</span><span class="si">}</span><span class="s1">] </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">fraction</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">ending</span><span class="p">)</span>
+
 <span class="k">def</span> <span class="nf">generateStructureRefFile</span><span class="p">(</span><span class="n">PDB_IDs</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Creates a PDB Structure Reference File</span>
@@ -776,15 +719,37 @@
 <span class="sd">    -------</span>
 <span class="sd">        .csv Structure reference file with relevant metadata</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-
-    <span class="n">interface</span> <span class="o">=</span> <span class="n">PDB_interface</span><span class="p">(</span><span class="n">PDB_IDs</span><span class="p">)</span>
-    <span class="n">interface</span><span class="o">.</span><span class="n">print_output_csv</span><span class="p">(</span><span class="n">outputFile</span><span class="p">)</span>
-    <span class="c1">#interface.get_output_xlsx(outputFile)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Structure Reference File successfully created!&#39;</span><span class="p">)</span></div>
-
+    <span class="n">dict_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bad_PDBs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">PDB_ID</span> <span class="ow">in</span> <span class="n">PDB_IDs</span><span class="p">:</span>
+        <span class="c1">#This can have a lot of fetching time, we would like to print to let the user</span>
+        <span class="c1"># know what the status is of the job fetch. </span>
+        <span class="n">progress_bar</span><span class="p">(</span><span class="n">PDB_IDs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">PDB_IDs</span><span class="p">))</span>
+        <span class="n">interface</span> <span class="o">=</span> <span class="n">PDB_interface</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span>
+        <span class="n">ERROR</span><span class="p">,</span> <span class="n">annotations</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
+        <span class="c1"># reiteration attempt - in case of connectivity issue. </span>
+        <span class="n">num_attempts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_attempts</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="k">while</span> <span class="n">ERROR</span> <span class="ow">and</span> <span class="n">num_attempts</span> <span class="o">&lt;</span> <span class="n">max_attempts</span><span class="p">:</span>
+            <span class="n">ERROR</span><span class="p">,</span> <span class="n">annotations</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">get_anno_dict</span><span class="p">()</span>
+            <span class="n">num_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ERROR</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">annotation</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">:</span> <span class="c1">#multiple entities can come back and each should become something in a dataframe</span>
+                <span class="n">dict_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bad_PDBs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dict_list</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">COLUMNS</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     
-<div class="viewcode-block" id="download_cifFile">
-<a class="viewcode-back" href="../../PDB.html#CoDIAC.PDB.download_cifFile">[docs]</a>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Structure Reference File successfully created!&#39;</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bad_PDBs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All PDBs successfully fetched&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not fetch the following PDBs, these encountered errors, despite retrying </span><span class="si">%d</span><span class="s2"> times:&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">max_attempts</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">bad_PDBs</span><span class="p">)</span>
+    <span class="c1">#interface.print_output_csv(outputFile)</span>
+    <span class="k">return</span> <span class="n">dict_list</span><span class="p">,</span> <span class="n">bad_PDBs</span>
+    
 <span class="k">def</span> <span class="nf">download_cifFile</span><span class="p">(</span><span class="n">PDB_list</span><span class="p">,</span> <span class="n">PATH</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;generates .cif files for PDB structures</span>
 <span class="sd">    </span>
@@ -805,8 +770,7 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cif_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
         
-    <span class="k">return</span> <span class="n">cif_path</span></div>
-
+    <span class="k">return</span> <span class="n">cif_path</span>
 </pre></div>
 
             <div class="clearer"></div>

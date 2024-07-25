@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>STEP 1: Generate CIF files &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    
+    <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Generate CIF files</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">AlphaFold</span>
+</pre></div>
+</div>
+</div>
+<section id="STEP-1:-Generate-CIF-files">
+<h1>STEP 1: Generate CIF files<a class="headerlink" href="#STEP-1:-Generate-CIF-files" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">refUniprot_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/Uniprot_Reference/SH2_IPR000980_uniprot_reference.csv&#39;</span>
+<span class="n">outputDir</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/cifFiles/&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">AlphaFold</span><span class="o">.</span><span class="n">get_cifFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  393k    0  393k    0     0   474k      0 --:--:-- --:--:-- --:--:--  475k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  641k    0  641k    0     0  1050k      0 --:--:-- --:--:-- --:--:-- 1050k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  532k    0  532k    0     0  2463k      0 --:--:-- --:--:-- --:--:-- 2475k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  182k    0  182k    0     0   356k      0 --:--:-- --:--:-- --:--:--  357k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  496k    0  496k    0     0  1466k      0 --:--:-- --:--:-- --:--:-- 1467k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  203k    0  203k    0     0   365k      0 --:--:-- --:--:-- --:--:--  364k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  466k    0  466k    0     0   763k      0 --:--:-- --:--:-- --:--:--  762k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  129k    0  129k    0     0   198k      0 --:--:-- --:--:-- --:--:--  198k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1116k    0 1116k    0     0  1518k      0 --:--:-- --:--:-- --:--:-- 1518k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  193k    0  193k    0     0   446k      0 --:--:-- --:--:-- --:--:--  445k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  344k    0  344k    0     0   700k      0 --:--:-- --:--:-- --:--:--  701k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1051k    0 1051k    0     0  1793k      0 --:--:-- --:--:-- --:--:-- 1793k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  120k    0  120k    0     0   272k      0 --:--:-- --:--:-- --:--:--  273k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  479k    0  479k    0     0  1005k      0 --:--:-- --:--:-- --:--:-- 1007k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  305k    0  305k    0     0   589k      0 --:--:-- --:--:-- --:--:--  589k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  719k    0  719k    0     0  2951k      0 --:--:-- --:--:-- --:--:-- 2960k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  987k    0  987k    0     0  1370k      0 --:--:-- --:--:-- --:--:-- 1370k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  460k    0  460k    0     0  2289k      0 --:--:-- --:--:-- --:--:-- 2292k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  481k    0  481k    0     0   814k      0 --:--:-- --:--:-- --:--:--  814k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  736k    0  736k    0     0  1119k      0 --:--:-- --:--:-- --:--:-- 1121k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  481k    0  481k    0     0   830k      0 --:--:-- --:--:-- --:--:--  830k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  464k    0  464k    0     0   768k      0 --:--:-- --:--:-- --:--:--  767k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  471k    0  471k    0     0  2298k      0 --:--:-- --:--:-- --:--:-- 2301k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  471k    0  471k    0     0   635k      0 --:--:-- --:--:-- --:--:--  635k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  475k    0  475k    0     0   846k      0 --:--:-- --:--:-- --:--:--  848k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  767k    0  767k    0     0  1168k      0 --:--:-- --:--:-- --:--:-- 1169k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  420k    0  420k    0     0   575k      0 --:--:-- --:--:-- --:--:--  574k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  343k    0  343k    0     0   516k      0 --:--:-- --:--:-- --:--:--  515k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  735k    0  735k    0     0  1192k      0 --:--:-- --:--:-- --:--:-- 1193k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1199k    0 1199k    0     0  1695k      0 --:--:-- --:--:-- --:--:-- 1696k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1206k    0 1206k    0     0  1456k      0 --:--:-- --:--:-- --:--:-- 1455k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  939k    0  939k    0     0  1191k      0 --:--:-- --:--:-- --:--:-- 1190k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1069k    0 1069k    0     0  1514k      0 --:--:-- --:--:-- --:--:-- 1514k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  654k    0  654k    0     0   942k      0 --:--:-- --:--:-- --:--:--  942k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  533k    0  533k    0     0  2440k      0 --:--:-- --:--:-- --:--:-- 2446k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  495k    0  495k    0     0  2582k      0 --:--:-- --:--:-- --:--:-- 2592k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1077k    0 1077k    0     0  1745k      0 --:--:-- --:--:-- --:--:-- 1745k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  687k    0  687k    0     0  1058k      0 --:--:-- --:--:-- --:--:-- 1057k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  403k    0  403k    0     0  1752k      0 --:--:-- --:--:-- --:--:-- 1762k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  683k    0  683k    0     0  1097k      0 --:--:-- --:--:-- --:--:-- 1096k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  735k    0  735k    0     0  1233k      0 --:--:-- --:--:-- --:--:-- 1234k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  709k    0  709k    0     0  1184k      0 --:--:-- --:--:-- --:--:-- 1184k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  448k    0  448k    0     0  2174k      0 --:--:-- --:--:-- --:--:-- 2177k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  579k    0  579k    0     0   970k      0 --:--:-- --:--:-- --:--:--  970k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  483k    0  483k    0     0   830k      0 --:--:-- --:--:-- --:--:--  831k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1030k    0 1030k    0     0  1574k      0 --:--:-- --:--:-- --:--:-- 1575k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  462k    0  462k    0     0   880k      0 --:--:-- --:--:-- --:--:--  880k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  550k    0  550k    0     0  2717k      0 --:--:-- --:--:-- --:--:-- 2725k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  568k    0  568k    0     0   934k      0 --:--:-- --:--:-- --:--:--  933k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  274k    0  274k    0     0   509k      0 --:--:-- --:--:-- --:--:--  510k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  273k    0  273k    0     0   499k      0 --:--:-- --:--:-- --:--:--  499k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  457k    0  457k    0     0   774k      0 --:--:-- --:--:-- --:--:--  774k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  703k    0  703k    0     0  1121k      0 --:--:-- --:--:-- --:--:-- 1121k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  612k    0  612k    0     0  2571k      0 --:--:-- --:--:-- --:--:-- 2582k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1010k    0 1010k    0     0  1399k      0 --:--:-- --:--:-- --:--:-- 1399k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  763k    0  763k    0     0  1128k      0 --:--:-- --:--:-- --:--:-- 1129k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  791k    0  791k    0     0  3190k      0 --:--:-- --:--:-- --:--:-- 3190k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  425k    0  425k    0     0   691k      0 --:--:-- --:--:-- --:--:--  692k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  207k    0  207k    0     0   429k      0 --:--:-- --:--:-- --:--:--  428k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  490k    0  490k    0     0   865k      0 --:--:-- --:--:-- --:--:--  865k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  489k    0  489k    0     0   555k      0 --:--:-- --:--:-- --:--:--  554k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  535k    0  535k    0     0  2481k      0 --:--:-- --:--:-- --:--:-- 2491k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  599k    0  599k    0     0  2671k      0 --:--:-- --:--:-- --:--:-- 2678k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  566k    0  566k    0     0   928k      0 --:--:-- --:--:-- --:--:--  927k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  473k    0  473k    0     0   718k      0 --:--:-- --:--:-- --:--:--  717k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  252k    0  252k    0     0   400k      0 --:--:-- --:--:-- --:--:--  400k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  528k    0  528k    0     0   935k      0 --:--:-- --:--:-- --:--:--  935k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  208k  100  208k    0     0  1179k      0 --:--:-- --:--:-- --:--:-- 1185k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  659k    0  659k    0     0   764k      0 --:--:-- --:--:-- --:--:--  764k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  412k    0  412k    0     0   515k      0 --:--:-- --:--:-- --:--:--  515k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  482k    0  482k    0     0   605k      0 --:--:-- --:--:-- --:--:--  605k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  472k    0  472k    0     0   871k      0 --:--:-- --:--:-- --:--:--  870k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  671k    0  671k    0     0  1196k      0 --:--:-- --:--:-- --:--:-- 1197k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  434k    0  434k    0     0   689k      0 --:--:-- --:--:-- --:--:--  689k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  405k    0  405k    0     0   620k      0 --:--:-- --:--:-- --:--:--  620k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  426k    0  426k    0     0   776k      0 --:--:-- --:--:-- --:--:--  777k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1235k    0 1235k    0     0  1692k      0 --:--:-- --:--:-- --:--:-- 1692k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1255k    0 1255k    0     0  1194k      0 --:--:--  0:00:01 --:--:-- 1196k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  537k    0  537k    0     0   966k      0 --:--:-- --:--:-- --:--:--  967k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  372k    0  372k    0     0   633k      0 --:--:-- --:--:-- --:--:--  633k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1604k    0 1604k    0     0  1874k      0 --:--:-- --:--:-- --:--:-- 1874k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  370k    0  370k    0     0  2019k      0 --:--:-- --:--:-- --:--:-- 2025k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  160k    0  160k    0     0   260k      0 --:--:-- --:--:-- --:--:--  261k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  390k    0  390k    0     0   723k      0 --:--:-- --:--:-- --:--:--  724k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  598k    0  598k    0     0  1032k      0 --:--:-- --:--:-- --:--:-- 1032k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  736k    0  736k    0     0  1135k      0 --:--:-- --:--:-- --:--:-- 1137k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  837k    0  837k    0     0  1249k      0 --:--:-- --:--:-- --:--:-- 1251k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  115k    0  115k    0     0   247k      0 --:--:-- --:--:-- --:--:--  247k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  399k    0  399k    0     0   543k      0 --:--:-- --:--:-- --:--:--  543k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  398k    0  398k    0     0   633k      0 --:--:-- --:--:-- --:--:--  634k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  778k    0  778k    0     0  1173k      0 --:--:-- --:--:-- --:--:-- 1172k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  503k    0  503k    0     0  2427k      0 --:--:-- --:--:-- --:--:-- 2434k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  428k    0  428k    0     0   524k      0 --:--:-- --:--:-- --:--:--  524k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1070k    0 1070k    0     0  1569k      0 --:--:-- --:--:-- --:--:-- 1567k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  307k    0  307k    0     0   561k      0 --:--:-- --:--:-- --:--:--  561k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  310k    0  310k    0     0  1732k      0 --:--:-- --:--:-- --:--:-- 1736k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  497k    0  497k    0     0   920k      0 --:--:-- --:--:-- --:--:--  921k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  434k    0  434k    0     0  2309k      0 --:--:-- --:--:-- --:--:-- 2321k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  233k    0  233k    0     0   526k      0 --:--:-- --:--:-- --:--:--  527k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  415k    0  415k    0     0   729k      0 --:--:-- --:--:-- --:--:--  729k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1498k    0 1498k    0     0  1507k      0 --:--:-- --:--:-- --:--:-- 1507k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  343k    0  343k    0     0   595k      0 --:--:-- --:--:-- --:--:--  594k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  622k    0  622k    0     0  2170k      0 --:--:-- --:--:-- --:--:-- 2176k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  232k  100  232k    0     0  1368k      0 --:--:-- --:--:-- --:--:-- 1373k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  357k    0  357k    0     0   687k      0 --:--:-- --:--:-- --:--:--  687k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  764k    0  764k    0     0  1194k      0 --:--:-- --:--:-- --:--:-- 1193k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  274k    0  274k    0     0   479k      0 --:--:-- --:--:-- --:--:--  480k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  260k    0  260k    0     0   488k      0 --:--:-- --:--:-- --:--:--  488k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  498k    0  498k    0     0   643k      0 --:--:-- --:--:-- --:--:--  643k
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-2:-Using-the-mmcif-files,-generate-AlphaFold-reference-csv-file">
+<h1>STEP 2: Using the mmcif files, generate AlphaFold reference csv file<a class="headerlink" href="#STEP-2:-Using-the-mmcif-files,-generate-AlphaFold-reference-csv-file" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cifFile_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/cifFiles/&#39;</span>
+<span class="n">outputFile</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/SH2_AlphaFold_reference.csv&#39;</span>
+<span class="n">AlphaFold</span><span class="o">.</span><span class="n">makeRefFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">cifFile_path</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+A6NKC9
+AF-A6NKC9-F1 - SH2D7
+O00459
+AF-O00459-F1 - PIK3R2
+O14492
+AF-O14492-F1 - SH2B2
+O14508
+AF-O14508-F1 - SOCS2
+O14512
+AF-O14512-F1 - SOCS7
+O14543
+AF-O14543-F1 - SOCS3
+O14544
+AF-O14544-F1 - SOCS6
+O14796
+AF-O14796-F1 - SH2D1B
+O15357
+AF-O15357-F1 - INPPL1
+O15524
+AF-O15524-F1 - SOCS1
+O43639
+AF-O43639-F1 - NCK2
+O60674
+AF-O60674-F1 - JAK2
+O60880
+AF-O60880-F1 - SH2D1A
+O75159
+AF-O75159-F1 - SOCS5
+O75791
+AF-O75791-F1 - GRAP2
+O75815
+AF-O75815-F1 - BCAR3
+P00519
+AF-P00519-F1 - ABL1
+P06239
+AF-P06239-F1 - LCK
+P06241
+AF-P06241-F1 - FYN
+P07332
+AF-P07332-F1 - FES
+P07947
+AF-P07947-F1 - YES1
+P07948
+AF-P07948-F1 - LYN
+P08631
+AF-P08631-F1 - HCK
+P09769
+AF-P09769-F1 - FGR
+P12931
+AF-P12931-F1 - SRC
+P15498
+AF-P15498-F1 - VAV1
+P15882
+AF-P15882-F1 - CHN1
+P16333
+AF-P16333-F1 - NCK1
+P16591
+AF-P16591-F1 - FER
+P16885
+AF-P16885-F1 - PLCG2
+P19174
+AF-P19174-F1 - PLCG1
+P20936
+AF-P20936-F1 - RASA1
+P23458
+AF-P23458-F1 - JAK1
+P27986
+AF-P27986-F1 - PIK3R1
+P29350
+AF-P29350-F1 - PTPN6
+P29353
+AF-P29353-F1 - SHC1
+P29597
+AF-P29597-F1 - TYK2
+P40763
+AF-P40763-F1 - STAT3
+P41240
+AF-P41240-F1 - CSK
+P42224
+AF-P42224-F1 - STAT1
+P42226
+AF-P42226-F1 - STAT6
+P42229
+AF-P42229-F1 - STAT5A
+P42679
+AF-P42679-F1 - MATK
+P42680
+AF-P42680-F1 - TEC
+P42681
+AF-P42681-F1 - TXK
+P42684
+AF-P42684-F1 - ABL2
+P42685
+AF-P42685-F1 - FRK
+P43403
+AF-P43403-F1 - ZAP70
+P43405
+AF-P43405-F1 - SYK
+P46108
+AF-P46108-F1 - CRK
+P46109
+AF-P46109-F1 - CRKL
+P51451
+AF-P51451-F1 - BLK
+P51692
+AF-P51692-F1 - STAT5B
+P51813
+AF-P51813-F1 - BMX
+P52333
+AF-P52333-F1 - JAK3
+P52630
+AF-P52630-F1 - STAT2
+P52735
+AF-P52735-F1 - VAV2
+P52757
+AF-P52757-F1 - CHN2
+P62993
+AF-P62993-F1 - GRB2
+P78314
+AF-P78314-F1 - SH3BP2
+P98077
+AF-P98077-F1 - SHC2
+Q06124
+AF-Q06124-F1 - PTPN11
+Q06187
+AF-Q06187-F1 - BTK
+Q08881
+AF-Q08881-F1 - ITK
+Q13094
+AF-Q13094-F1 - LCP2
+Q13239
+AF-Q13239-F1 - SLA
+Q13322
+AF-Q13322-F1 - GRB10
+Q13588
+AF-Q13588-F1 - GRAP
+Q13671
+AF-Q13671-F1 - RIN1
+Q13882
+AF-Q13882-F1 - PTK6
+Q14449
+AF-Q14449-F1 - GRB14
+Q14451
+AF-Q14451-F1 - GRB7
+Q14765
+AF-Q14765-F1 - STAT4
+Q15464
+AF-Q15464-F1 - SHB
+Q5SQS7
+AF-Q5SQS7-F1 - SH2D4B
+Q5VZ18
+AF-Q5VZ18-F1 - SHE
+Q63HR2
+AF-Q63HR2-F1 - TNS2
+Q68CZ2
+AF-Q68CZ2-F1 - TNS3
+Q6S5L8
+AF-Q6S5L8-F1 - SHC4
+Q6ZV89
+AF-Q6ZV89-F1 - SH2D5
+Q7KZ85
+AF-Q7KZ85-F1 - SUPT6H
+Q7M4L6
+AF-Q7M4L6-F1 - SHF
+Q7Z4S9
+AF-Q7Z4S9-F1 - SH2D6
+Q7Z7G1
+AF-Q7Z7G1-F1 - CLNK
+Q8IZW8
+AF-Q8IZW8-F1 - TNS4
+Q8N5H7
+AF-Q8N5H7-F1 - SH2D3C
+Q8TB24
+AF-Q8TB24-F1 - RIN3
+Q8TC17
+AF-Q8TC17-F1 - GRAPL
+Q8WV28
+AF-Q8WV28-F1 - BLNK
+Q8WXH5
+AF-Q8WXH5-F1 - SOCS4
+Q8WYP3
+AF-Q8WYP3-F1 - RIN2
+Q92529
+AF-Q92529-F1 - SHC3
+Q92569
+AF-Q92569-F1 - PIK3R3
+Q92835
+AF-Q92835-F1 - INPP5D
+Q96IW2
+AF-Q96IW2-F1 - SHD
+Q96JZ2
+AF-Q96JZ2-F1 - HSH2D
+Q9BRG2
+AF-Q9BRG2-F1 - SH2D3A
+Q9H3Y6
+AF-Q9H3Y6-F1 - SRMS
+Q9H6Q3
+AF-Q9H6Q3-F1 - SLA2
+Q9H788
+AF-Q9H788-F1 - SH2D4A
+Q9HBL0
+AF-Q9HBL0-F1 - TNS1
+Q9NP31
+AF-Q9NP31-F1 - SH2D2A
+Q9NRF2
+AF-Q9NRF2-F1 - SH2B1
+Q9NSE2
+AF-Q9NSE2-F1 - CISH
+Q9UGK3
+AF-Q9UGK3-F1 - STAP2
+Q9UKW4
+AF-Q9UKW4-F1 - VAV3
+Q9ULZ2
+AF-Q9ULZ2-F1 - STAP1
+Q9UN19
+AF-Q9UN19-F1 - DAPP1
+Q9UQQ2
+AF-Q9UQQ2-F1 - SH2B3
+</pre></div></div>
+</div>
+<section id="*Manually-removed-'Spt6_SH2_C:IPR035018:1424,1515,0,0'-domain-from-SUPTH6-since-this-is-overlaps-with-the-neighboring-SH2-domain-boundary">
+<h2>*Manually removed ‘Spt6_SH2_C:IPR035018:1424,1515,0,0’ domain from SUPTH6 since this is overlaps with the neighboring SH2 domain boundary<a class="headerlink" href="#*Manually-removed-'Spt6_SH2_C:IPR035018:1424,1515,0,0'-domain-from-SUPTH6-since-this-is-overlaps-with-the-neighboring-SH2-domain-boundary" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+<section id="STEP-3:-Generate-json-files-using-Arppegio-(not-shown-here)">
+<h1>STEP 3: Generate json files using Arppegio (not shown here)<a class="headerlink" href="#STEP-3:-Generate-json-files-using-Arppegio-(not-shown-here)" title="Link to this heading">¶</a></h1>
+</section>
+<section id="STEP-4:-Generate-domain-domain-contact-maps">
+<h1>STEP 4: Generate domain-domain contact maps<a class="headerlink" href="#STEP-4:-Generate-domain-domain-contact-maps" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">contactMap</span> <span class="k">as</span> <span class="n">cm</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">PDBHelper</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">pTyrLigand_helpers</span> <span class="k">as</span> <span class="n">pTyr_helpers</span>
+
+<span class="n">PATH</span> <span class="o">=</span> <span class="s1">&#39;./Data/Adjacency_files/&#39;</span> <span class="c1">#this is where you can find the adjacency files</span>
+<span class="n">ann_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/SH2_AlphaFold_reference.csv&#39;</span> <span class="c1">#this is the annotation file</span>
+<span class="n">PDB_ID</span> <span class="o">=</span> <span class="s1">&#39;AF-O14508-F1&#39;</span> <span class="c1">#SOCS family protein</span>
+<span class="n">ann</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">ann_file</span><span class="p">)</span>
+<span class="n">entities</span> <span class="o">=</span> <span class="n">PDBHelper</span><span class="o">.</span><span class="n">PDBEntitiesClass</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span>
+<span class="n">entity</span> <span class="o">=</span><span class="mi">1</span> <span class="c1">#there&#39;s only one entity in this example</span>
+<span class="n">pdbClass</span> <span class="o">=</span> <span class="n">entities</span><span class="o">.</span><span class="n">pdb_dict</span><span class="p">[</span><span class="n">entity</span><span class="p">]</span> <span class="c1">#this holds information about the protein crystalized, such as domains</span>
+<span class="n">chain_A</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">chainMap</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+<span class="n">chain_A</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="n">PATH</span><span class="p">)</span>
+<span class="n">chain_A_aligned</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">chain_A</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">)</span>
+<span class="n">ROI_1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">46</span><span class="p">,</span> <span class="mi">156</span><span class="p">]</span> <span class="c1">#SH2 domain</span>
+<span class="n">ROI_2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">151</span><span class="p">,</span> <span class="mi">197</span><span class="p">]</span> <span class="c1">#socsbox domain</span>
+<span class="n">fastaHeader</span> <span class="o">=</span> <span class="s1">&#39;SH2|SOCS_box&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">ROI_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span> <span class="n">ROI_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;O14508|SOCS2|1|46|156&#39;</span><span class="p">,</span> <span class="s1">&#39;SOCS_box&#39;</span><span class="p">,</span>
+                                         <span class="s1">&#39;./Data/Feature_Fasta_files/SH2_interdomain_Afold&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">STEP 1: Generate CIF files</a></li>
+<li><a class="reference internal" href="#STEP-2:-Using-the-mmcif-files,-generate-AlphaFold-reference-csv-file">STEP 2: Using the mmcif files, generate AlphaFold reference csv file</a><ul>
+<li><a class="reference internal" href="#*Manually-removed-'Spt6_SH2_C:IPR035018:1424,1515,0,0'-domain-from-SUPTH6-since-this-is-overlaps-with-the-neighboring-SH2-domain-boundary">*Manually removed ‘Spt6_SH2_C:IPR035018:1424,1515,0,0’ domain from SUPTH6 since this is overlaps with the neighboring SH2 domain boundary</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#STEP-3:-Generate-json-files-using-Arppegio-(not-shown-here)">STEP 3: Generate json files using Arppegio (not shown here)</a></li>
+<li><a class="reference internal" href="#STEP-4:-Generate-domain-domain-contact-maps">STEP 4: Generate domain-domain contact maps</a></li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/Examples/AlphaFold_contactmapping.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Generate CIF files</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

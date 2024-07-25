@@ -1,0 +1,239 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from CoDIAC import featureTools, InterPro, UniProt, PDB, IntegrateStructure_Reference, PTM, translateFeatures, jalviewFunctions\n",
+    "import CoDIAC\n",
+    "import pandas as pd\n",
+    "Interpro_ID = 'IPR000980' #IPR000980 is the SH2 domain superfamily\n",
+    "\n",
+    "#We will be creating a lot of files, this is how we would like them to be named\n",
+    "data_root = 'Data/'\n",
+    "name_root = 'SH2_'+Interpro_ID\n",
+    "\n",
+    "# The files we will make in this process (so that different pieces of code can be run below as needed)\n",
+    "uniprot_reference_file = data_root+'Uniprot_Reference/'+name_root+'_uniprot_reference.csv' # The uniprot reference\n",
+    "fasta_long_header_file = data_root + 'Uniprot_Reference/' + name_root+'_long_header.fasta'\n",
+    "fasta_file = data_root + 'Uniprot_Reference/' + name_root+'.fasta'\n",
+    "#note: in addition to these 3 files, this also makes a mapping file for movng between fasta_long_header_file and fasta_file\n",
+    "\n",
+    "#PDB Files we'll make in this process\n",
+    "PDB_file = data_root + 'PDB_Reference/' + name_root + '_PDB.csv'\n",
+    "PDB_file_annotated = data_root+ 'PDB_Reference/' + name_root + '_PDB_annotated.csv'\n",
+    "PDB_file_filtered = data_root + 'PDB_Reference/' + name_root + '_PDB_reference.csv' #The final PDB structure file, containing only filtered proteins\n",
+    "\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### STEP 1: Get all Uniprot IDs that match a family of interest\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Fetched 109 Uniprot IDs linked to IPR000980, where count expected to be 109\n"
+     ]
+    }
+   ],
+   "source": [
+    "uniprot_IDs, species_dict = CoDIAC.InterPro.fetch_uniprotids(Interpro_ID, REVIEWED=True, species='Homo sapiens')"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### STEP 2: Make a human reference file of the family of interest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Domain Reference File successfully created!\n",
+      "Adding Interpro Domains\n",
+      "Fetching domains..\n",
+      "Appending domains to file..\n",
+      "Interpro metadata succesfully incorporated\n"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "uniprot_df = CoDIAC.UniProt.makeRefFile(uniprot_IDs, uniprot_reference_file)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Manually checked Uniprot reference file for errors/issues. Found Uniprot and Interpro generally agreeing, with Interpro adding additional domains of interest.\n",
+    "Manually removed the alpha-helix region termed \"PI3K_P85_iSH2:IPR032498\" in the Interpro file for \n",
+    "\n",
+    "P27986,PIK3R1\n",
+    "\n",
+    "Q92569,PIK3R3\n",
+    "\n",
+    "O00459,PIK3R2\n",
+    "\n"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### STEP 3: Get all PDBs that exist for the reference proteins of interest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "6GMH is not a valid PDB ID\n",
+      "6TED is not a valid PDB ID\n",
+      "7OOP is not a valid PDB ID\n",
+      "7OPC is not a valid PDB ID\n",
+      "7OPD is not a valid PDB ID\n",
+      "5RXU is not a valid PDB ID\n",
+      "5RXV is not a valid PDB ID\n",
+      "5RXW is not a valid PDB ID\n",
+      "5RXX is not a valid PDB ID\n",
+      "5RXY is not a valid PDB ID\n",
+      "5RXZ is not a valid PDB ID\n",
+      "5RY0 is not a valid PDB ID\n",
+      "5RY1 is not a valid PDB ID\n",
+      "5RY2 is not a valid PDB ID\n",
+      "5RY3 is not a valid PDB ID\n",
+      "5RY4 is not a valid PDB ID\n",
+      "5RY5 is not a valid PDB ID\n",
+      "5RY6 is not a valid PDB ID\n",
+      "5RY7 is not a valid PDB ID\n",
+      "5RY8 is not a valid PDB ID\n",
+      "5RY9 is not a valid PDB ID\n",
+      "5RYA is not a valid PDB ID\n",
+      "5RYB is not a valid PDB ID\n",
+      "5RYC is not a valid PDB ID\n",
+      "5RYD is not a valid PDB ID\n",
+      "5RYE is not a valid PDB ID\n",
+      "5RYF is not a valid PDB ID\n",
+      "5RYG is not a valid PDB ID\n",
+      "5RYH is not a valid PDB ID\n",
+      "5RYI is not a valid PDB ID\n",
+      "5RYJ is not a valid PDB ID\n",
+      "5RYK is not a valid PDB ID\n",
+      "5RYL is not a valid PDB ID\n",
+      "6IBD is not a valid PDB ID\n",
+      "6XY7 is not a valid PDB ID\n",
+      "8PDG is not a valid PDB ID\n",
+      "8PDH is not a valid PDB ID\n",
+      "8PDI is not a valid PDB ID\n",
+      "8PDJ is not a valid PDB ID\n",
+      "2CS0 is not a valid PDB ID\n",
+      "4M4Z is not a valid PDB ID\n",
+      "5W3R is not a valid PDB ID\n",
+      "2EL8 is not a valid PDB ID\n",
+      "2D86 is not a valid PDB ID\n",
+      "1X1F is not a valid PDB ID\n",
+      "3MAZ is not a valid PDB ID\n",
+      "1FAO is not a valid PDB ID\n",
+      "1FB8 is not a valid PDB ID\n",
+      "Structure Reference File successfully created!\n"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "CoDIAC.PDB.generateStructureRefFile_fromUniprotFile(uniprot_reference_file, PDB_file)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### STEP 4: Annotate the structure file with reference, for domain annotation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "struct_df_out = CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file(PDB_file, uniprot_reference_file, PDB_file_annotated, INTERPRO=True, verbose=False)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### STEP 5: Reduce the structure file to just those that contain the domain of interest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Made Data/PDB_Reference/SH2_IPR000980_PDB_reference.csv file: 456 structures retained of 1409 total\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Now with an appended PDB File, create an output that contains only the lines that have SH2 domains\n",
+    "CoDIAC.IntegrateStructure_Reference.filter_structure_file(PDB_file_annotated, Interpro_ID, PDB_file_filtered)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.18"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

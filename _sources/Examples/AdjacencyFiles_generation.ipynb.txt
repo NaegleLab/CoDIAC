@@ -1,0 +1,136 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "3ef224aa-b7c9-4d42-85e9-b6ddf68ef77e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os, shutil\n",
+    "from CoDIAC import AdjacencyFiles as af\n",
+    "from CoDIAC import PDB"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5fe6f65d-fd11-4772-a261-e23d56b84f78",
+   "metadata": {},
+   "source": [
+    "### STEP 1: Generate mmCIF files for PDBs of interest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "6657e221-e237-46f3-821a-0a0f92633be0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cif_path = './Data/CIF_files'\n",
+    "PDB_list = ['4JGH','3TL0','1D4W']\n",
+    "PDB.download_cifFile(PDB_list, cif_path)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c4796fba-d9b8-45c4-aa28-f6e7d38dbabf",
+   "metadata": {},
+   "source": [
+    "### STEP 2: Generate json files using Arpeggio (not shown here)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "76263b92-e828-4066-8c4f-440dfff45ddc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "json_path = './Data/JSON_files'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b07d96d7-149f-4d9a-aec5-36af9ced30d1",
+   "metadata": {},
+   "source": [
+    "### STEP 3: Generate Adjacency txt files "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "2f83745c-be8e-4401-b991-8a4693da7b61",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "4JGH\n",
+      "4JGH\n",
+      "Adjacency File generated for 4JGH\n",
+      "Adjacency File with Binary features generated for 4JGH\n",
+      "3TL0\n",
+      "3TL0\n",
+      "Adjacency File generated for 3TL0\n",
+      "Adjacency File with Binary features generated for 3TL0\n",
+      "1D4W\n",
+      "1D4W\n",
+      "Adjacency File generated for 1D4W\n",
+      "Adjacency File with Binary features generated for 1D4W\n"
+     ]
+    }
+   ],
+   "source": [
+    "adj_path='./Data/Adjacency_files'\n",
+    "for PDB_ID in PDB_list: \n",
+    "    cif_file = cif_path+'/'+PDB_ID+'.cif'\n",
+    "    json_file = json_path+'/'+PDB_ID+'.json'\n",
+    "    newpath = adj_path+'/'+PDB_ID \n",
+    "    os.mkdir(newpath)   #create a directory for PDB to store its corresponding adjacency files\n",
+    "    outfile = newpath\n",
+    "    af.ProcessArpeggio(json_file, outfile, cif_file, small_molecule=False)    #generates adjacency file \n",
+    "    af.BinaryFeatures(PDB_ID, outfile, translate_resid=True)    #generates binarized version\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8f3e4095-ccae-423e-87fb-95357dbb7538",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "174f2398-ffb5-4040-8a4d-fbcbd167bf20",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.18"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

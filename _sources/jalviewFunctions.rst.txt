@@ -1,0 +1,4 @@
+Jalview Tools
+----------------------
+.. automodule:: CoDIAC.jalviewFunctions
+    :members: combine_feature_files, print_ann_file

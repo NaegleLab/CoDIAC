@@ -37,11 +37,12 @@
           <div class="body" role="main">
             
   <h1>Source code for CoDIAC.InterPro</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">requests</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">timeit</span>
 
 
 <div class="viewcode-block" id="fetch_uniprotids">
@@ -54,12 +55,9 @@
 <span class="sd">    Examples:</span>
 <span class="sd">    Examples, use this module like this, the first being a more restrictive human with reviewed, versus all </span>
 <span class="sd">    records associated within an Interpro ID:</span>
-
 <span class="sd">    .. code-block:: python</span>
-<span class="sd">    </span>
 <span class="sd">        fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=True, species=&#39;Homo sapiens&#39;) # human proteins with reviewed records</span>
 <span class="sd">        fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=False, species=&#39;all&#39;) #all species records, reviewed and unreviewed</span>
-
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    interpro_ID: str</span>
@@ -69,7 +67,6 @@
 <span class="sd">    species: string</span>
 <span class="sd">        Using scientific name under the Uniprot taxonomy to define species. </span>
 <span class="sd">        See here for taxonomy names: https://www.uniprot.org/taxonomy?query=*</span>
-
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    uniprot_ID_list: list</span>
@@ -79,75 +76,502 @@
 <span class="sd">        Dictionary, with top keys equal to the species scientific name and </span>
 <span class="sd">        points to an inner dict that keeps track of the database source &#39;reviewed&#39; or &#39;unreviewed&#39;</span>
 <span class="sd">        and has lists of the uniprot IDs found for that species under that database source.</span>
-
-
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">count_data</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">count_data</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># count of records expected to be found</span>
     <span class="c1">#species = species.replace(&quot; &quot;, &quot;+&quot;)</span>
     <span class="n">interpro_url</span> <span class="o">=</span> <span class="s2">&quot;https://www.ebi.ac.uk/interpro/api&quot;</span>
-    <span class="k">if</span> <span class="n">REVIEWED</span><span class="p">:</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span>  <span class="sa">f</span><span class="s2">&quot;/protein/reviewed/entry/interpro/</span><span class="si">{</span><span class="n">interpro_ID</span><span class="si">}</span><span class="s2">/&quot;</span> 
+    <span class="k">if</span> <span class="n">REVIEWED</span><span class="p">:</span> <span class="c1"># if reviewed, we need to change the URL</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">interpro_url</span><span class="p">,</span> <span class="s2">&quot;/protein/reviewed/entry/interpro/&quot;</span><span class="p">,</span> <span class="n">interpro_ID</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/protein/UniProt/entry/interpro/</span><span class="si">{</span><span class="n">interpro_ID</span><span class="si">}</span><span class="s2">/&quot;</span> 
-    
-    <span class="k">if</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;all&#39;</span> <span class="ow">or</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;All&#39;</span> <span class="ow">or</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;ALL&#39;</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">interpro_url</span><span class="p">,</span> <span class="s2">&quot;/protein/UniProt/entry/interpro/&quot;</span><span class="p">,</span> <span class="n">interpro_ID</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">])</span>
+    <span class="c1"># if species is defined, we need to add this to the URL</span>
+    <span class="k">if</span> <span class="n">species</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span><span class="s1">&#39;all&#39;</span><span class="p">:</span>
         <span class="n">species_temp</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;+&quot;</span><span class="p">)</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;?search=</span><span class="si">{</span><span class="n">species_temp</span><span class="si">}</span><span class="s2">&amp;page_size=200&quot;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;?&amp;page_size=200&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">url</span><span class="p">,</span> <span class="s2">&quot;?search=&quot;</span><span class="p">,</span> <span class="n">species_temp</span><span class="p">,</span> <span class="s2">&quot;&amp;page_size=200&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># if all species, we need to add a page size to the URL</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">url</span><span class="p">,</span> <span class="s2">&quot;?&amp;page_size=200&quot;</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">REVIEWED</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: About to search for all records for all species, this will take a while...&quot;</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;error.log&#39;</span><span class="p">,</span>
                     <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
                     <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span>
-                    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
-    
-    <span class="n">fetch_all_results</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span> <span class="c1"># set up logging for requests exceptions</span>
+    <span class="n">fetch_all_results</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list to store all results</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        <span class="n">count_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+        <span class="k">with</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>  <span class="c1"># make the request</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>  <span class="c1"># convert to json</span>
+            <span class="n">count_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
 
-        <span class="n">fetch_all_results</span> <span class="o">=</span> <span class="n">fetch_all_results</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span>
+            <span class="n">fetch_all_results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">])</span>  <span class="c1"># use extend instead of +</span>
 
+        <span class="c1"># if there are more pages, we need to fetch these as well</span>
         <span class="k">while</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found next page and downloading&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">])</span>
-            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">])</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">])</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-            <span class="n">fetch_all_results</span> <span class="o">=</span> <span class="n">fetch_all_results</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span>
+            <span class="n">fetch_all_results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">])</span>  <span class="c1"># use extend instead of +</span>
 
     <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Found request exceptions...&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Most likely error is species formatting, check </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">species</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Most likely error is species formatting, check </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">species</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
 
-    <span class="n">UNIPROT_ID_LIST</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">uniprot_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">species_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">UNIPROT_ID_LIST</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list to store all uniprot IDs</span>
+    <span class="n">uniprot_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># dictionary to store uniprot IDs and their associated species</span>
+    <span class="n">species_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">))</span>  <span class="c1"># dictionary to store species and their associated uniprot IDs</span>
 
-    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">fetch_all_results</span><span class="p">:</span>
-        <span class="n">Uniprot_Accession</span> <span class="o">=</span> <span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">])</span>
-        <span class="n">source_database</span> <span class="o">=</span> <span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;source_database&#39;</span><span class="p">])</span>
-        <span class="n">taxId</span> <span class="o">=</span> <span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;source_organism&#39;</span><span class="p">][</span><span class="s1">&#39;taxId&#39;</span><span class="p">])</span> <span class="c1">#not using this, but could be helpful. </span>
+    <span class="n">all_species</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;All&#39;</span><span class="p">,</span> <span class="s1">&#39;ALL&#39;</span><span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">fetch_all_results</span><span class="p">:</span>  <span class="c1"># loop through all results</span>
+        <span class="n">Uniprot_Accession</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
+        <span class="n">source_database</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;source_database&#39;</span><span class="p">]</span>
         <span class="n">Scientific_name</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;source_organism&#39;</span><span class="p">][</span><span class="s1">&#39;scientificName&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;all&#39;</span> <span class="ow">or</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;All&#39;</span> <span class="ow">or</span> <span class="n">species</span><span class="o">!=</span><span class="s1">&#39;ALL&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">Scientific_name</span><span class="o">==</span><span class="n">species</span><span class="p">:</span>
-                <span class="n">UNIPROT_ID_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Uniprot_Accession</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">UNIPROT_ID_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Uniprot_Accession</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">species</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_species</span> <span class="ow">and</span> <span class="n">species</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Scientific_name</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">UNIPROT_ID_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Uniprot_Accession</span><span class="p">)</span>
         <span class="n">uniprot_dict</span><span class="p">[</span><span class="n">Uniprot_Accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">Scientific_name</span>
-        <span class="k">if</span> <span class="n">Scientific_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">species_dict</span><span class="p">:</span>
-            <span class="n">species_dict</span><span class="p">[</span><span class="n">Scientific_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">source_database</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">species_dict</span><span class="p">[</span><span class="n">Scientific_name</span><span class="p">]:</span>
-            <span class="n">species_dict</span><span class="p">[</span><span class="n">Scientific_name</span><span class="p">][</span><span class="n">source_database</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">species_dict</span><span class="p">[</span><span class="n">Scientific_name</span><span class="p">][</span><span class="n">source_database</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Uniprot_Accession</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetched </span><span class="si">%d</span><span class="s2"> Uniprot IDs linked to </span><span class="si">%s</span><span class="s2">, where count expected to be </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UNIPROT_ID_LIST</span><span class="p">),</span><span class="n">interpro_ID</span><span class="p">,</span> <span class="n">count_data</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fetched </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">UNIPROT_ID_LIST</span><span class="p">)</span><span class="si">}</span><span class="s2"> Uniprot IDs linked to </span><span class="si">{</span><span class="n">interpro_ID</span><span class="si">}</span><span class="s2">, where count expected to be </span><span class="si">{</span><span class="n">count_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span><span class="p">(</span><span class="n">UNIPROT_ID_LIST</span><span class="p">,</span> <span class="n">species_dict</span><span class="p">)</span></div>
 
 
+
+<span class="k">def</span> <span class="nf">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an entry from the InterPro API, collect the data for a protein accession</span>
+<span class="sd">    and return a dictionary with the keys &#39;name&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;, &#39;boundaries&#39;</span>
+<span class="sd">    where &#39;boundaries&#39; is a list of dictionaries with keys &#39;start&#39; and &#39;end&#39;.</span>
+<span class="sd">    If &#39;short_name&#39; is in the extra fields, this will be added to the dictionary as &#39;short&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    entry: dict</span>
+<span class="sd">        dictionary from the InterPro API</span>
+<span class="sd">    protein_accession: str</span>
+<span class="sd">        Uniprot accession ID for a protein</span>
+<span class="sd">    domain_database: str</span>
+<span class="sd">        Domain database to search for, default is None</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dictionary: dict</span>
+<span class="sd">        dictionary with the keys &#39;name&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;, &#39;boundaries&#39;</span>
+<span class="sd">        where &#39;boundaries&#39; is a list of dictionaries with keys &#39;start&#39; and &#39;end&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">entry_protein_locations</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;proteins&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;entry_protein_locations&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">entry_protein_locations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">entry_protein_locations</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">num_boundaries</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry_protein_locations</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">num_boundaries</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{</span> 
+        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;accession&#39;</span><span class="p">:</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;num_boundaries&#39;</span><span class="p">:</span> <span class="n">num_boundaries</span><span class="p">,</span>
+        <span class="s1">&#39;boundaries&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+            <span class="p">}</span> 
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_boundaries</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">bounds</span> <span class="ow">in</span> <span class="p">[</span><span class="n">entry_protein_locations</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;fragments&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;dc-status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;CONTINUOUS&quot;</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="s1">&#39;extra_fields&#39;</span> <span class="ow">in</span> <span class="n">entry</span> <span class="ow">and</span> <span class="s1">&#39;short_name&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">]:</span>
+        <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">][</span><span class="s1">&#39;short_name&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">dictionary</span>
+
+<span class="k">def</span> <span class="nf">fetch_InterPro_json</span><span class="p">(</span><span class="n">protein_accessions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Instantiates an api fetch to InterPro database for domains. Returns a dictionary of those repsonses with keys equal </span>
+<span class="sd">    to the protein accession run.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interpro_url</span> <span class="o">=</span> <span class="s2">&quot;https://www.ebi.ac.uk/interpro/api&quot;</span>
+    <span class="n">extra_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;short_name&#39;</span><span class="p">]</span>
+    <span class="n">response_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># code you want to evaluate</span>
+    <span class="k">with</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">protein_accession</span> <span class="ow">in</span> <span class="n">protein_accessions</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="s2">&quot;/entry/interpro/protein/uniprot/&quot;</span> <span class="o">+</span> <span class="n">protein_accession</span> <span class="o">+</span> <span class="s2">&quot;?extra_fields=&quot;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra_fields</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">204</span><span class="p">:</span>
+                    <span class="n">response_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An empty response was received for </span><span class="si">{</span><span class="n">protein_accession</span><span class="si">}</span><span class="s2"> resulting in empty domain architecture.&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing </span><span class="si">{</span><span class="n">protein_accession</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Debugging line</span>
+    <span class="k">return</span> <span class="n">response_dict</span>
+
+
+<span class="k">def</span> <span class="nf">get_domains</span><span class="p">(</span><span class="n">protein_accessions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a uniprot accession (protein_accession), return a list of domain dictionaries</span>
+<span class="sd">    each domain dictionary has keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39; (InterPro ID), &#39;num_boundaries&#39; (number of this type found)</span>
+<span class="sd">    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once </span>
+<span class="sd">    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    protein_accession: str</span>
+<span class="sd">        Uniprot accession ID for a protein</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    domain_dict: dict of list of dicts</span>
+<span class="sd">        outer key values are the individual protein accessions</span>
+<span class="sd">        these point to a list of dictionaries, each dictionary is a domain entry with keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;</span>
+<span class="sd">        this list is ordered by start positions of domains</span>
+<span class="sd">    domain_string_dict: dict of lists of strings</span>
+<span class="sd">        outer key values are the individual protein accessions</span>
+<span class="sd">        these point to a list of stirngs, each string is information for the domain in this manner</span>
+<span class="sd">        short_name:interpro_id:start:end</span>
+<span class="sd">    arch_dict: dict of strings</span>
+<span class="sd">        outer key values are the individual protein accessions</span>
+<span class="sd">        these point to a string that is the domain architecture, | separated list of domain names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">fetch_InterPro_json</span><span class="p">(</span><span class="n">protein_accessions</span><span class="p">)</span> <span class="c1">#pack and unpack as a list for a single domain fetch</span>
+    <span class="n">domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">domain_string_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">arch_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">protein_accession</span> <span class="ow">in</span> <span class="n">resp_dict</span><span class="p">:</span>
+        <span class="n">domain_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">],</span> <span class="n">domain_string_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">],</span> <span class="n">arch_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_domains_from_response</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">domain_dict</span><span class="p">,</span> <span class="n">domain_string_dict</span><span class="p">,</span> <span class="n">arch_dict</span>
+
+<span class="k">def</span> <span class="nf">get_domains_from_response</span><span class="p">(</span><span class="n">resp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a response from the InterPro API for a single protein search, return a list of domain dictionaries</span>
+<span class="sd">    each domain dictionary has keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39; (InterPro ID), &#39;num_boundaries&#39; (number of this type found)</span>
+<span class="sd">    These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once </span>
+<span class="sd">    we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. </span>
+<span class="sd">    This returns the ordere list of domains and a list of domain information strings, based on start site.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    resp: dict</span>
+<span class="sd">        response from the InterPro API (json)</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sorted_domain_list: list</span>
+<span class="sd">        list of dictionaries, each dictionary is a domain entry with keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;</span>
+<span class="sd">    domain_string_list: list</span>
+<span class="sd">        list of domain information short_name:id:start:end</span>
+<span class="sd">    domain_arch: string</span>
+<span class="sd">        domain architecture as a string, | separated list of domain names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># An empty response passed from the Interpro API will bypass all this</span>
+    <span class="k">if</span> <span class="n">resp</span><span class="p">:</span>
+        <span class="n">entry_results</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span>
+        <span class="n">d_dict</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># Dictionary to store domain information for each entry</span>
+        <span class="n">d_resolved</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entry_results</span><span class="p">):</span>
+        <span class="c1">#for i, entry in enumerate(entry_list):</span>
+            <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="c1">#get domain level only features</span>
+                <span class="n">d_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        
+        <span class="n">values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">d_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">d_resolved</span><span class="o">+=</span><span class="n">return_expanded_domains</span><span class="p">(</span><span class="n">d_dict</span><span class="p">[</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="c1"># a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.</span>
+        
+        <span class="k">for</span> <span class="n">domain_num</span> <span class="ow">in</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        
+            <span class="n">d_resolved</span> <span class="o">=</span> <span class="n">resolve_domain</span><span class="p">(</span><span class="n">d_resolved</span><span class="p">,</span> <span class="n">d_dict</span><span class="p">[</span><span class="n">domain_num</span><span class="p">])</span>
+
+        <span class="c1">#having resolved, now let&#39;s sort the list and get the domain string information</span>
+        <span class="n">sorted_domain_list</span><span class="p">,</span> <span class="n">domain_string_list</span><span class="p">,</span> <span class="n">domain_arch</span> <span class="o">=</span> <span class="n">sort_domain_list</span><span class="p">(</span><span class="n">d_resolved</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sorted_domain_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">domain_string_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">domain_arch</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">sorted_domain_list</span><span class="p">,</span> <span class="n">domain_string_list</span><span class="p">,</span> <span class="n">domain_arch</span>
+  
+<span class="k">def</span> <span class="nf">return_expanded_domains</span><span class="p">(</span><span class="n">domain_entry</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a domain entry, such as from collect_data, return a list of expanded domains where there is only </span>
+<span class="sd">    one boundary per set. This will reset the dictionary, such that instead of &#39;boundaries&#39; with a list of [&#39;start&#39;: x, &#39;end&#39;: y]</span>
+<span class="sd">    it will be a single boundary with &#39;start&#39;: x, &#39;end&#39;: y as keys in the dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">boundary_list</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span>
+    <span class="n">domain_new</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">domain_new</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundary_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+    <span class="n">domain_new</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundary_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+    <span class="n">domain_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_new</span><span class="p">)</span>
+    <span class="c1">#make a new dictionary with the start and end values of subsequent domains (Then go through and pop boundaries off all)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundary_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundary_list</span><span class="p">)):</span>
+            <span class="n">domain_temp</span> <span class="o">=</span> <span class="n">domain_entry</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">domain_temp</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundary_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+            <span class="n">domain_temp</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundary_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+            <span class="n">domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_temp</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">:</span> <span class="c1">#remove the boundaries term now</span>
+        <span class="n">domain</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;boundaries&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">domain_list</span>
+
+<span class="k">def</span> <span class="nf">resolve_domain</span><span class="p">(</span><span class="n">d_resolved</span><span class="p">,</span> <span class="n">dict_entry</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of resolved domains and a new domain entry, resolve the new domain entry with the existing domains</span>
+<span class="sd">    Keep the new domain entry if it does not overlap by more than threshold% with any existing domain. Default threshold is</span>
+<span class="sd">    50% (or 0.5)</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    d_resolved: list</span>
+<span class="sd">        list of dictionaries, each dictionary is a domain entry with keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;</span>
+<span class="sd">    dict_entry: dict</span>
+<span class="sd">        dictionary of domain information with that comes from collect_data on an entry. This function expands multiple domain entries, meaning that these are prioritized as they are encountered first</span>
+<span class="sd">    threshold: float</span>
+<span class="sd">        threshold for rejecting domains by overlap, default is 0.5, should be between 0 and 1</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    d_resolved: list</span>
+<span class="sd">        list of dictionaries, each dictionary is a domain entry with keys &#39;name&#39;, &#39;start&#39;, &#39;end&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># d_resolved is a list of dictionaries, each dictionary is a domain entry</span>
+    <span class="c1">#setup the existing boundaries that are in d_resolved</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c1">#set to default</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARN: Threshold must be between 0 and 1 for rejecting domains by overlap, setting to default of 0.5&quot;</span><span class="p">)</span>
+
+    <span class="n">boundary_array</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">d_resolved</span><span class="p">:</span>
+        <span class="n">boundary_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> <span class="n">domain</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">])))</span>
+    
+    <span class="c1">#expand the dict_entry as well to a list</span>
+    <span class="n">new_domains</span> <span class="o">=</span> <span class="n">return_expanded_domains</span><span class="p">(</span><span class="n">dict_entry</span><span class="p">)</span>
+    <span class="c1">#print(&quot;DEBUG: have these new domains&quot;)</span>
+    <span class="c1">#print(new_domains)</span>
+
+    <span class="c1">#first expand if multiple boundaries exist in the dict_entry</span>
+    <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">new_domains</span><span class="p">:</span>
+        <span class="n">range_new</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> <span class="n">domain</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]))</span>
+        <span class="n">found_intersecting</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">range_existing</span> <span class="ow">in</span> <span class="n">boundary_array</span><span class="p">:</span>
+            <span class="c1">#check if the set overlap between the new range and the existing range is greater than </span>
+            <span class="c1"># 50% of the new range. If so, do not add the new range.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">range_new</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">range_existing</span><span class="p">))</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">range_new</span><span class="p">,</span> <span class="n">range_existing</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">found_intersecting</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found_intersecting</span><span class="p">:</span>
+            <span class="n">d_resolved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d_resolved</span>
+
+<span class="k">def</span> <span class="nf">sort_domain_list</span><span class="p">(</span><span class="n">domain_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of</span>
+<span class="sd">    the domains according to the start site. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    domain_list: list</span>
+<span class="sd">        list of domain dictionaries, where the dictonaries have keys &#39;name&#39;, &#39;accession&#39;, &#39;short&#39;, &#39;start&#39;, &#39;end&#39;</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sorted_domain_list: list</span>
+<span class="sd">        list of domain dictionaries, now sorted by the start positions.</span>
+<span class="sd">    domain_string_list: list</span>
+<span class="sd">        list of domain information short_name:id:start:end</span>
+<span class="sd">    domain_arch: string</span>
+<span class="sd">        domain architecture as a string, | separated list of domain names</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">domdict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">domdict</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: More than one domain have the same start position!&quot;</span><span class="p">)</span>
+        <span class="n">domdict</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain</span>
+
+    <span class="n">sorted_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">domdict</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span><span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">sorted_domain_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">domain_string_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">domain_arch_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">sorted_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">sorted_domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">domain_string_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]))</span>
+        <span class="n">domain_arch_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">sorted_domain_list</span><span class="p">,</span> <span class="n">domain_string_list</span><span class="p">,</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">domain_arch_names</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">generateDomainMetadata_wfilter</span><span class="p">(</span><span class="n">uniprot_accessions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list </span>
+<span class="sd">    of proteins. May 22, 2024 KMN. Written by LC. </span>
+
+<span class="sd">    Given a list of uniprot accessions, return a dictionary of protein accessions containing domain metadata.</span>
+<span class="sd">    This function will return a dictionary with keys as the protein accession and values as a list of dictionaries</span>
+<span class="sd">    where each dictionary contains domain metadata. This metadata is collected from the InterPro API and includes</span>
+<span class="sd">    the keys &#39;interpro&#39;, &#39;num_children&#39;. The &#39;interpro&#39; key contains a dictionary with keys &#39;name&#39;, &#39;accession&#39;, &#39;num_boundaries&#39;, &#39;boundaries&#39;</span>
+<span class="sd">    where &#39;boundaries&#39; is a list of dictionaries with keys &#39;start&#39; and &#39;end&#39;. If &#39;short_name&#39; is in the extra fields, this will be added to the dictionary as &#39;short&#39;</span>
+<span class="sd">    This version of code uses hierarchy and children nodes to select InterPro domains.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    uniprot_accessions: list</span>
+<span class="sd">        list of uniprot accessions</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    metadata: dict</span>
+<span class="sd">        dictionary of protein accessions containing domain metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">interpro_url</span> <span class="o">=</span> <span class="s2">&quot;https://www.ebi.ac.uk/interpro/api&quot;</span>
+    <span class="n">extra_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hierarchy&#39;</span><span class="p">,</span> <span class="s1">&#39;short_name&#39;</span><span class="p">]</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">with</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">protein_accession</span> <span class="ow">in</span> <span class="n">uniprot_accessions</span><span class="p">:</span>
+            <span class="c1">#print(f&quot;Processing {protein_accession}&quot;)  # Debugging line</span>
+
+            <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="s2">&quot;/entry/interpro/protein/uniprot/&quot;</span> <span class="o">+</span> <span class="n">protein_accession</span> <span class="o">+</span> <span class="s2">&quot;?extra_fields=&quot;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra_fields</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing </span><span class="si">{</span><span class="n">protein_accession</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Debugging line</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  
+                <span class="k">continue</span>             
+
+            <span class="n">current_accession</span> <span class="o">=</span> <span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span>
+
+            <span class="c1"># pulling out top hierarchy domains from extra fields</span>
+            <span class="n">entry_results</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]</span>
+            <span class="n">top_hierarchy</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># Getting top hierarchy domains for each entry in the results</span>
+            <span class="n">num_children_list</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># List to store number of children for each domain</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entry_results</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;extra_fields&#39;</span> <span class="ow">in</span> <span class="n">entry</span> <span class="ow">and</span> <span class="s1">&#39;hierarchy&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;children&#39;</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">][</span><span class="s1">&#39;hierarchy&#39;</span><span class="p">]:</span>
+                        <span class="n">num_children</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">][</span><span class="s1">&#39;hierarchy&#39;</span><span class="p">][</span><span class="s1">&#39;children&#39;</span><span class="p">])</span>
+                        <span class="n">num_children_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">num_children</span><span class="p">)</span>
+                    <span class="n">top_hierarchy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;extra_fields&#39;</span><span class="p">][</span><span class="s1">&#39;hierarchy&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span> 
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing </span><span class="si">{</span><span class="n">protein_accession</span><span class="si">}</span><span class="s2">: No hierarchy found&quot;</span><span class="p">)</span>
+            <span class="c1">#print(top_hierarchy)</span>
+            <span class="n">entry_list</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s1">&#39;interpro&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;num_children&#39;</span><span class="p">:</span> <span class="n">num_children_list</span><span class="p">[</span><span class="n">i</span><span class="p">]}</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">resp</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;domain&#39;</span> <span class="ow">and</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">top_hierarchy</span>
+                <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="n">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">]</span>
+        
+            <span class="n">metadata</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry_list</span> 
+           <span class="c1"># print(entry_list)</span>
+
+    <span class="k">return</span> <span class="n">metadata</span>
+
+<span class="c1"># Filtering returned metadata </span>
+
+<span class="k">def</span> <span class="nf">filter_domains</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.15</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list </span>
+<span class="sd">    of proteins. May 22, 2024 KMN. Written by LC. &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">protein_accession</span><span class="p">,</span> <span class="n">domains</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Sort by end position and then by size in descending order</span>
+        <span class="n">domains</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">],</span> <span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]),</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;num_children&#39;</span><span class="p">]))</span>
+        <span class="n">filtered_domains</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+            <span class="n">overlap</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">existing_domain</span> <span class="ow">in</span> <span class="n">filtered_domains</span><span class="p">:</span>
+                <span class="n">start_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> <span class="n">existing_domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">])</span>
+                <span class="n">end_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">],</span> <span class="n">existing_domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">])</span>
+                <span class="n">overlap_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">end_min</span> <span class="o">-</span> <span class="n">start_max</span><span class="p">)</span>
+                <span class="n">domain_length</span> <span class="o">=</span> <span class="n">domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">domain</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">overlap_length</span> <span class="o">/</span> <span class="n">domain_length</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+                    <span class="c1"># If the current domain has more children, replace the existing domain</span>
+                    <span class="k">if</span> <span class="n">domain</span><span class="p">[</span><span class="s1">&#39;num_children&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">existing_domain</span><span class="p">[</span><span class="s1">&#39;num_children&#39;</span><span class="p">]:</span>
+                        <span class="n">filtered_domains</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">existing_domain</span><span class="p">)</span>
+                        <span class="n">filtered_domains</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+                    <span class="n">overlap</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">overlap</span><span class="p">:</span>
+                <span class="n">filtered_domains</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+        <span class="n">filtered_domains</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">])</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">filtered_domains</span>
+    <span class="k">return</span> <span class="n">metadata</span>
+
+
+<span class="c1"># NO LONGER USED, this string generation goes with the code that focuses on hierarch. </span>
+<span class="k">def</span> <span class="nf">generate_domain_metadata_string_list</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">uniprot_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    NO LONGER USED: Leaving this here, this is code that focuses on hierarchy and children to determine the list </span>
+<span class="sd">    of proteins. May 22, 2024 KMN. Written by LC.</span>
+
+<span class="sd">    Condenses protein metadata into strings and outputs them as a list corresponding with indices of accessions in uniprot_list</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    processed_metadata: dict</span>
+<span class="sd">        dictionary of protein accessions containing domain metadata. Following hierarchy and overlap filtering</span>
+<span class="sd">    uniprot_list: list</span>
+<span class="sd">        list of uniprot IDs</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    metadata_string_list: list of lists of strings</span>
+<span class="sd">        list containing lists of domain strings that condense domain metadata information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metadata_string_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">domain_arch_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uniprot_list</span><span class="p">)):</span>
+        <span class="n">string_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">accession</span> <span class="o">=</span> <span class="n">uniprot_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">domain_metadata_list</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="n">accession</span><span class="p">]</span>
+        <span class="c1"># Sort domain metadata by start position</span>
+        <span class="n">domain_metadata_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">domain_dict</span> <span class="ow">in</span> <span class="n">domain_metadata_list</span><span class="p">:</span>
+            <span class="n">short_name</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;short&#39;</span><span class="p">]</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
+            <span class="c1"># Iterate over boundaries</span>
+            <span class="c1"># here, also sort the domains in the list according to start positions.</span>
+            <span class="k">for</span> <span class="n">boundary</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">boundary</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">boundary</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+                <span class="n">metadata_string</span> <span class="o">=</span> <span class="n">short_name</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">id</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+                <span class="n">string_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metadata_string</span><span class="p">)</span>
+        <span class="n">sorted_domain_list</span> <span class="o">=</span> <span class="n">sort_domain_list</span><span class="p">(</span><span class="n">string_list</span><span class="p">)</span>
+        <span class="n">domain_arch</span> <span class="o">=</span> <span class="n">return_domain_architecture</span><span class="p">(</span><span class="n">string_list</span><span class="p">)</span>
+        <span class="n">domain_arch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_arch</span><span class="p">)</span>
+        <span class="n">metadata_string_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sorted_domain_list</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">metadata_string_list</span><span class="p">,</span> <span class="n">domain_arch_list</span>
+
+
+
+
+
+<span class="c1"># def sort_domain_list(domain_string_list):</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     Given a domain_list, list of domain information short_name:id:start:end, </span>
+<span class="c1">#     sort the list according to start positions of the domains and return a new list</span>
+
+<span class="c1">#     Parameters</span>
+<span class="c1">#     ----------</span>
+<span class="c1">#     domain_string_list: list</span>
+<span class="c1">#         list of domain information short_name:id:start:end as a string, array of strings</span>
+<span class="c1">#     Returns</span>
+<span class="c1">#     -------</span>
+<span class="c1">#     sorted_domain_string_list: list</span>
+<span class="c1">#         list of domain information sorted according to start positions as short_name:id:start:end as a string, array of strings</span>
+
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     domdict = {}</span>
+<span class="c1">#     for domain_info in domain_string_list:</span>
+<span class="c1">#         name, uniprot_id, start, end = domain_info.split(&#39;:&#39;)</span>
+<span class="c1">#         start = int(start)</span>
+<span class="c1">#         domdict[start] = name, uniprot_id, end</span>
+
+<span class="c1">#     sorted_dict = dict(sorted(domdict.items(),reverse=False))</span>
+<span class="c1">#     sorted_domain_list = []</span>
+<span class="c1">#     for key, values in sorted_dict.items():</span>
+<span class="c1">#         domain = values[0]+&#39;:&#39;+values[1]+&#39;:&#39;+str(key)+&#39;:&#39;+str(values[2])</span>
+<span class="c1">#         sorted_domain_list.append(domain)</span>
+<span class="c1">#     return sorted_domain_list</span>
 
 <div class="viewcode-block" id="appendRefFile">
 <a class="viewcode-back" href="../../InterPro.html#CoDIAC.InterPro.appendRefFile">[docs]</a>
@@ -173,569 +597,16 @@
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">input_RefFile</span><span class="p">)</span>
     <span class="n">uniprotList</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetching domains..&quot;</span><span class="p">)</span>
-    <span class="n">domainMD</span> <span class="o">=</span> <span class="n">generateDomainMetadata</span><span class="p">(</span><span class="n">uniprotList</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing domains...&quot;</span><span class="p">)</span>
-    <span class="n">processed_MD</span> <span class="o">=</span> <span class="n">process_proteins</span><span class="p">(</span><span class="n">domainMD</span><span class="p">)</span>
-    <span class="n">metadata_string_list</span><span class="p">,</span> <span class="n">domain_arch_list</span> <span class="o">=</span> <span class="n">generate_domain_metadata_string_list</span><span class="p">(</span><span class="n">processed_MD</span><span class="p">,</span> <span class="n">uniprotList</span><span class="p">)</span>
-    
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Interpro Domains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata_string_list</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_arch_list</span>
+    <span class="n">domain_dict</span><span class="p">,</span> <span class="n">domain_string_dict</span><span class="p">,</span> <span class="n">domain_arch_dict</span> <span class="o">=</span> <span class="n">get_domains</span><span class="p">(</span><span class="n">uniprotList</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Appending domains to file..&quot;</span><span class="p">)</span>    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uniprotList</span><span class="p">)):</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;Interpro Domains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">domain_string_dict</span><span class="p">[</span><span class="n">uniprotList</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_arch_dict</span><span class="p">[</span><span class="n">uniprotList</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+    <span class="c1">#df[&#39;Interpro Domains&#39;] = metadata_string_list</span>
+    <span class="c1">#df[&#39;Interpro Domain Architecture&#39;] = domain_arch_list</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Interpro metadata succesfully incorporated&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span></div>
-
-
-<span class="k">def</span> <span class="nf">generate_domain_metadata_string_list</span><span class="p">(</span><span class="n">processed_metadata</span><span class="p">,</span> <span class="n">uniprot_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Condenses protein metadata into strings and outputs them as a list corresponding with indices of accessions in uniprot_list</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    processed_metadata: dict</span>
-<span class="sd">        dictionary of protein accessions containing domain metadata</span>
-<span class="sd">    uniprot_list: list</span>
-<span class="sd">        list of uniprot IDs</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    metadata_string_list: list of lists of strings</span>
-<span class="sd">        list containing lists of domain strings that condense domain metadata information</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">metadata_string_list</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">domain_arch_list</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uniprot_list</span><span class="p">)):</span>
-        <span class="n">string_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">accession</span> <span class="o">=</span> <span class="n">uniprot_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">domain_metadata_list</span> <span class="o">=</span> <span class="n">processed_metadata</span><span class="p">[</span><span class="n">accession</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">domain_dict</span> <span class="ow">in</span> <span class="n">domain_metadata_list</span><span class="p">:</span>
-            <span class="n">short_name</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span>
-            <span class="nb">id</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
-            <span class="n">start</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
-            <span class="n">end</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
-            <span class="n">metadata_string</span> <span class="o">=</span> <span class="n">short_name</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">id</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
-            <span class="n">string_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metadata_string</span><span class="p">)</span>
-        <span class="n">domain_arch</span> <span class="o">=</span> <span class="n">return_domain_architecture</span><span class="p">(</span><span class="n">string_list</span><span class="p">)</span>
-        <span class="n">domain_arch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_arch</span><span class="p">)</span>
-        <span class="n">metadata_string_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">string_list</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">metadata_string_list</span><span class="p">,</span> <span class="n">domain_arch_list</span>
-
-<span class="k">def</span> <span class="nf">generateDomainMetadata</span><span class="p">(</span><span class="n">uniprot_accessions</span><span class="p">):</span>
-    <span class="n">interpro_url</span> <span class="o">=</span> <span class="s2">&quot;https://www.ebi.ac.uk/interpro/api&quot;</span>
-    <span class="n">domain_database</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smart&quot;</span><span class="p">,</span> <span class="s2">&quot;pfam&quot;</span><span class="p">,</span> <span class="s2">&quot;profile&quot;</span><span class="p">,</span> <span class="s2">&quot;prosite&quot;</span><span class="p">,</span> <span class="s2">&quot;prints&quot;</span><span class="p">,</span> <span class="s2">&quot;cdd&quot;</span><span class="p">,</span> <span class="s2">&quot;tigrfams&quot;</span><span class="p">,</span> <span class="s2">&quot;sfld&quot;</span><span class="p">,</span> <span class="s2">&quot;panther&quot;</span><span class="p">]</span>
-
-    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">protein_accession</span> <span class="ow">in</span> <span class="n">uniprot_accessions</span><span class="p">:</span>
-        
-        <span class="n">new_accession_flag</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="s2">&quot;/entry/interpro/protein/uniprot/&quot;</span> <span class="o">+</span> <span class="n">protein_accession</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="n">metadata</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  
-            <span class="k">continue</span>         
-        
-        <span class="n">current_accession</span> <span class="o">=</span> <span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span>
-
-        <span class="n">entry_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]:</span>
-
-            <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;domain&#39;</span><span class="p">:</span>
-                <span class="k">continue</span>
-            
-            <span class="n">info_dict</span> <span class="o">=</span> <span class="p">{}</span>
-
-            <span class="n">interpro_dict</span> <span class="o">=</span> <span class="n">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">current_accession</span><span class="p">,</span> <span class="n">domain_database</span><span class="p">)</span>
-
-            <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;interpro&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpro_dict</span>
-
-            <span class="n">entry_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
-        
-        <span class="c1"># Accessing domain information from other databases </span>
-        <span class="k">for</span> <span class="n">database</span> <span class="ow">in</span> <span class="n">domain_database</span><span class="p">:</span>
-            <span class="n">db_url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="s2">&quot;/entry/&quot;</span> <span class="o">+</span> <span class="n">database</span> <span class="o">+</span> <span class="s2">&quot;/protein/uniprot/&quot;</span> <span class="o">+</span> <span class="n">protein_accession</span>
-            
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">db_domain_resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">db_domain_resp</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">]:</span>
-
-                <span class="k">if</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;domain&#39;</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="n">db_dict</span> <span class="o">=</span> <span class="n">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">current_accession</span><span class="p">)</span>
-                <span class="n">integrated</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;integrated&#39;</span><span class="p">]</span>
-                <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entry_list</span><span class="p">)):</span>
-                    <span class="k">if</span> <span class="s1">&#39;interpro&#39;</span> <span class="ow">in</span> <span class="n">entry_list</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
-                        <span class="k">if</span> <span class="n">entry_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">integrated</span><span class="p">:</span>
-                            <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
-                            <span class="k">break</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                        <span class="n">index</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
-
-                <span class="k">if</span> <span class="n">index</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">entry_list</span><span class="p">):</span>
-                    <span class="c1"># This part is the necessary part</span>
-                    <span class="n">info_dict</span> <span class="o">=</span> <span class="p">{}</span>
-                    <span class="n">info_dict</span><span class="p">[</span><span class="n">database</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_dict</span>
-                    <span class="n">entry_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># add to the already existing dictionary that contains the interpro domain info</span>
-                    <span class="n">entry_list</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">database</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_dict</span>   
-        <span class="n">metadata</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry_list</span> 
-    <span class="k">return</span> <span class="n">metadata</span>
-
-<span class="c1"># domain_database added to figure out if there are any databases we might be missing</span>
-<span class="k">def</span> <span class="nf">collect_data</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">protein_accession</span><span class="p">,</span> <span class="n">domain_database</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    
-    <span class="c1"># can be removed later</span>
-    <span class="k">if</span> <span class="n">domain_database</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">keys</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;member_databases&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">domain_database</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-
-    <span class="c1"># back to normal code</span>
-    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{}</span>
-    
-    <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
-    <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
-    <span class="c1"># try-except can be removed post testing</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">num_boundaries</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;proteins&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;entry_protein_locations&#39;</span><span class="p">])</span>
-        <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;num_boundaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_boundaries</span>
-        <span class="c1"># list that contains all the discontinous boundaries</span>
-        <span class="n">boundaries_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_boundaries</span><span class="p">):</span>
-            <span class="n">boundaries_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">bounds</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;proteins&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;entry_protein_locations&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;fragments&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">boundaries_dict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
-            <span class="n">boundaries_dict</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
-            <span class="n">boundaries_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">boundaries_dict</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;dc-status&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;CONTINUOUS&quot;</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Domain not continuous&quot;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">protein_accession</span> <span class="o">+</span> <span class="s2">&quot; : &quot;</span> <span class="o">+</span> <span class="n">dictionary</span><span class="p">[</span><span class="s2">&quot;accession&quot;</span><span class="p">])</span>
-
-        <span class="n">dictionary</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries_list</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;boundaries dictionary raises error&#39;</span><span class="p">)</span>
-    
-    <span class="k">return</span> <span class="n">dictionary</span>
-
-<span class="c1"># complete</span>
-<span class="k">def</span> <span class="nf">process_proteins</span><span class="p">(</span><span class="n">PROTEINS</span><span class="p">,</span> <span class="n">VERBOSE</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_file</span> <span class="o">=</span> <span class="s1">&#39;process_interpro_log.txt&#39;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes in a dictionary of proteins accessions containing domain annotations for each protein and outputs a dictionary of proteins with domains for that protein organized and collapsed such that no domain intersects with another domain</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    PROTEINS: dict</span>
-<span class="sd">        dictionary of protein accessions containing a list of domains</span>
-<span class="sd">    VERBOSE: boolean</span>
-<span class="sd">        If VERBOSE, print logging statements to log_file output about decisions being made at the coherence of domains and boundaries</span>
-<span class="sd">    log_file: str</span>
-<span class="sd">        Location of verbose output. If no file provided, this will default to print logging statements as append to a default file</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    processed_proteins_dict: dict</span>
-<span class="sd">        dictionary of protein accessions containing a list of collapsed and arranged domains</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">domainMD_new</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;+a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">log</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Collapsing domains based on mulit-domains within a larger domain</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Parameters: </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">protein</span> <span class="ow">in</span> <span class="n">PROTEINS</span><span class="p">:</span>
-        <span class="c1">#print(&quot;Working on %s&quot;%(protein))</span>
-        <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;+a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">log</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">protein</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">domain_list</span> <span class="o">=</span> <span class="n">PROTEINS</span><span class="p">[</span><span class="n">protein</span><span class="p">]</span>
-        <span class="n">domain_list_reduced</span> <span class="o">=</span> <span class="n">collapse_InterPro_Domains</span><span class="p">(</span><span class="n">domain_list</span><span class="p">,</span> <span class="n">VERBOSE</span><span class="p">,</span> <span class="n">log_file</span><span class="p">)</span> 
-        <span class="n">domainMD_new</span><span class="p">[</span><span class="n">protein</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_list_reduced</span>
-    <span class="c1">#interpro_dict = collapse_InterPro_Domains(PROTEINS) #inplace deletion of domainMD, may want to move this to process_proteins?</span>
-
-    <span class="n">processed_proteins_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">protein_accession</span><span class="p">,</span> <span class="n">domains_list</span> <span class="ow">in</span> <span class="n">domainMD_new</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1"># domains_list is a list of unprocessed domains which can be processed with make_interpro_annotations</span>
-        <span class="n">processed_domains_list</span> <span class="o">=</span> <span class="n">make_interpro_annotations</span><span class="p">(</span><span class="n">domains_list</span><span class="p">)</span>
-        
-        <span class="c1"># The list of processed domains can be associated with its accession</span>
-        <span class="n">processed_proteins_dict</span><span class="p">[</span><span class="n">protein_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_domains_list</span>
-    
-    <span class="k">return</span> <span class="n">processed_proteins_dict</span>
-
-<span class="c1"># complete</span>
-<span class="k">def</span> <span class="nf">make_interpro_annotations</span><span class="p">(</span><span class="n">domains_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a list of domains arranged by sequence</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    domains_list : list</span>
-<span class="sd">        A list of domain dictionaries</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    overall_dict : list of dictionaries</span>
-<span class="sd">        </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">interpro_domains_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">domains_list</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="s1">&#39;interpro&#39;</span> <span class="ow">in</span> <span class="n">domains_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">interpro_domains_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domains_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-
-    <span class="c1"># domains_list is processed such that the domains that intersect can be collapsed based on hierarchy</span>
-    <span class="n">collapsed_domains_list</span><span class="p">,</span> <span class="n">hierarchy_dict</span> <span class="o">=</span> <span class="n">collapse_domains</span><span class="p">(</span><span class="n">interpro_domains_list</span><span class="p">)</span>
-    <span class="c1">#print(collapsed_domains_list)</span>
-
-    <span class="n">formatted_domains_list</span> <span class="o">=</span> <span class="n">handle_bounds</span><span class="p">(</span><span class="n">collapsed_domains_list</span><span class="p">)</span>
-    
-    <span class="n">formatted_domains_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">sort_function</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">formatted_domains_list</span>
-
-<span class="k">def</span> <span class="nf">return_interpro_domain_list</span><span class="p">(</span><span class="n">domain_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    From a list of domain dicts that comes from get meta data, get just the subset of domains that are interpro</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">interpro_domain_list</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_list</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="s1">&#39;interpro&#39;</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">interpro_domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">interpro_domain_list</span>
-
-<span class="c1"># documentation incomplete</span>
-<span class="k">def</span> <span class="nf">handle_bounds</span><span class="p">(</span><span class="n">domain_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Handles instances where there may be discontinuous boundaries for a single domain</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    processed_domain_list : list</span>
-<span class="sd">        list of dictionaries containing one or more regions annotated as the same domain</span>
-<span class="sd">    &quot;&quot;&quot;</span> 
-    <span class="n">formatted_domain_list</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_list</span><span class="p">)):</span>
-        <span class="n">domain_dict</span> <span class="o">=</span> <span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">]</span>
-
-        <span class="n">num_boundaries</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">])</span><span class="c1">#domain_dict[&#39;num_boundaries&#39;]</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
-        <span class="n">short</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span>
-        <span class="n">accession</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
-        <span class="n">bounds</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">num_boundaries</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_boundaries</span><span class="p">):</span>
-                <span class="n">new_domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">short</span>
-                <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">accession</span>
-                <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
-                <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
-                <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
-                <span class="n">formatted_domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_domain_dict</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">short</span>
-            <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">accession</span>
-            <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
-            <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
-            <span class="n">new_domain_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
-            <span class="n">formatted_domain_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_domain_dict</span><span class="p">)</span>
-        
-    <span class="k">return</span> <span class="n">formatted_domain_list</span>
-
-<span class="c1"># documentation incomplete</span>
-<span class="k">def</span> <span class="nf">sort_function</span><span class="p">(</span><span class="n">formatted_domain_dict</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">formatted_domain_dict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
-
-
-<span class="c1"># complete</span>
-<span class="k">def</span> <span class="nf">compare_hierarchy</span><span class="p">(</span><span class="n">hierarchy_dict</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Checks the domain hierarchies of all domains present within a protein and collapses domains into the domain at the </span>
-<span class="sd">    top of the hierarchy</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    hierarchy_dict : dict</span>
-<span class="sd">        Dictionary containing hierarchy information where the key is the interpro accession of the domain and </span>
-<span class="sd">        the value is the dictionary with data regarding the domain&#39;s hierarchy</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    collapsed_domain_mapper : dict</span>
-<span class="sd">        A dictionary that maps the collapsed domains to the domain they have been collapsed under</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">skipped_accessions</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">collapsed_domain_mapper</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">interpro_accession_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hierarchy_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">interpro_accession_list</span><span class="p">)):</span>
-        <span class="n">accession</span> <span class="o">=</span> <span class="n">interpro_accession_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="c1"># check if the accession has already been collapsed and skip iteration if collapsed</span>
-        <span class="k">if</span> <span class="n">accession</span> <span class="ow">in</span> <span class="n">skipped_accessions</span><span class="p">:</span>
-            <span class="k">continue</span>
-        
-        <span class="n">compare_to_list</span> <span class="o">=</span> <span class="n">interpro_accession_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">collapsable_domains</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">collapsable_domain_found</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">compare_to_list</span><span class="p">)):</span>
-            <span class="n">compare_to_accession</span> <span class="o">=</span> <span class="n">compare_to_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-            <span class="c1"># check if the accession has already been collapsed and skip iteration if collapsed</span>
-            <span class="k">if</span> <span class="n">compare_to_accession</span> <span class="ow">in</span> <span class="n">skipped_accessions</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="n">hierarchy_dict</span><span class="p">[</span><span class="n">accession</span><span class="p">]</span> <span class="o">==</span> <span class="n">hierarchy_dict</span><span class="p">[</span><span class="n">compare_to_accession</span><span class="p">]:</span>
-                <span class="n">collapsable_domain_found</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">collapsable_domains</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compare_to_accession</span><span class="p">)</span>
-                <span class="n">skipped_accessions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compare_to_accession</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">collapsable_domain_found</span><span class="p">:</span>
-            <span class="n">collapsable_domains</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">accession</span><span class="p">)</span>
-            <span class="c1"># implement breadth first search to find the topmost domain within the hierarchy</span>
-            <span class="n">topmost_accession</span> <span class="o">=</span> <span class="n">BFS</span><span class="p">(</span><span class="n">collapsable_domains</span><span class="p">,</span> <span class="n">hierarchy_dict</span><span class="p">[</span><span class="n">accession</span><span class="p">])</span>
-            <span class="n">collapsable_domains</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">topmost_accession</span><span class="p">)</span>
-            <span class="n">collapsed_domain_mapper</span><span class="p">[</span><span class="n">topmost_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">collapsable_domains</span>
-    
-    <span class="k">return</span> <span class="n">collapsed_domain_mapper</span>
-
-
-<span class="c1"># complete            </span>
-<span class="k">def</span> <span class="nf">BFS</span><span class="p">(</span><span class="n">accession_list</span><span class="p">,</span> <span class="n">hierarchy_tree</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A function that performs breadth-first search on a provided hierarchy tree</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    accession_list : list</span>
-<span class="sd">        list of accessions that the algorith is searching for within the tree</span>
-<span class="sd">    hierarchy_tree : dict</span>
-<span class="sd">        a dictionary that contains the hierarchy data</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    topmost_accession : str</span>
-<span class="sd">        the accession found at the topmost level of the tree that also exists in accession_list</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">queue</span> <span class="o">=</span> <span class="p">[</span><span class="n">hierarchy_tree</span><span class="p">]</span>
-    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">tree</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">accession_list</span><span class="p">:</span>
-            <span class="n">topmost_accession</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">topmost_accession</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">children</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)):</span>
-                <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">children</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-
-
-<span class="c1"># complete</span>
-<span class="k">def</span> <span class="nf">collapse_domains</span><span class="p">(</span><span class="n">domain_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes the domains within an interpro protein that have similar/intersecting boundaries</span>
-<span class="sd">    and collapses them based on domain hierarchy</span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    domain_list : list</span>
-<span class="sd">        A list of domain dictionaries</span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    collapsed_domain_list : list</span>
-<span class="sd">        A list of dictionaries where domains at the top of the hierarchy table are kept and any underlying domains have been removed</span>
-<span class="sd">    &quot;&quot;&quot;</span>    
-    <span class="n">hierarchy_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">interpro_accessions_list</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">interpro_url</span> <span class="o">=</span> <span class="s1">&#39;https://www.ebi.ac.uk/interpro/api&#39;</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_list</span><span class="p">)):</span>
-        <span class="n">interpro_accessions_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">])</span>
-    
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">interpro_accessions_list</span><span class="p">)):</span>
-        <span class="n">interpro_accession</span> <span class="o">=</span> <span class="n">interpro_accessions_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">interpro_url</span> <span class="o">+</span> <span class="s2">&quot;/entry/interpro/&quot;</span> <span class="o">+</span> <span class="n">interpro_accession</span>
-        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-
-        <span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;short&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">][</span><span class="s1">&#39;short&#39;</span><span class="p">]</span>
-        <span class="n">hierarchy_dict</span><span class="p">[</span><span class="n">interpro_accession</span><span class="p">]</span> <span class="o">=</span> <span class="n">resp</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;hierarchy&#39;</span><span class="p">]</span>
-    
-    <span class="n">collapsed_domain_mapper</span> <span class="o">=</span> <span class="n">compare_hierarchy</span><span class="p">(</span><span class="n">hierarchy_dict</span><span class="p">)</span>
-    
-    <span class="n">to_remove</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mapped_list</span> <span class="ow">in</span> <span class="n">collapsed_domain_mapper</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_list</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">domain_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">mapped_list</span><span class="p">:</span>
-                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-    
-    <span class="n">to_remove</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)):</span>
-        <span class="n">domain_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">to_remove</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-
-    <span class="k">return</span> <span class="n">domain_list</span><span class="p">,</span> <span class="n">hierarchy_dict</span>
-
-<span class="k">def</span> <span class="nf">return_domain_architecture</span><span class="p">(</span><span class="n">domain_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given a domain_list, list of domain information short_name:id:start:end return a domain </span>
-<span class="sd">    architecture, which is the | separated list of domain names, in the order they appear in protein</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1">#Domain Architecture</span>
-    <span class="n">domdict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">domain_info</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">:</span>
-        <span class="n">name</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">domain_info</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
-        <span class="n">domdict</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">end</span><span class="p">,</span> <span class="n">name</span>
-
-    <span class="n">sorted_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">domdict</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span><span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-    <span class="n">domain_arch</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">sorted_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="c1">#sort_start = key</span>
-        <span class="c1">#sort_end = value[0]</span>
-        <span class="n">domain</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">domain_arch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
-
-    
-    <span class="n">final_domarch</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">domain_arch</span><span class="p">)</span>   
-    <span class="k">return</span> <span class="n">final_domarch</span>
-
-
-<span class="k">def</span> <span class="nf">collapse_InterPro_Domains</span><span class="p">(</span><span class="n">domain_list</span><span class="p">,</span> <span class="n">VERBOSE</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="n">overlap_threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given a domain metadata dictionary (keys are protein ID and points to list of domain dicts), remove</span>
-<span class="sd">    all domains that overlap a domain by more than the fraction defined by overlap_threshold. Behavior: </span>
-<span class="sd">    Keeps the first instance of the domain (as returned by Interpro) and removes later instances, which are </span>
-<span class="sd">    less generalized/more specific to proteins.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    domain_list: list</span>
-<span class="sd">        List of domain dictionaries from InterPro for a single protein </span>
-<span class="sd">    VERBOSE: boolean</span>
-<span class="sd">        If VERBOSE, print logging statements to log_file output about decisions being made at the coherence of domains and boundaries</span>
-<span class="sd">    log_file: str</span>
-<span class="sd">        Location of verbose output. If no file provided, this will default to print logging statements as append to a default file</span>
-<span class="sd">    overlap_threshold: float</span>
-<span class="sd">        Percent of the smaller domain that must overlap with a larger domain before considering collapsing these. </span>
-<span class="sd">  </span>
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    domain_list_new: list</span>
-<span class="sd">        List of domain dictionaries with collapsed entries removed. Collapsed when more than one domain is found within a larger</span>
-<span class="sd">        domain that has &gt; overlap_threshold and is smaller by larger_than_length.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1">#first assemble all the interpro domains across the list. Keep track of their entry number, and the information</span>
-    <span class="c1">#let&#39;s make a new version of this, as a dict, where the index values cannot be changed as a result of </span>
-    <span class="c1">#deleting values as we go. We&#39;ll cast back to a list for export</span>
-    <span class="n">domain_list_temp</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">domain_list</span><span class="p">)</span>
-    <span class="n">domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain_list_temp</span><span class="p">)):</span>
-        <span class="n">domain_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_list_temp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-    <span class="n">interpro_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">database_key</span> <span class="o">=</span> <span class="s1">&#39;interpro&#39;</span>
-    <span class="c1">#for protein in domain_metadata:</span>
-        <span class="c1">#print(&quot;Working on %s&quot;%(protein))</span>
-        <span class="c1">#domain_list = domain_metadata[protein]</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">database_key</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
-            <span class="n">interpro_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">database_key</span><span class="p">]</span>
-
-    <span class="n">keys_to_remove</span> <span class="o">=</span> <span class="n">return_keys_to_remove_by_overlap</span><span class="p">(</span><span class="n">interpro_dict</span><span class="p">,</span> <span class="n">overlap_threshold</span><span class="p">)</span>
-
-    <span class="n">domainVal_report</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">keys_to_remove</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys_to_remove</span><span class="p">:</span><span class="c1">#.sort(reverse=True):</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
-                <span class="n">boundary_starts</span> <span class="o">=</span> <span class="n">keys_to_remove</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundary_starts</span><span class="p">)</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]):</span>
-                    <span class="k">del</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="c1">#[database_key] #can delete the entire entry</span>
-                    <span class="n">domainVal_report</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;all instances&#39;</span>
-                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundary_starts</span><span class="p">)</span><span class="o">&gt;</span><span class="nb">len</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]):</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: boundaries to remove is larger than available&quot;</span><span class="p">)</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="n">boundary_starts</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1">#sort the boundaries in reverse order</span>
-                    <span class="n">domainVal_report</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;some instances:&#39;</span>
-                    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">boundary_starts</span><span class="p">:</span>
-                        <span class="c1">#find the correct value in the range to remove</span>
-                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">])):</span>
-                            <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]:</span>
-                                <span class="n">domainVal_report</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot; </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
-                                <span class="c1">#print(&quot;DEBUG: removing %d position with start %d, matching %d&quot;%(i, start, domain_dict[key][&#39;interpro&#39;][&#39;boundaries&#39;][i][&#39;start&#39;]))</span>
-                                <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                                <span class="k">break</span>
-                    <span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;num_boundaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;interpro&#39;</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: Index </span><span class="si">%d</span><span class="s2"> no longer in domain list&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-        <span class="c1">#re list the domains</span>
-    <span class="n">domain_list_new</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
-        <span class="n">domain_list_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-
-    <span class="c1">#write the report if VERBOSE</span>
-    <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;+a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">log</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Removal based on domain overlap</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">domain_val</span> <span class="ow">in</span> <span class="n">keys_to_remove</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> REMOVED: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">return_info_string</span><span class="p">(</span><span class="n">interpro_dict</span><span class="p">,</span> <span class="n">domain_val</span><span class="p">),</span> <span class="n">domainVal_report</span><span class="p">[</span><span class="n">domain_val</span><span class="p">]))</span>
-    <span class="k">return</span> <span class="n">domain_list_new</span>
-
-
-<span class="k">def</span> <span class="nf">return_keys_to_remove_by_overlap</span><span class="p">(</span><span class="n">interpro_dict</span><span class="p">,</span> <span class="n">overlap_threshold</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        </span>
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        keys_to_remove: dict</span>
-<span class="sd">            Dictionary with key equal to the dictionary entry of an interpro domain to be removed</span>
-<span class="sd">            and values equal to a list of unique start positions of boundaries to be removed</span>
-<span class="sd">            from the domain set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">keys</span> <span class="o">=</span> <span class="n">interpro_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="c1"># keep track of the start position of the domain number and the boundary number that need to be removed</span>
-        <span class="n">to_remove</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)):</span>
-                <span class="n">boundaries_i</span> <span class="o">=</span> <span class="n">interpro_dict</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)):</span> 
-                        <span class="c1">#j is always a later set than i, so if it overlaps, remove it</span>
-                        <span class="n">boundaries_j</span> <span class="o">=</span> <span class="n">interpro_dict</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span>
-                        <span class="k">for</span> <span class="n">boundary_j</span> <span class="ow">in</span> <span class="n">boundaries_j</span><span class="p">:</span>
-                                <span class="k">for</span> <span class="n">boundary_i</span> <span class="ow">in</span> <span class="n">boundaries_i</span><span class="p">:</span>
-                                        <span class="c1">#print(&#39;DEBUG comparing x to y&#39;)</span>
-                                        <span class="c1">#print(boundary_i)</span>
-                                        <span class="c1">#print(boundary_j)</span>
-                                        <span class="n">intersection</span> <span class="o">=</span> <span class="n">return_overlap</span><span class="p">(</span><span class="n">boundary_i</span><span class="p">,</span> <span class="n">boundary_j</span><span class="p">)</span>
-                                        <span class="k">if</span> <span class="n">intersection</span> <span class="o">&gt;=</span> <span class="n">overlap_threshold</span><span class="p">:</span>
-                                                <span class="k">if</span> <span class="n">j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">to_remove</span><span class="p">:</span>
-                                                        <span class="n">to_remove</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                                                <span class="n">to_remove</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">boundary_j</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">])</span>
-        <span class="c1">#clean up and make boundaries to remove a set</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">to_remove</span><span class="p">:</span>
-                <span class="n">to_remove</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">to_remove</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
-        <span class="k">return</span> <span class="n">to_remove</span>               
-
-                
-<span class="k">def</span> <span class="nf">return_info_string</span><span class="p">(</span><span class="n">interpro_dict</span><span class="p">,</span> <span class="n">dict_item_number</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given an intepro_dict and the item number, return a string of info about the domain, specifically </span>
-<span class="sd">    the short name, interpro number, and start, stop </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">interpro_dict</span><span class="p">[</span><span class="n">dict_item_number</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">interpro_dict</span><span class="p">[</span><span class="n">dict_item_number</span><span class="p">][</span><span class="s1">&#39;accession&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">interpro_dict</span><span class="p">[</span><span class="n">dict_item_number</span><span class="p">][</span><span class="s1">&#39;boundaries&#39;</span><span class="p">])])</span>
-
-
-<span class="k">def</span> <span class="nf">return_overlap</span><span class="p">(</span><span class="n">boundary_set_1</span><span class="p">,</span> <span class="n">boundary_set_2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; </span>
-<span class="sd">    Given a boundary dictionary with &#39;start&#39; and &#39;end&#39; return the overlap fraction of the </span>
-<span class="sd">    set (measuring the intersection of the two boundaries and normalizing by the smaller domain)</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">set_1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">boundary_set_1</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> <span class="n">boundary_set_1</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]))</span>
-    <span class="n">set_2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">boundary_set_2</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">],</span> <span class="n">boundary_set_2</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]))</span>
-    <span class="n">intersection</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">set_1</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">set_2</span><span class="p">))</span><span class="o">/</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">set_1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">set_2</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">intersection</span>
-
-
-
-
 
 
 <span class="k">def</span> <span class="nf">Main</span><span class="p">():</span>

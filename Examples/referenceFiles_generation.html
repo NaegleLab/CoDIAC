@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>STEP 1: Get all Uniprot IDs that match a family of interest &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    
+    <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Get all Uniprot IDs that match a family of interest</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">featureTools</span><span class="p">,</span> <span class="n">InterPro</span><span class="p">,</span> <span class="n">UniProt</span><span class="p">,</span> <span class="n">PDB</span><span class="p">,</span> <span class="n">IntegrateStructure_Reference</span><span class="p">,</span> <span class="n">PTM</span><span class="p">,</span> <span class="n">translateFeatures</span><span class="p">,</span> <span class="n">jalviewFunctions</span>
+<span class="kn">import</span> <span class="nn">CoDIAC</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">Interpro_ID</span> <span class="o">=</span> <span class="s1">&#39;IPR000980&#39;</span> <span class="c1">#IPR000980 is the SH2 domain superfamily</span>
+
+<span class="c1">#We will be creating a lot of files, this is how we would like them to be named</span>
+<span class="n">data_root</span> <span class="o">=</span> <span class="s1">&#39;Data/&#39;</span>
+<span class="n">name_root</span> <span class="o">=</span> <span class="s1">&#39;SH2_&#39;</span><span class="o">+</span><span class="n">Interpro_ID</span>
+
+<span class="c1"># The files we will make in this process (so that different pieces of code can be run below as needed)</span>
+<span class="n">uniprot_reference_file</span> <span class="o">=</span> <span class="n">data_root</span><span class="o">+</span><span class="s1">&#39;Uniprot_Reference/&#39;</span><span class="o">+</span><span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;_uniprot_reference.csv&#39;</span> <span class="c1"># The uniprot reference</span>
+<span class="n">fasta_long_header_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;Uniprot_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;_long_header.fasta&#39;</span>
+<span class="n">fasta_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;Uniprot_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span><span class="o">+</span><span class="s1">&#39;.fasta&#39;</span>
+<span class="c1">#note: in addition to these 3 files, this also makes a mapping file for movng between fasta_long_header_file and fasta_file</span>
+
+<span class="c1">#PDB Files we&#39;ll make in this process</span>
+<span class="n">PDB_file</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB.csv&#39;</span>
+<span class="n">PDB_file_annotated</span> <span class="o">=</span> <span class="n">data_root</span><span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB_annotated.csv&#39;</span>
+<span class="n">PDB_file_filtered</span> <span class="o">=</span> <span class="n">data_root</span> <span class="o">+</span> <span class="s1">&#39;PDB_Reference/&#39;</span> <span class="o">+</span> <span class="n">name_root</span> <span class="o">+</span> <span class="s1">&#39;_PDB_reference.csv&#39;</span> <span class="c1">#The final PDB structure file, containing only filtered proteins</span>
+<br/><br/></pre></div>
+</div>
+</div>
+<section id="STEP-1:-Get-all-Uniprot-IDs-that-match-a-family-of-interest">
+<h1>STEP 1: Get all Uniprot IDs that match a family of interest<a class="headerlink" href="#STEP-1:-Get-all-Uniprot-IDs-that-match-a-family-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">uniprot_IDs</span><span class="p">,</span> <span class="n">species_dict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">InterPro</span><span class="o">.</span><span class="n">fetch_uniprotids</span><span class="p">(</span><span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">REVIEWED</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;Homo sapiens&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Fetched 109 Uniprot IDs linked to IPR000980, where count expected to be 109
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">
+<h1>STEP 2: Make a human reference file of the family of interest<a class="headerlink" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">uniprot_df</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">UniProt</span><span class="o">.</span><span class="n">makeRefFile</span><span class="p">(</span><span class="n">uniprot_IDs</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Domain Reference File successfully created!
+Adding Interpro Domains
+Fetching domains..
+Appending domains to file..
+Interpro metadata succesfully incorporated
+</pre></div></div>
+</div>
+<p>Manually checked Uniprot reference file for errors/issues. Found Uniprot and Interpro generally agreeing, with Interpro adding additional domains of interest. Manually removed the alpha-helix region termed “PI3K_P85_iSH2:IPR032498” in the Interpro file for</p>
+<p>P27986,PIK3R1</p>
+<p>Q92569,PIK3R3</p>
+<p>O00459,PIK3R2</p>
+</section>
+<section id="STEP-3:-Get-all-PDBs-that-exist-for-the-reference-proteins-of-interest">
+<h1>STEP 3: Get all PDBs that exist for the reference proteins of interest<a class="headerlink" href="#STEP-3:-Get-all-PDBs-that-exist-for-the-reference-proteins-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDB</span><span class="o">.</span><span class="n">generateStructureRefFile_fromUniprotFile</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+6GMH is not a valid PDB ID
+6TED is not a valid PDB ID
+7OOP is not a valid PDB ID
+7OPC is not a valid PDB ID
+7OPD is not a valid PDB ID
+5RXU is not a valid PDB ID
+5RXV is not a valid PDB ID
+5RXW is not a valid PDB ID
+5RXX is not a valid PDB ID
+5RXY is not a valid PDB ID
+5RXZ is not a valid PDB ID
+5RY0 is not a valid PDB ID
+5RY1 is not a valid PDB ID
+5RY2 is not a valid PDB ID
+5RY3 is not a valid PDB ID
+5RY4 is not a valid PDB ID
+5RY5 is not a valid PDB ID
+5RY6 is not a valid PDB ID
+5RY7 is not a valid PDB ID
+5RY8 is not a valid PDB ID
+5RY9 is not a valid PDB ID
+5RYA is not a valid PDB ID
+5RYB is not a valid PDB ID
+5RYC is not a valid PDB ID
+5RYD is not a valid PDB ID
+5RYE is not a valid PDB ID
+5RYF is not a valid PDB ID
+5RYG is not a valid PDB ID
+5RYH is not a valid PDB ID
+5RYI is not a valid PDB ID
+5RYJ is not a valid PDB ID
+5RYK is not a valid PDB ID
+5RYL is not a valid PDB ID
+6IBD is not a valid PDB ID
+6XY7 is not a valid PDB ID
+8PDG is not a valid PDB ID
+8PDH is not a valid PDB ID
+8PDI is not a valid PDB ID
+8PDJ is not a valid PDB ID
+2CS0 is not a valid PDB ID
+4M4Z is not a valid PDB ID
+5W3R is not a valid PDB ID
+2EL8 is not a valid PDB ID
+2D86 is not a valid PDB ID
+1X1F is not a valid PDB ID
+3MAZ is not a valid PDB ID
+1FAO is not a valid PDB ID
+1FB8 is not a valid PDB ID
+Structure Reference File successfully created!
+</pre></div></div>
+</div>
+</section>
+<section id="STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">
+<h1>STEP 4: Annotate the structure file with reference, for domain annotation<a class="headerlink" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">struct_df_out</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">IntegrateStructure_Reference</span><span class="o">.</span><span class="n">add_reference_info_to_struct_file</span><span class="p">(</span><span class="n">PDB_file</span><span class="p">,</span> <span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file_annotated</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">
+<h1>STEP 5: Reduce the structure file to just those that contain the domain of interest<a class="headerlink" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now with an appended PDB File, create an output that contains only the lines that have SH2 domains</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">IntegrateStructure_Reference</span><span class="o">.</span><span class="n">filter_structure_file</span><span class="p">(</span><span class="n">PDB_file_annotated</span><span class="p">,</span> <span class="n">Interpro_ID</span><span class="p">,</span> <span class="n">PDB_file_filtered</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Made Data/PDB_Reference/SH2_IPR000980_PDB_reference.csv file: 456 structures retained of 1409 total
+</pre></div></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">STEP 1: Get all Uniprot IDs that match a family of interest</a></li>
+<li><a class="reference internal" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">STEP 2: Make a human reference file of the family of interest</a></li>
+<li><a class="reference internal" href="#STEP-3:-Get-all-PDBs-that-exist-for-the-reference-proteins-of-interest">STEP 3: Get all PDBs that exist for the reference proteins of interest</a></li>
+<li><a class="reference internal" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">STEP 4: Annotate the structure file with reference, for domain annotation</a></li>
+<li><a class="reference internal" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">STEP 5: Reduce the structure file to just those that contain the domain of interest</a></li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/Examples/referenceFiles_generation.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Get all Uniprot IDs that match a family of interest</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

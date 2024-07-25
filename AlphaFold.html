@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>PDB &#8212; CoDIAC 1 documentation</title>
+    <title>AlphaFold &#8212; CoDIAC 1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
     
@@ -16,8 +16,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="PDB" href="AlphaFold.html" />
-    <link rel="prev" title="UniProt" href="UniProt.html" /> 
+    <link rel="next" title="InterPro" href="InterPro.html" />
+    <link rel="prev" title="PDB" href="PDB.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -29,13 +29,13 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="AlphaFold.html" title="PDB"
+          <a href="InterPro.html" title="InterPro"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="UniProt.html" title="UniProt"
+          <a href="PDB.html" title="PDB"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">PDB</a></li> 
+        <li class="nav-item nav-item-this"><a href="">AlphaFold</a></li> 
       </ul>
     </div>  
 
@@ -44,27 +44,31 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="module-CoDIAC.PDB">
-<span id="pdb"></span><h1>PDB<a class="headerlink" href="#module-CoDIAC.PDB" title="Link to this heading">¶</a></h1>
+  <section id="module-CoDIAC.AlphaFold">
+<span id="alphafold"></span><h1>AlphaFold<a class="headerlink" href="#module-CoDIAC.AlphaFold" title="Link to this heading">¶</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="CoDIAC.PDB.generateStructureRefFile_fromUniprotFile">
-<span class="sig-prename descclassname"><span class="pre">CoDIAC.PDB.</span></span><span class="sig-name descname"><span class="pre">generateStructureRefFile_fromUniprotFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uniprotRefFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/PDB.html#generateStructureRefFile_fromUniprotFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.PDB.generateStructureRefFile_fromUniprotFile" title="Link to this definition">¶</a></dt>
-<dd><p>Creates a PDB Structure Reference File</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>uniprotRefFile: str</strong></dt><dd><p>Location of the uniprot referenct to use</p>
+<dt class="sig sig-object py" id="CoDIAC.AlphaFold.makeRefFile">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.AlphaFold.</span></span><span class="sig-name descname"><span class="pre">makeRefFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">refUniprot_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cifFile_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputFile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/AlphaFold.html#makeRefFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.AlphaFold.makeRefFile" title="Link to this definition">¶</a></dt>
+<dd><p>make a structure reference file for alphafodl structures
+Parameters
+———-</p>
+<blockquote>
+<div><dl class="simple">
+<dt>refUniprot_file<span class="classifier">str</span></dt><dd><p>input uniprot reference file</p>
 </dd>
-<dt><strong>outputFile: str</strong></dt><dd><p>name of the output file</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>Writes to the outputFile location a CSV formatted, annotated structure file</dt><dd></dd>
-</dl>
+<dt>cifFile_path<span class="classifier">str</span></dt><dd><p>input path to find mmcif files downloaded for AlphaFold structures</p>
 </dd>
 </dl>
+</div></blockquote>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>outputFile<span class="classifier">str</span></dt><dd><p>file path for output reference csv file</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
 </dd></dl>
 
 </section>
@@ -79,8 +83,8 @@
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">PDB</a><ul>
-<li><a class="reference internal" href="#CoDIAC.PDB.generateStructureRefFile_fromUniprotFile"><code class="docutils literal notranslate"><span class="pre">generateStructureRefFile_fromUniprotFile()</span></code></a></li>
+<li><a class="reference internal" href="#">AlphaFold</a><ul>
+<li><a class="reference internal" href="#CoDIAC.AlphaFold.makeRefFile"><code class="docutils literal notranslate"><span class="pre">makeRefFile()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -88,18 +92,18 @@
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="UniProt.html"
-                          title="previous chapter">UniProt</a></p>
+    <p class="topless"><a href="PDB.html"
+                          title="previous chapter">PDB</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="AlphaFold.html"
-                          title="next chapter">PDB</a></p>
+    <p class="topless"><a href="InterPro.html"
+                          title="next chapter">InterPro</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/PDB.rst.txt"
+      <li><a href="_sources/AlphaFold.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -127,13 +131,13 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="AlphaFold.html" title="PDB"
+          <a href="InterPro.html" title="InterPro"
              >next</a> |</li>
         <li class="right" >
-          <a href="UniProt.html" title="UniProt"
+          <a href="PDB.html" title="PDB"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">PDB</a></li> 
+        <li class="nav-item nav-item-this"><a href="">AlphaFold</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

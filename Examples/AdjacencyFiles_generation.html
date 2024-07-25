@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>STEP 1: Generate mmCIF files for PDBs of interest &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    
+    <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dependencies (Examples)" href="../Dependencies.html" />
+    <link rel="prev" title="Fetch all reference files for an Interpro_ID of interest" href="SH2_get_specific_proteins_example.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../Dependencies.html" title="Dependencies (Examples)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="SH2_get_specific_proteins_example.html" title="Fetch all reference files for an Interpro_ID of interest"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Examples.html" accesskey="U">Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Generate mmCIF files for PDBs of interest</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">AdjacencyFiles</span> <span class="k">as</span> <span class="n">af</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">PDB</span>
+</pre></div>
+</div>
+</div>
+<section id="STEP-1:-Generate-mmCIF-files-for-PDBs-of-interest">
+<h1>STEP 1: Generate mmCIF files for PDBs of interest<a class="headerlink" href="#STEP-1:-Generate-mmCIF-files-for-PDBs-of-interest" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cif_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/CIF_files&#39;</span>
+<span class="n">PDB_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;4JGH&#39;</span><span class="p">,</span><span class="s1">&#39;3TL0&#39;</span><span class="p">,</span><span class="s1">&#39;1D4W&#39;</span><span class="p">]</span>
+<span class="n">PDB</span><span class="o">.</span><span class="n">download_cifFile</span><span class="p">(</span><span class="n">PDB_list</span><span class="p">,</span> <span class="n">cif_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-2:-Generate-json-files-using-Arpeggio-(not-shown-here)">
+<h1>STEP 2: Generate json files using Arpeggio (not shown here)<a class="headerlink" href="#STEP-2:-Generate-json-files-using-Arpeggio-(not-shown-here)" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">json_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/JSON_files&#39;</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-3:-Generate-Adjacency-txt-files">
+<h1>STEP 3: Generate Adjacency txt files<a class="headerlink" href="#STEP-3:-Generate-Adjacency-txt-files" title="Link to this heading">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adj_path</span><span class="o">=</span><span class="s1">&#39;./Data/Adjacency_files&#39;</span>
+<span class="k">for</span> <span class="n">PDB_ID</span> <span class="ow">in</span> <span class="n">PDB_list</span><span class="p">:</span>
+    <span class="n">cif_file</span> <span class="o">=</span> <span class="n">cif_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span>
+    <span class="n">json_file</span> <span class="o">=</span> <span class="n">json_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span>
+    <span class="n">newpath</span> <span class="o">=</span> <span class="n">adj_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>   <span class="c1">#create a directory for PDB to store its corresponding adjacency files</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">newpath</span>
+    <span class="n">af</span><span class="o">.</span><span class="n">ProcessArpeggio</span><span class="p">(</span><span class="n">json_file</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">cif_file</span><span class="p">,</span> <span class="n">small_molecule</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>    <span class="c1">#generates adjacency file</span>
+    <span class="n">af</span><span class="o">.</span><span class="n">BinaryFeatures</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">translate_resid</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1">#generates binarized version</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+4JGH
+4JGH
+Adjacency File generated for 4JGH
+Adjacency File with Binary features generated for 4JGH
+3TL0
+3TL0
+Adjacency File generated for 3TL0
+Adjacency File with Binary features generated for 3TL0
+1D4W
+1D4W
+Adjacency File generated for 1D4W
+Adjacency File with Binary features generated for 1D4W
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">STEP 1: Generate mmCIF files for PDBs of interest</a></li>
+<li><a class="reference internal" href="#STEP-2:-Generate-json-files-using-Arpeggio-(not-shown-here)">STEP 2: Generate json files using Arpeggio (not shown here)</a></li>
+<li><a class="reference internal" href="#STEP-3:-Generate-Adjacency-txt-files">STEP 3: Generate Adjacency txt files</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="SH2_get_specific_proteins_example.html"
+                          title="previous chapter">Fetch all reference files for an Interpro_ID of interest</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../Dependencies.html"
+                          title="next chapter">Dependencies (Examples)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/Examples/AdjacencyFiles_generation.ipynb.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../Dependencies.html" title="Dependencies (Examples)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="SH2_get_specific_proteins_example.html" title="Fetch all reference files for an Interpro_ID of interest"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="Examples.html" >Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">STEP 1: Generate mmCIF files for PDBs of interest</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

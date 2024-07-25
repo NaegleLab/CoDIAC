@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Integrate the Structure and Reference files" href="IntegrateStructure_Reference.html" />
-    <link rel="prev" title="PDB" href="PDB.html" /> 
+    <link rel="prev" title="PDB" href="AlphaFold.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -32,7 +32,7 @@
           <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="PDB.html" title="PDB"
+          <a href="AlphaFold.html" title="PDB"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">InterPro</a></li> 
@@ -78,25 +78,27 @@ this returns the dataframe that is prented</p>
 for all species or for a specific taxonomy.</p>
 <p>Examples:
 Examples, use this module like this, the first being a more restrictive human with reviewed, versus all 
-records associated within an Interpro ID:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fetch_uniprotids</span><span class="p">(</span><span class="s1">&#39;IPR000980&#39;</span><span class="p">,</span> <span class="n">REVIEWED</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;Homo sapiens&#39;</span><span class="p">)</span> <span class="c1"># human proteins with reviewed records</span>
-<span class="n">fetch_uniprotids</span><span class="p">(</span><span class="s1">&#39;IPR000980&#39;</span><span class="p">,</span> <span class="n">REVIEWED</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span> <span class="c1">#all species records, reviewed and unreviewed</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>interpro_ID: str</strong></dt><dd><p>InterPro ID to search for</p>
+records associated within an Interpro ID:
+.. code-block:: python</p>
+<blockquote>
+<div><p>fetch_uniprotids(‘IPR000980’, REVIEWED=True, species=’Homo sapiens’) # human proteins with reviewed records
+fetch_uniprotids(‘IPR000980’, REVIEWED=False, species=’all’) #all species records, reviewed and unreviewed</p>
+</div></blockquote>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>interpro_ID: str</dt><dd><p>InterPro ID to search for</p>
 </dd>
-<dt><strong>REVIEWED: bool</strong></dt><dd><p>If TRUE, only reviewed records will be returned</p>
+<dt>REVIEWED: bool</dt><dd><p>If TRUE, only reviewed records will be returned</p>
 </dd>
-<dt><strong>species: string</strong></dt><dd><p>Using scientific name under the Uniprot taxonomy to define species. 
+<dt>species: string</dt><dd><p>Using scientific name under the Uniprot taxonomy to define species. 
 See here for taxonomy names: <a class="reference external" href="https://www.uniprot.org/taxonomy?query=*">https://www.uniprot.org/taxonomy?query=*</a></p>
 </dd>
 </dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h2>
+<dl class="simple">
 <dt>uniprot_ID_list: list</dt><dd><p>list of all uniprot IDs found in search. If a species was set, all uniprot IDs for a species
 will be returned in this list, otherwise, all species from search will be returned.</p>
 </dd>
@@ -105,8 +107,7 @@ points to an inner dict that keeps track of the database source ‘reviewed’ o
 and has lists of the uniprot IDs found for that species under that database source.</p>
 </dd>
 </dl>
-</dd>
-</dl>
+</section>
 </dd></dl>
 
 </section>
@@ -131,7 +132,7 @@ and has lists of the uniprot IDs found for that species under that database sour
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="PDB.html"
+    <p class="topless"><a href="AlphaFold.html"
                           title="previous chapter">PDB</a></p>
   </div>
   <div>
@@ -173,7 +174,7 @@ and has lists of the uniprot IDs found for that species under that database sour
           <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
              >next</a> |</li>
         <li class="right" >
-          <a href="PDB.html" title="PDB"
+          <a href="AlphaFold.html" title="PDB"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">InterPro</a></li> 

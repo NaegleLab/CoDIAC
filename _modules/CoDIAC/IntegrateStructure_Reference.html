@@ -162,9 +162,10 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    domainStruct: dict</span>
-<span class="sd">        This dictionary has the name of domainName tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps]</span>
+<span class="sd">        This dictionary has the domain tuples and maps to a tuple of [toName_sequence_start, toName_sequence_stop, numGaps, domain_num]</span>
+<span class="sd">        using a unique key according to the start position of the domain in the alignment.</span>
 <span class="sd">        if INTERPRO is detected then the tuple is [Interpro_ID, </span>
-<span class="sd">        toName_sequence_start, toName_sequence_stop, numGaps]</span>
+<span class="sd">        toName_sequence_start, toName_sequence_stop, numGaps, domain_name]</span>
 <span class="sd">        numGaps says how many gaps existed in the alignment. </span>
 <span class="sd">        Returns -1 if the region could not be mapped. It returns an empty dictionary if the alignment did not meet a gap threshold of less than 30%</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -247,12 +248,14 @@
             <span class="n">start_aln_val</span> <span class="o">=</span> <span class="n">start_aln</span>
             <span class="n">stop_aln_val</span> <span class="o">=</span> <span class="n">stop_aln</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">domain_name</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
-                    <span class="n">domain_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">start_aln_val</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: more than one domain with the same start value was found. First will be overwritten&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">INTERPRO</span><span class="p">:</span>
-                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">]</span>
+                    <span class="c1">#domainStruct[domain_name] = [mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]</span>
+                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpro_ID</span><span class="p">,</span> <span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">]</span>
+                    <span class="c1">#domainStruct[domain_name] = [interpro_ID, mapToStruct[start_aln_val]+1,  mapToStruct[stop_aln_val]+1, numGaps, numMuts]</span>
+                    <span class="n">domainStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpro_ID</span><span class="p">,</span> <span class="n">mapToStruct</span><span class="p">[</span><span class="n">start_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>  <span class="n">mapToStruct</span><span class="p">[</span><span class="n">stop_aln_val</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">,</span> <span class="n">domain_name</span><span class="p">]</span>
                 <span class="c1">#domain_name may already exist, so add a new value to it</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="c1">#print(&quot;ERROR: could not map domains&quot;)</span>
@@ -364,6 +367,9 @@
 <span class="sd">        This is an easily readable string of domain names, in the order they appear in the protein from N- to C-terminal that was</span>
 <span class="sd">        covered by the experiment. Domains are separated by &#39;|&#39;. For example SH3_domain|SH2|Prot_kinase_dom means that the </span>
 <span class="sd">        structure fully covered the SH3_domain, SH2, and Protein_kinase_dom of a SRC family kinase. </span>
+<span class="sd">    full_protein_domain: str</span>
+<span class="sd">        For easy reference, this includes the domains and domain boundaries of the full protein. If domainStr does not contain </span>
+<span class="sd">        the protein domain, it&#39;s due to lack of full inclusion. </span>
 <span class="sd">    full_domain_arch: str</span>
 <span class="sd">        For easy reference, this includes the architecture of the full protein so it can be seen what part of the whole protein</span>
 <span class="sd">        was studied in the experiment.</span>
@@ -378,6 +384,7 @@
     <span class="n">pos_diff</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">domainStr</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
     <span class="n">structure_arch</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
+    <span class="n">full_protein_domain</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
     <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
 
 
@@ -387,7 +394,7 @@
         <span class="n">rangeStr</span> <span class="o">=</span> <span class="s1">&#39;1-&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">struct_seq</span><span class="p">))</span> <span class="c1">#set the range starting from start to end</span>
         
         <span class="n">struct_seq_ref_spanning</span> <span class="o">=</span> <span class="n">struct_seq</span> <span class="c1">#what it is based on existing.</span>
-        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_protein_domain</span><span class="p">,</span> <span class="n">full_domain_arch</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">ref_seq_pos_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_seq_pos_start</span><span class="p">)</span>
         <span class="n">ref_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_length</span><span class="p">)</span>
@@ -398,19 +405,21 @@
     <span class="c1">#First find the protein information in the reference file based on uniprot_id</span>
     <span class="n">protein_rec</span> <span class="o">=</span> <span class="n">reference_df</span><span class="p">[</span><span class="n">reference_df</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">uniprot_id</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">protein_rec</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">uniprot_id</span> <span class="o">==</span> <span class="s1">&#39;not found&#39;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: Encountered Uniprot </span><span class="si">%s</span><span class="s2"> in PDB, not in reference&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">))</span>
+        <span class="c1">#print(&quot;NOTE: Encountered Uniprot %s in PDB, not in reference&quot;%(uniprot_id))</span>
         <span class="c1">#return default information here</span>
     
-        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+        <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_protein_domain</span><span class="p">,</span> <span class="n">full_domain_arch</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">protein_rec</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: Found more than one record for </span><span class="si">%s</span><span class="s2"> in reference&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
             <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Interpro Domains&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">full_protein_domain</span> <span class="o">=</span> <span class="n">domains</span>
             <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Interpro Domain Architecture&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Uniprot Domains&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">full_protein_domain</span> <span class="o">=</span> <span class="n">domains</span>
             <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">protein_rec</span><span class="p">[</span><span class="s1">&#39;Uniprot Domain Architecture&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
             
@@ -424,11 +433,11 @@
     <span class="n">domainList</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">domainDict_forArch</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domainStruct</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">domain_name</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">start_val</span> <span class="ow">in</span> <span class="n">domainStruct</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
-                <span class="n">interproID</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
+                <span class="n">interproID</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">,</span> <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">start_val</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">domain_name</span><span class="p">]</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">numGaps</span><span class="p">,</span> <span class="n">numMuts</span><span class="p">,</span> <span class="n">domain_name</span> <span class="o">=</span> <span class="n">domainStruct</span><span class="p">[</span><span class="n">start_val</span><span class="p">]</span>
             <span class="n">valStr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">numGaps</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">numMuts</span><span class="p">)</span>
             <span class="n">domainDict_forArch</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain_name</span>
             <span class="k">if</span> <span class="n">INTERPRO</span><span class="p">:</span>
@@ -448,7 +457,7 @@
     
     <span class="c1">#make gaps </span>
     
-    <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span>
+    <span class="k">return</span> <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_protein_domain</span><span class="p">,</span> <span class="n">full_domain_arch</span>
 
 <div class="viewcode-block" id="add_reference_info_to_struct_file">
 <a class="viewcode-back" href="../../IntegrateStructure_Reference.html#CoDIAC.IntegrateStructure_Reference.add_reference_info_to_struct_file">[docs]</a>
@@ -469,7 +478,7 @@
 <span class="sd">        Recommended behavior is to use Interpro - it is more inclusive of domain boundaries and has better naming</span>
 <span class="sd">        conventions, along with perserving ability to use the Interpro ID for filtering strucutres containing domains of interest. </span>
 <span class="sd">    verbose: boolean</span>
-<span class="sd">        Print information about processing. Default is Falses.</span>
+<span class="sd">        Print information about processing. Default is False.</span>
 <span class="sd">    </span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -488,7 +497,7 @@
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Working on </span><span class="si">%s</span><span class="s2"> for protein </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">],</span> <span class="n">uniprot_id</span><span class="p">))</span>
         <span class="n">information_list</span> <span class="o">=</span> <span class="n">return_reference_information</span><span class="p">(</span><span class="n">reference_df</span><span class="p">,</span> <span class="n">uniprot_id</span><span class="p">,</span> <span class="n">struct_seq</span><span class="p">,</span> <span class="n">ref_seq_pos_start</span><span class="p">,</span> <span class="n">pdb_seq_pos_start</span><span class="p">,</span> <span class="n">ref_length</span><span class="p">,</span> <span class="n">INTERPRO</span><span class="p">)</span>
-        <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="n">information_list</span>
+        <span class="n">gene_name</span><span class="p">,</span> <span class="n">struct_seq_ref_spanning</span><span class="p">,</span> <span class="n">rangeStr</span><span class="p">,</span> <span class="n">pos_diff</span><span class="p">,</span> <span class="n">diffStr</span><span class="p">,</span> <span class="n">gaps_ref_to_struct</span><span class="p">,</span> <span class="n">gaps_struct_to_ref</span><span class="p">,</span> <span class="n">domainStr</span><span class="p">,</span> <span class="n">structure_arch</span><span class="p">,</span> <span class="n">full_protein_domain</span><span class="p">,</span> <span class="n">full_domain_arch</span> <span class="o">=</span> <span class="n">information_list</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span><span class="s1">&#39;ref:gene name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gene_name</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:struct/ref sequence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">struct_seq_ref_spanning</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:reference range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rangeStr</span>
@@ -498,6 +507,7 @@
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:variants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diffStr</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:domains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domainStr</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:struct domain architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure_arch</span>
+        <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:full protein domain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_protein_domain</span>
         <span class="n">struct_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ref:protein domain architecture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_domain_arch</span>
     <span class="n">struct_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">struct_df</span></div>
