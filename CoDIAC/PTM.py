@@ -39,7 +39,8 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
         Number of PTMs in all domains of a type required to generate a feature file
     PHOSPHOSITE_PLUS: bool
         If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
-        This requires runnign your own local setup of PhosphoSite files. See PhosphoSitePlus_Tools.py convert_pSiteDataFiles
+        See PhosphoSitePlus_Tools.py convert_pSiteDataFiles can be used to update or create the 
+        API-formatted files. These resources are stored in GitHub LFS.
     
 
     Returns
