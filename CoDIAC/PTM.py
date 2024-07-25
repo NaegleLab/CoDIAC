@@ -10,7 +10,7 @@ PTM_API = proteomeScoutAPI.ProteomeScoutAPI(PROTEOMESCOUT_DATA)
 
 def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file ='', n_term_offset=0, c_term_offset=0, gap_threshold=0.7, num_PTM_threshold = 5, PHOSPHOSITE_PLUS=False):
     """
-    Writes all PTM features from ProteomeScout on Interpro domains from a uniprot reference file, if there are more
+    Writes all PTM features from ProteomeScout or PhosphoSitePlus on Interpro domains from a uniprot reference file, if there are more
     than num_PTM_threshold that occur across all domains of that type in the reference. Returns the ptm_count_dict for reference
     and the feature dict that is generated to write the files. Files are named Interpro_ID_<PTM_Type>.feature
     and the reference fasta is also generated so that it is clear the features are attached to that 
@@ -197,6 +197,7 @@ def get_PTMS_proteomeScout(uniprot_ID):
     ----------
     uniprot_ID: str
         Uniprot ID
+    
     Returns
     -------
     seq: str
@@ -223,6 +224,7 @@ def get_PTMS_phosphoSitePlus(uniprot_ID):
     ----------
     uniprot_ID: str
         Uniprot ID
+    
     Returns
     -------
     seq: str
