@@ -7,7 +7,7 @@ setup(
     version="0.0.1",
     author="Naegle Lab",
     author_email="kmn4mj@virginia.edu",
-    url="git@github.com:NaegleLab/CoDIAC.git",
+    url="https://github.com/NaegleLab/CoDIAC",
     install_requires=['pandas', 'numpy', 'scipy', 'matplotlib', 'seaborn', 'statsmodels', 'biopython','requests'],
     license='GNU General Public License v3',
     description='CoDIAC: COmprehensive Domain Interface Anlysis of Contacts',
