@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 # Run setup
 setup(
     name="codiac",
-    version="0.0.1",
+    version="0.0.3",
     author="Naegle Lab",
     author_email="kmn4mj@virginia.edu",
     url="https://github.com/NaegleLab/CoDIAC",
@@ -21,5 +21,6 @@ setup(
     packages=find_packages(),
     include_package_data = True,
     python_requires=">=3.6",
+    package_data={'': ['CoDIAC/data/proteomescout_everything_20190701/*.tsv']},
     zip_safe = False
 )
