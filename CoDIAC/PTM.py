@@ -18,40 +18,39 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
 
     Parameters
     ----------
-    Interpro_ID: string 
-        Interpro ID - for example in a reference line such as 
-        SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
-        the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
-    uniprot_reference_file: string
-        File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
-    feature_dir: string
-        Feature Directory to place files in
-    mapping_file: string
-        A CSV file location, if wanted, that holds a translation of the long header into a shorter header
-        If this is an empty string, then it will not attempt mapping
-    n_term_offset: int
-        Number of amino acids to extend in the n-term direction (up to start of protein)
-    c_term_offset: int
-        Number of amino acids to extend in the c-term direction (up to end of protein)
-    gap_threshold: float
-        fraction gap allowed before dispanding with PTM translation from ProteomeScout
-    num_PTM_threshold: int
-        Number of PTMs in all domains of a type required to generate a feature file
-    PHOSPHOSITE_PLUS: bool
-        If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
-        See PhosphoSitePlus_Tools.py convert_pSiteDataFiles can be used to update or create the 
-        API-formatted files. These resources are stored in GitHub LFS.
+        Interpro_ID: string 
+            Interpro ID - for example in a reference line such as 
+            SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
+            the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
+        uniprot_reference_file: string
+            File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
+        feature_dir: string
+            Feature Directory to place files in
+        mapping_file: string
+            A CSV file location, if wanted, that holds a translation of the long header into a shorter header
+            If this is an empty string, then it will not attempt mapping
+        n_term_offset: int
+            Number of amino acids to extend in the n-term direction (up to start of protein)
+        c_term_offset: int
+            Number of amino acids to extend in the c-term direction (up to end of protein)
+        gap_threshold: float
+            fraction gap allowed before dispanding with PTM translation from ProteomeScout
+        num_PTM_threshold: int
+            Number of PTMs in all domains of a type required to generate a feature file
+        PHOSPHOSITE_PLUS: bool
+            If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
+            See PhosphoSitePlus_Tools.py convert_pSiteDataFiles can be used to update or create the 
+            API-formatted files. These resources are stored in GitHub LFS.
     
-
     Returns
     -------
-    file_list: list
-        List of files generated as features
-    ptm_count_dict: dict
-        keys are the modification type and values are total number encountered
-    domain_feature_dict: dict of dicts
-        keys are the fasta headers 
-        Inner dict keys are the modification types and the values of this is a list of zero-based positions. 
+        file_list: list
+            List of files generated as features
+        ptm_count_dict: dict
+            keys are the modification type and values are total number encountered
+        domain_feature_dict: dict of dicts
+            keys are the fasta headers 
+            Inner dict keys are the modification types and the values of this is a list of zero-based positions. 
 
     
     """

@@ -32,7 +32,7 @@ AA_dict = {"ALA":'A',
                   "VAL":'V'}
 
 def ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = False):
-        ''' This function generates a contactmap text file.
+        ''' This function generates a text file of contacts that is a processed version of contact information extracted using Arpeggio (json file) 
         
         Parameters
         ----------
@@ -146,7 +146,8 @@ def ProcessArpeggio(input_file_path, outfile_path, mmCIF_file, small_molecule = 
         
 
 def BinaryFeatures(PDB_ID, PATH, translate_resid=False):
-    ''' Produces an adjacency file for intra and inter protein contacts that are also represented as binary features
+    ''' Produces an adjacency file for intra (domain-domain) and inter (liagnd) protein contacts that are represented as binary features. Contacts merged across and within protein entities and chains using defined thresholds. 
+    
     Parameters
     ----------
         PDB_ID : str
@@ -154,7 +155,13 @@ def BinaryFeatures(PDB_ID, PATH, translate_resid=False):
         PATH : str
             Path to write the output file 
         translate_resid : bool
-            whether to update structure sequence residue positions to the ones in the Uniprot Reference'''
+            chose whether to update structure sequence residue positions to the ones in the Uniprot Reference
+            
+    Returns
+    -------
+        OUTFILE : str
+            binarized version of the adjacency txt file is created
+    '''
     
     OUTFILE = PATH+'/'+PDB_ID+'_BF.txt'
     interpro_Adj = Interprotein_AdjFile(PDB_ID, PATH, translate_resid)
@@ -166,6 +173,7 @@ def BinaryFeatures(PDB_ID, PATH, translate_resid=False):
     
 def Intraprotein_AdjFile(PDB_ID, PATH, translate_resid=False):
     ''' Produces adjacency file for only Intraprotein contacts along with binary features
+    
     Parameters
     ----------
         PDB_ID : str
@@ -173,7 +181,9 @@ def Intraprotein_AdjFile(PDB_ID, PATH, translate_resid=False):
         PATH : str
             Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for intraprotein 
         translate_resid : bool
-            whether to update structure sequence residue positions to the ones in the Uniprot Reference'''
+            whether to update structure sequence residue positions to the ones in the Uniprot Reference
+
+    '''
     
     INPUTFILE = PATH+'/'+PDB_ID+'.txt'
     #OUTFILE = PATH+'/'+PDB_ID+'/'+PDB_ID+'_intra.txt'

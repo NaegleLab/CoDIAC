@@ -335,8 +335,6 @@ def print_ann_file(feature_file, alignment_file, annotation_file):
     annotation_file: str
         This is the name of the file to output the annotation tracks to, it will be overwritten
 
-    Returns
-    -------
     """
     
     feature_colors, features = return_features_from_file(feature_file) 

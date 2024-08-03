@@ -37,7 +37,8 @@ AA_dict = {"ALA":'A',
                   "VAL":'V'}
 
 def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_offset=0, C_offset=0):
-    '''make a feature file with mutations recorded as features. mutations extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID.
+    '''Mutations found on the domain of interest and are extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID are stored in feature files
+    
     Parameters
     ----------
         fastafile : str
@@ -52,11 +53,8 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_
             number of residues to add or remove from the N terminal end of the domain boundary
         C_offset : int
             number of residues to add or remove from the C terminal end of the domain boundary
-
-    Returns
-    -------
-        output_feafile : str
-            Mutation feature file (.fea) '''
+ 
+    '''
     
     fetch_VariantCSV(fastafile, csvfiles_dir, downloads_path)
     
@@ -97,7 +95,7 @@ def gnomAD_mutations(fastafile, downloads_path, csvfiles_dir, output_feafile, N_
     
 
 def OMIM_mutations(uniprot_refFile, api_key, ref_fastaFile, output_featureFile, domain_of_interest,N_offset=0, C_offset=0): 
-    """Generates a feature file with mutations extracted from OMIM database.
+    """Generates a feature file whose features are mutations found on the domain of interest and are extracted from OMIM database
 
     Parameters
     ----------
@@ -113,9 +111,8 @@ def OMIM_mutations(uniprot_refFile, api_key, ref_fastaFile, output_featureFile, 
             number of residues to add or remove from the N terminal end of the domain boundary
         C_offset : int
             number of residues to add or remove from the C terminal end of the domain boundary
-    Returns
-    -------
-        output_featureFile : str """
+            
+    """
         
     df_ref = pd.read_csv(uniprot_refFile)
     uniprot_ids = df_ref['UniProt ID'].tolist() 
@@ -162,7 +159,8 @@ def OMIM_mutations(uniprot_refFile, api_key, ref_fastaFile, output_featureFile, 
     print('OMIM mutation feature file created!')       
 
 def PDB_mutations(PDB_refFile,ref_fastaFile, output_featureFile, domain_of_interest,N_offset=0, C_offset=0):
-    '''Generates a feature file for mutations extracted from PDB structures on the domain of interest.
+    '''Generates a feature file with mutations found on the domain of interest within PDB structures
+    
     Parameters
     ----------
         PDB_refFile : str
@@ -177,9 +175,10 @@ def PDB_mutations(PDB_refFile,ref_fastaFile, output_featureFile, domain_of_inter
             number of residues to add or remove from the N terminal end of the domain boundary
         C_offset : int
             number of residues to add or remove from the C terminal end of the domain boundary
+            
     Returns
     -------
-        feature file with mutations/variants reported in PDB structures that are present within the SH2 domain boundary '''
+        feature file with mutations/variants reported in PDB structures that are present within the domain of interest '''
     df = pd.read_csv(PDB_refFile)
     j = 1
     tmp_list = []
@@ -361,6 +360,7 @@ def ensembleID_dict(fasta_refFile):
 
 def check_exists_by_xpath(driver):
     '''Checks whether GnomAD has mutations recorded for specific transcript ID. For the ones that do not have any information available, it pops up 'Gene not found' error. And we use this to identify Uniprot IDs/genes for which data doesnt exist on GnomAD.
+    
     Parameters
     ----------
         driver : str
@@ -376,6 +376,7 @@ def check_exists_by_xpath(driver):
     
 def fetch_VariantCSV(fastafile, csvfiles_dir, downloads_path):
     '''fetches variant CSV files from GnomAD for every UniProt ID/transcript ID found in the input fastafile.
+    
     Parameters
     ----------
         fastafile : str
