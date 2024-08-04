@@ -9,7 +9,8 @@
    "source": [
     "import os, shutil\n",
     "from CoDIAC import AdjacencyFiles as af\n",
-    "from CoDIAC import PDB"
+    "from CoDIAC import PDB\n",
+    "import CoDIAC"
    ]
   },
   {
@@ -17,7 +18,7 @@
    "id": "5fe6f65d-fd11-4772-a261-e23d56b84f78",
    "metadata": {},
    "source": [
-    "### STEP 1: Generate mmCIF files for PDBs of interest"
+    "### Generate mmCIF files for PDBs of interest"
    ]
   },
   {
@@ -29,7 +30,7 @@
    "source": [
     "cif_path = './Data/CIF_files'\n",
     "PDB_list = ['4JGH','3TL0','1D4W']\n",
-    "PDB.download_cifFile(PDB_list, cif_path)"
+    "CoDIAC.PDB.download_cifFile(PDB_list, cif_path)"
    ]
   },
   {
@@ -37,7 +38,7 @@
    "id": "c4796fba-d9b8-45c4-aa28-f6e7d38dbabf",
    "metadata": {},
    "source": [
-    "### STEP 2: Generate json files using Arpeggio (not shown here)"
+    "### Generate json files using Arpeggio"
    ]
   },
   {
@@ -52,10 +53,45 @@
   },
   {
    "cell_type": "markdown",
+   "id": "d353afd2-bf59-40c9-a4bc-07973e603a8a",
+   "metadata": {},
+   "source": [
+    "Arpeggio was ran for input mmCIF files of PDBs of interest on High-performance computing system that can allocate more memory for running these jobs.\n",
+    "\n",
+    "<!-- .. code-block:: bash -->\n",
+    "\n",
+    "    #!/bin/bash\n",
+    "    #SBATCH --nodes=1\n",
+    "    #SBATCH --mem=750MB\n",
+    "    #SBATCH --time=50:00:00\n",
+    "    #SBATCH --partition=standard\n",
+    "    #SBATCH -A g_bme-naeglelab\n",
+    "    #SBATCH -o SH2_PDB.output\n",
+    "    #SBATCH -e SH2_PDB.error\n",
+    "\n",
+    "    module load anaconda\n",
+    "    conda create -n arp-env python=3.7\n",
+    "    source activate arp-env\n",
+    "    conda install -c openbabel openbabel\n",
+    "    pip install biopython\n",
+    "    pip install git+https://github.com/PDBeurope/arpeggio.git@master#egg=arpeggio\n",
+    "    \n",
+    "    for fname in *.cif\n",
+    "    do\n",
+    "    arpeggio $fname -sa\n",
+    "    done\n",
+    "        \n",
+    "The refactored version of [Arpeggio](https://github.com/harryjubb/arpeggio) that is being made available by [PDBe](https://github.com/PDBeurope/arpeggio) has been used to generate .json files in this work. The pdbe-arpeggio (git release version 1.4.*) was used at the time of contactmap generation. \n",
+    "\n",
+    "*pip package installation ```pip install pdbe-arpeggio``` can be used for this purpose as well. \n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
    "id": "b07d96d7-149f-4d9a-aec5-36af9ced30d1",
    "metadata": {},
    "source": [
-    "### STEP 3: Generate Adjacency txt files "
+    "### Generate Adjacency txt files "
    ]
   },
   {
@@ -91,25 +127,9 @@
     "    newpath = adj_path+'/'+PDB_ID \n",
     "    os.mkdir(newpath)   #create a directory for PDB to store its corresponding adjacency files\n",
     "    outfile = newpath\n",
-    "    af.ProcessArpeggio(json_file, outfile, cif_file, small_molecule=False)    #generates adjacency file \n",
-    "    af.BinaryFeatures(PDB_ID, outfile, translate_resid=True)    #generates binarized version\n"
+    "    CoDIAC.AdjacencyFiles.ProcessArpeggio(json_file, outfile, cif_file, small_molecule=False)    #generates adjacency file \n",
+    "    CoDIAC.AdjacencyFiles.BinaryFeatures(PDB_ID, outfile, translate_resid=True)    #generates binarized version\n"
    ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "8f3e4095-ccae-423e-87fb-95357dbb7538",
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "174f2398-ffb5-4040-8a4d-fbcbd167bf20",
-   "metadata": {},
-   "outputs": [],
-   "source": []
   }
  ],
  "metadata": {

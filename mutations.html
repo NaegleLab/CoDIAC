@@ -5,19 +5,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Mutations via gnomAD &#8212; CoDIAC 1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=514cf933" />
+    <title>Mutations &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=def86cc0" />
     
     <script src="_static/documentation_options.js?v=29a6c3e3"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PTM" href="PTM.html" />
+    <link rel="prev" title="AdjacencyFiles" href="AdjacencyFiles.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -26,8 +28,14 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTM"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles.html" title="AdjacencyFiles"
+             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Mutations via gnomAD</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Mutations</a></li> 
       </ul>
     </div>  
 
@@ -37,7 +45,84 @@
           <div class="body" role="main">
             
   <section id="module-CoDIAC.mutations">
-<span id="mutations-via-gnomad"></span><h1>Mutations via gnomAD<a class="headerlink" href="#module-CoDIAC.mutations" title="Link to this heading">¶</a></h1>
+<span id="mutations"></span><h1>Mutations<a class="headerlink" href="#module-CoDIAC.mutations" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.mutations.OMIM_mutations">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.mutations.</span></span><span class="sig-name descname"><span class="pre">OMIM_mutations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uniprot_refFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_fastaFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_featureFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain_of_interest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/mutations.html#OMIM_mutations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.mutations.OMIM_mutations" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a feature file whose features are mutations found on the domain of interest and are extracted from OMIM database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>uniprot_refFile</strong><span class="classifier">str</span></dt><dd><p>input a uniprot reference file to get a list of uniprot IDs</p>
+</dd>
+<dt><strong>api_key</strong><span class="classifier">str</span></dt><dd><p>this key needs to be generated through OMIM to be able to access their programmatic interface</p>
+</dd>
+<dt><strong>ref_fastaFile</strong><span class="classifier">str</span></dt><dd><p>fasta file with reference sequences of the domains</p>
+</dd>
+<dt><strong>domain_of_interest</strong><span class="classifier">str</span></dt><dd><p>mutations on domains of interest (SH2 domains)</p>
+</dd>
+<dt><strong>N_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the N terminal end of the domain boundary</p>
+</dd>
+<dt><strong>C_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the C terminal end of the domain boundary</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.mutations.PDB_mutations">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.mutations.</span></span><span class="sig-name descname"><span class="pre">PDB_mutations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">PDB_refFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_fastaFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_featureFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain_of_interest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/mutations.html#PDB_mutations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.mutations.PDB_mutations" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a feature file with mutations found on the domain of interest within PDB structures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>PDB_refFile</strong><span class="classifier">str</span></dt><dd><p>input PDB reference file path</p>
+</dd>
+<dt><strong>ref_fastaFile</strong><span class="classifier">str</span></dt><dd><p>fasta file with reference sequences of the domains</p>
+</dd>
+<dt><strong>output_featureFile</strong><span class="classifier">str</span></dt><dd><p>output feature file path</p>
+</dd>
+<dt><strong>domain_of_interest</strong><span class="classifier">str</span></dt><dd><p>mutations on domains of interest (SH2 domains)</p>
+</dd>
+<dt><strong>N_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the N terminal end of the domain boundary</p>
+</dd>
+<dt><strong>C_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the C terminal end of the domain boundary</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>feature file with mutations/variants reported in PDB structures that are present within the domain of interest</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.mutations.gnomAD_mutations">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.mutations.</span></span><span class="sig-name descname"><span class="pre">gnomAD_mutations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fastafile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downloads_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csvfiles_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_feafile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/mutations.html#gnomAD_mutations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.mutations.gnomAD_mutations" title="Link to this definition">¶</a></dt>
+<dd><p>Mutations found on the domain of interest and are extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID are stored in feature files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>fastafile</strong><span class="classifier">str</span></dt><dd><p>the reference fasta file that is created using UniProt.py and key_array_order= [‘uniprot’, ‘gene’, ‘domain_num’, ‘start’, ‘end’]</p>
+</dd>
+<dt><strong>downloads_path</strong><span class="classifier">str</span></dt><dd><p>the path to the downloads folder on the device where files downloaded are placed</p>
+</dd>
+<dt><strong>csvfiles_dir</strong><span class="classifier">str</span></dt><dd><p>path of the directory where we would like to move and save the downloaded variant csv files from the downloads folder</p>
+</dd>
+<dt><strong>output_feafile</strong><span class="classifier">str</span></dt><dd><p>the path to save the output feature file</p>
+</dd>
+<dt><strong>N_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the N terminal end of the domain boundary</p>
+</dd>
+<dt><strong>C_offset</strong><span class="classifier">int</span></dt><dd><p>number of residues to add or remove from the C terminal end of the domain boundary</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -45,16 +130,38 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Mutations</a><ul>
+<li><a class="reference internal" href="#CoDIAC.mutations.OMIM_mutations"><code class="docutils literal notranslate"><span class="pre">OMIM_mutations()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.mutations.PDB_mutations"><code class="docutils literal notranslate"><span class="pre">PDB_mutations()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.mutations.gnomAD_mutations"><code class="docutils literal notranslate"><span class="pre">gnomAD_mutations()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="AdjacencyFiles.html"
+                          title="previous chapter">AdjacencyFiles</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="PTM.html"
+                          title="next chapter">PTM</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/mutations.rst.txt"
+      <li><a href="_sources/Mutations.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -62,13 +169,13 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -77,13 +184,19 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="PTM.html" title="PTM"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles.html" title="AdjacencyFiles"
+             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Mutations via gnomAD</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Mutations</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Naegle Lab.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     </div>
   </body>
 </html>

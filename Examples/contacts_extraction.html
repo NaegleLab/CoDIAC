@@ -5,20 +5,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>DOMAIN-DOMAIN CONTACT INTERFACE EXTRACTION &#8212; CoDIAC 1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
-    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <title>Analysis using PDB structures &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=def86cc0" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
     
     <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dependencies (Examples)" href="../Dependencies.html" />
+    <link rel="prev" title="Generate mmCIF files for PDBs of interest" href="AdjacencyFiles_generation.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -27,8 +29,15 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="../Dependencies.html" title="Dependencies (Examples)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles_generation.html" title="Generate mmCIF files for PDBs of interest"
+             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">DOMAIN-DOMAIN CONTACT INTERFACE EXTRACTION</a></li> 
+          <li class="nav-item nav-item-1"><a href="Examples.html" accesskey="U">Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Analysis using PDB structures</a></li> 
       </ul>
     </div>  
 
@@ -42,14 +51,31 @@
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">contactMap</span> <span class="k">as</span> <span class="n">cm</span>
 <span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">PDBHelper</span>
 <span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">pTyrLigand_helpers</span> <span class="k">as</span> <span class="n">pTyr_helpers</span>
+<span class="kn">import</span> <span class="nn">CoDIAC</span>
 </pre></div>
 </div>
 </div>
-<section id="DOMAIN-DOMAIN-CONTACT-INTERFACE-EXTRACTION">
-<h1>DOMAIN-DOMAIN CONTACT INTERFACE EXTRACTION<a class="headerlink" href="#DOMAIN-DOMAIN-CONTACT-INTERFACE-EXTRACTION" title="Link to this heading">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#N and C terminal offsets for regions of interest (ROI)</span>
+<span class="n">N_offset_ROI_1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">C_offset_ROI_1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">N_offset_ROI_2</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">C_offset_ROI_2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+</div>
+<section id="Analysis-using-PDB-structures">
+<h1>Analysis using PDB structures<a class="headerlink" href="#Analysis-using-PDB-structures" title="Link to this heading">¶</a></h1>
+</section>
+<section id="A.-Domain-domain-contact-interface-extraction">
+<h1>A. Domain-domain contact interface extraction<a class="headerlink" href="#A.-Domain-domain-contact-interface-extraction" title="Link to this heading">¶</a></h1>
 <section id="STEP-1:-Fetching-data-from-PDB-reference-file-for-a-PDB-examined">
 <h2>STEP 1: Fetching data from PDB reference file for a PDB examined<a class="headerlink" href="#STEP-1:-Fetching-data-from-PDB-reference-file-for-a-PDB-examined" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
@@ -61,10 +87,10 @@
 <span class="n">PDB_ID</span> <span class="o">=</span> <span class="s1">&#39;4JGH&#39;</span> <span class="c1">#SOCS family protein</span>
 
 <span class="n">ann</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">ann_file</span><span class="p">)</span>
-<span class="n">entities</span> <span class="o">=</span> <span class="n">PDBHelper</span><span class="o">.</span><span class="n">PDBEntitiesClass</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span>
+<span class="n">entities</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDBHelper</span><span class="o">.</span><span class="n">PDBEntitiesClass</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span>
 <span class="n">entity</span> <span class="o">=</span><span class="mi">1</span> <span class="c1">#there&#39;s only one entity in this example</span>
 <span class="n">pdbClass</span> <span class="o">=</span> <span class="n">entities</span><span class="o">.</span><span class="n">pdb_dict</span><span class="p">[</span><span class="n">entity</span><span class="p">]</span> <span class="c1">#this holds information about the protein crystalized, such as domains</span>
-<span class="n">chain_A</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">chainMap</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+<span class="n">chain_A</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">chainMap</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
 <span class="n">chain_A</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="n">PATH</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -114,13 +140,13 @@ QAARLAKALRELGQTGWYWGSMTVNEAKEKLKEAPEGTFLIRDSSHSDYLLTISVKTSAGPTNLRIEYQDGKFRLDSIIC
 </pre></div></div>
 </div>
 </section>
-<section id="STEP2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions">
-<h2>STEP2: Create an entity specific class to align structure to reference sequence positions<a class="headerlink" href="#STEP2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions" title="Link to this heading">¶</a></h2>
+<section id="STEP-2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions">
+<h2>STEP 2: Create an entity specific class to align structure to reference sequence positions<a class="headerlink" href="#STEP-2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions" title="Link to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">chain_A</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">)</span> <span class="c1">#class created to align structure to reference sequence positions</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">chain_A</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">)</span> <span class="c1">#class created to align structure to reference sequence positions</span>
 </pre></div>
 </div>
 </div>
@@ -171,7 +197,7 @@ Adding 1 c-terminal gaps
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">ROI_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span> <span class="n">ROI_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;O14508|SOCS2|1|46|156&#39;</span><span class="p">,</span> <span class="s1">&#39;SOCS_box&#39;</span><span class="p">,</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">ROI_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">N_offset_ROI_1</span><span class="p">,</span> <span class="n">ROI_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">C_offset_ROI_1</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N_offset_ROI_2</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">C_offset_ROI_2</span><span class="p">,</span> <span class="s1">&#39;O14508|SOCS2|1|46|156&#39;</span><span class="p">,</span> <span class="s1">&#39;SOCS_box&#39;</span><span class="p">,</span>
                                          <span class="s1">&#39;./Data/Feature_Fasta_files/SH2_interdomain_4JGH&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <br/></pre></div>
 </div>
@@ -189,15 +215,15 @@ Adding 1 c-terminal gaps
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/Examples_contacts_extraction_13_0.png" src="../_images/Examples_contacts_extraction_13_0.png" />
+<img alt="../_images/Examples_contacts_extraction_14_0.png" src="../_images/Examples_contacts_extraction_14_0.png" />
 </div>
 </div>
 </section>
 </section>
-<section id="LIGAND-INTERFACE-CONTACT-EXTRACTION">
-<h1>LIGAND INTERFACE CONTACT EXTRACTION<a class="headerlink" href="#LIGAND-INTERFACE-CONTACT-EXTRACTION" title="Link to this heading">¶</a></h1>
-<section id="STEP-1:Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB">
-<h2>STEP 1:Identity PTMS from PDB reference file for a specific PDB<a class="headerlink" href="#STEP-1:Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB" title="Link to this heading">¶</a></h2>
+<section id="B.-Ligand-interface-contact-extraction-using-PDB-structures">
+<h1>B. Ligand interface contact extraction using PDB structures<a class="headerlink" href="#B.-Ligand-interface-contact-extraction-using-PDB-structures" title="Link to this heading">¶</a></h1>
+<section id="STEP-1:-Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB">
+<h2>STEP 1: Identity PTMS from PDB reference file for a specific PDB<a class="headerlink" href="#STEP-1:-Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -210,7 +236,7 @@ Adding 1 c-terminal gaps
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">PDB_ID</span><span class="p">:</span>
             <span class="n">modification_from_PDB</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;modifications&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;modifications&#39;</span><span class="p">],</span><span class="nb">str</span><span class="p">):</span> <span class="c1">#PTM dictionary</span>
-                <span class="n">transDict</span> <span class="o">=</span> <span class="n">PDBHelper</span><span class="o">.</span><span class="n">return_PTM_dict</span><span class="p">(</span><span class="n">modification_from_PDB</span><span class="p">)</span> <span class="c1">#dictionary with ptm information from PDB reference file</span>
+                <span class="n">transDict</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDBHelper</span><span class="o">.</span><span class="n">return_PTM_dict</span><span class="p">(</span><span class="n">modification_from_PDB</span><span class="p">)</span> <span class="c1">#dictionary with ptm information from PDB reference file</span>
 </pre></div>
 </div>
 </div>
@@ -240,8 +266,8 @@ Adding 1 c-terminal gaps
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lig_entity</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="n">SH2_entity</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">dict_of_lig</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">return_single_chain_dict</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">lig_entity</span><span class="p">)</span>
-<span class="n">dict_of_SH2</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">return_single_chain_dict</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">SH2_entity</span><span class="p">)</span>
+<span class="n">dict_of_lig</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">return_single_chain_dict</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">lig_entity</span><span class="p">)</span>
+<span class="n">dict_of_SH2</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">return_single_chain_dict</span><span class="p">(</span><span class="n">main</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">SH2_entity</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -341,7 +367,7 @@ Adding 3 c-terminal gaps
 <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cm_aligned</span><span class="o">.</span><span class="n">transDict</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cm_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">PTM</span> <span class="ow">in</span> <span class="n">cm_aligned</span><span class="o">.</span><span class="n">transDict</span><span class="p">[</span><span class="n">res</span><span class="p">]:</span>
-            <span class="n">res_start</span><span class="p">,</span> <span class="n">res_end</span><span class="p">,</span> <span class="n">aligned_str</span><span class="p">,</span> <span class="n">tick_labels</span> <span class="o">=</span> <span class="n">pTyr_helpers</span><span class="o">.</span><span class="n">return_pos_of_interest</span><span class="p">(</span>
+            <span class="n">res_start</span><span class="p">,</span> <span class="n">res_end</span><span class="p">,</span> <span class="n">aligned_str</span><span class="p">,</span> <span class="n">tick_labels</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">pTyr_helpers</span><span class="o">.</span><span class="n">return_pos_of_interest</span><span class="p">(</span>
                 <span class="n">cm_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">,</span> <span class="n">cm_aligned</span><span class="o">.</span><span class="n">structSeq</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">n_term_num</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">c_term_num</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">PTR_value</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
 <br/></pre></div>
 </div>
@@ -373,9 +399,9 @@ Adding 3 c-terminal gaps
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adjList</span><span class="p">,</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">return_interChain_adj</span><span class="p">(</span><span class="n">PATH</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">)</span> <span class="c1">#outer dict keys for ligand residues - ligand to domain contacts</span>
-<span class="n">adjList_alt</span><span class="p">,</span> <span class="n">arr_alt</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">return_interChain_adj</span><span class="p">(</span><span class="n">PATH</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">)</span> <span class="c1">#outer dict keys for SH2 domain - domain to ligand contacts</span>
-</pre></div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adjList</span><span class="p">,</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">return_interChain_adj</span><span class="p">(</span><span class="n">PATH</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">)</span> <span class="c1">#outer dict keys for ligand residues - ligand to domain contacts</span>
+<span class="n">adjList_alt</span><span class="p">,</span> <span class="n">arr_alt</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">return_interChain_adj</span><span class="p">(</span><span class="n">PATH</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">)</span> <span class="c1">#outer dict keys for SH2 domain - domain to ligand contacts</span>
+<br/></pre></div>
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -409,7 +435,7 @@ Adding 3 c-terminal gaps
 <span class="n">domains</span> <span class="o">=</span> <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;pdb_class&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">domains</span>
 <span class="n">SH2_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domains</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;SH2&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
 <span class="n">SH2_stop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">domains</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;SH2&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">arr_sub</span><span class="p">,</span> <span class="n">list_aa_from_sub</span><span class="p">,</span> <span class="n">list_to_aa_sub</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">return_arr_subset_by_ROI</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+<span class="n">arr_sub</span><span class="p">,</span> <span class="n">list_aa_from_sub</span><span class="p">,</span> <span class="n">list_to_aa_sub</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">return_arr_subset_by_ROI</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
                                                                  <span class="n">res_start</span><span class="p">,</span> <span class="n">res_end</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
                                                                  <span class="n">SH2_start</span><span class="p">,</span> <span class="n">SH2_stop</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">())</span>
 </pre></div>
@@ -442,9 +468,11 @@ Adding 3 c-terminal gaps
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#SH2 domain-centric contacts</span>
 <span class="n">fasta_header</span> <span class="o">=</span> <span class="s1">&#39;Q06124|PTPN11|1|4|102|lig_4&#39;</span>
 <span class="n">PTM_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/Feature_Fasta_files/SH2_ligand_3TL0_test&#39;</span>
-<span class="n">cm</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">arr_alt</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">refseq</span><span class="p">,</span>
-                                                            <span class="n">SH2_start</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">SH2_stop</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
-                                                            <span class="n">res_start</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">res_end</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">arr_alt</span><span class="p">,</span> <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">refseq</span><span class="p">,</span>
+                                                            <span class="n">SH2_start</span><span class="p">,</span><span class="n">N_offset_ROI_1</span><span class="p">,</span> <span class="n">SH2_stop</span><span class="p">,</span> <span class="n">C_offset_ROI_1</span><span class="p">,</span>
+                                                            <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
+                                                            <span class="n">res_start</span><span class="p">,</span><span class="n">C_offset_ROI_1</span><span class="p">,</span> <span class="n">res_end</span><span class="p">,</span> <span class="n">C_offset_ROI_2</span><span class="p">,</span>
+                                                            <span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
                                                             <span class="n">fasta_header</span><span class="p">,</span><span class="s1">&#39;pTyr&#39;</span><span class="p">,</span> <span class="n">PTM_file</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -455,21 +483,134 @@ Adding 3 c-terminal gaps
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#pTyr ligand-centric contacts</span>
 <span class="n">SH2_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/Feature_Fasta_files/pTyr_3TL0_test&#39;</span>
-<span class="n">cm</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">structSeq</span><span class="p">,</span>
-                                                                 <span class="n">res_start</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="n">res_end</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
-                                                                 <span class="n">SH2_start</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">SH2_stop</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">structSeq</span><span class="p">,</span>
+                                                                 <span class="n">res_start</span><span class="p">,</span> <span class="n">N_offset_ROI_1</span><span class="p">,</span><span class="n">res_end</span><span class="p">,</span> <span class="n">C_offset_ROI_1</span><span class="p">,</span>
+                                                                <span class="n">dict_of_lig</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
+                                                                 <span class="n">SH2_start</span><span class="p">,</span><span class="n">N_offset_ROI_2</span><span class="p">,</span> <span class="n">SH2_stop</span><span class="p">,</span> <span class="n">C_offset_ROI_2</span><span class="p">,</span>
+                                                                <span class="n">dict_of_SH2</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span>
                                                                 <span class="n">fasta_header</span><span class="p">,</span><span class="s1">&#39;SH2&#39;</span><span class="p">,</span> <span class="n">SH2_file</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</section>
+</section>
+<section id="Analysis-using-AlphaFold-structures">
+<h1>Analysis using AlphaFold structures<a class="headerlink" href="#Analysis-using-AlphaFold-structures" title="Link to this heading">¶</a></h1>
+<section id="STEP-1:-Generate-mmCIF-files">
+<h2>STEP 1: Generate mmCIF files<a class="headerlink" href="#STEP-1:-Generate-mmCIF-files" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">AlphaFold</span>
+<span class="n">refUniprot_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/Uniprot_Reference/SH2_IPR000980_uniprot_reference.csv&#39;</span>
+<span class="n">outputDir</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/cifFiles/&#39;</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">AlphaFold</span><span class="o">.</span><span class="n">get_cifFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+</section>
+<section id="STEP-2:-Generate-AlphaFold-reference-csv-file">
+<h2>STEP 2: Generate AlphaFold reference csv file<a class="headerlink" href="#STEP-2:-Generate-AlphaFold-reference-csv-file" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cifFile_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/cifFiles/&#39;</span>
+<span class="n">outputFile</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/SH2_AlphaFold_reference.csv&#39;</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">AlphaFold</span><span class="o">.</span><span class="n">makeRefFile</span><span class="p">(</span><span class="n">refUniprot_file</span><span class="p">,</span> <span class="n">cifFile_path</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-3:-Generate-json-files-using-Arppegio">
+<h2>STEP 3: Generate json files using Arppegio<a class="headerlink" href="#STEP-3:-Generate-json-files-using-Arppegio" title="Link to this heading">¶</a></h2>
+<p>Arpeggio was ran for input mmCIF files of PDBs of interest on High-performance computing system that can allocate more memory for running these jobs.</p>
+<!-- .. code-block:: bash --><div class="highlight-none notranslate"><div class="highlight"><pre><span></span>#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --mem=750MB
+#SBATCH --time=50:00:00
+#SBATCH --partition=standard
+#SBATCH -A g_bme-naeglelab
+#SBATCH -o SH2_PDB.output
+#SBATCH -e SH2_PDB.error
+
+module load anaconda
+conda create -n arp-env python=3.7
+source activate arp-env
+conda install -c openbabel openbabel
+pip install biopython
+pip install git+https://github.com/PDBeurope/arpeggio.git@master#egg=arpeggio
+
+for fname in *.cif
+do
+arpeggio $fname -sa
+done
+</pre></div>
+</div>
+<p>The refactored version of <a class="reference external" href="https://github.com/harryjubb/arpeggio">Arpeggio</a> that is being made available by <a class="reference external" href="https://github.com/PDBeurope/arpeggio">PDBe</a> has been used to generate .json files in this work. The pdbe-arpeggio (git release version 1.4.*) was used at the time of contactmap generation.</p>
+<p>*pip package installation <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pdbe-arpeggio</span></code> can be used for this purpose as well.</p>
+</section>
+<section id="STEP-4:-Generate-binary-Adjacency-text-files">
+<h2>STEP 4: Generate binary Adjacency text files<a class="headerlink" href="#STEP-4:-Generate-binary-Adjacency-text-files" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">AdjacencyFiles</span>
+<span class="n">cif_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/CIF_files&#39;</span>
+<span class="n">json_path</span> <span class="o">=</span> <span class="s1">&#39;./Data/JSON_files&#39;</span>
+<span class="n">adj_path</span><span class="o">=</span><span class="s1">&#39;./Data/Adjacency_files&#39;</span>
+<span class="n">cif_file</span> <span class="o">=</span> <span class="n">cif_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span>
+<span class="n">json_file</span> <span class="o">=</span> <span class="n">json_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.json&#39;</span>
+<span class="n">newpath</span> <span class="o">=</span> <span class="n">adj_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">newpath</span><span class="p">)</span>   <span class="c1">#create a directory for PDB to store its corresponding adjacency files</span>
+<span class="n">outfile</span> <span class="o">=</span> <span class="n">newpath</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">AdjacencyFiles</span><span class="o">.</span><span class="n">ProcessArpeggio</span><span class="p">(</span><span class="n">json_file</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">cif_file</span><span class="p">,</span> <span class="n">small_molecule</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>    <span class="c1">#generates adjacency file</span>
+<span class="n">CoDIAC</span><span class="o">.</span><span class="n">AdjacencyFiles</span><span class="o">.</span><span class="n">BinaryFeatures</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">translate_resid</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1">#generates binarized version</span>
+<br/></pre></div>
+</div>
+</div>
+</section>
+<section id="STEP-5:-Generate-domain-domain-contact-maps">
+<h2>STEP 5: Generate domain-domain contact maps<a class="headerlink" href="#STEP-5:-Generate-domain-domain-contact-maps" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">contactMap</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">PDBHelper</span>
+
+<span class="n">PATH</span> <span class="o">=</span> <span class="s1">&#39;./Data/Adjacency_files/&#39;</span> <span class="c1">#path to adjacency files</span>
+<span class="n">ann_file</span> <span class="o">=</span> <span class="s1">&#39;./Data/AlphaFold_Reference/SH2_AlphaFold_reference.csv&#39;</span> <span class="c1">#this is the reference structure annotation file</span>
+<span class="n">PDB_ID</span> <span class="o">=</span> <span class="s1">&#39;AF-O14508-F1&#39;</span> <span class="c1">#SOCS family protein</span>
+<span class="n">ann</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">ann_file</span><span class="p">)</span>
+<span class="n">entities</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDBHelper</span><span class="o">.</span><span class="n">PDBEntitiesClass</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span>
+<span class="n">entity</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1">#there&#39;s only one entity in this example</span>
+<span class="n">pdbClass</span> <span class="o">=</span> <span class="n">entities</span><span class="o">.</span><span class="n">pdb_dict</span><span class="p">[</span><span class="n">entity</span><span class="p">]</span> <span class="c1">#this holds information about the protein crystalized, such as domains</span>
+<span class="n">chain_A</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">chainMap</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+<span class="n">chain_A</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="n">PATH</span><span class="p">)</span>
+<span class="n">chain_A_aligned</span> <span class="o">=</span> <span class="n">CoDIAC</span><span class="o">.</span><span class="n">contactMap</span><span class="o">.</span><span class="n">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">chain_A</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">)</span>
+<span class="n">ROI_1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">46</span><span class="p">,</span> <span class="mi">156</span><span class="p">]</span> <span class="c1">#SH2 domain</span>
+<span class="n">ROI_2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">151</span><span class="p">,</span> <span class="mi">197</span><span class="p">]</span> <span class="c1">#socsbox domain</span>
+<span class="n">fastaHeader</span> <span class="o">=</span> <span class="s1">&#39;SH2|SOCS_box&#39;</span>
+</pre></div>
+</div>
+</div>
+<section id="Print-fasta-and-feature-files-that-contain-contacts-extracted-across-specified-domain-domain-interface">
+<h3>Print fasta and feature files that contain contacts extracted across specified domain-domain interface<a class="headerlink" href="#Print-fasta-and-feature-files-that-contain-contacts-extracted-across-specified-domain-domain-interface" title="Link to this heading">¶</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">chain_A_aligned</span><span class="o">.</span><span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="n">ROI_1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">N_offset_ROI_1</span><span class="p">,</span> <span class="n">ROI_1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">C_offset_ROI_1</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">N_offset_ROI_2</span><span class="p">,</span><span class="n">ROI_2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">C_offset_ROI_2</span><span class="p">,</span>
+                                          <span class="s1">&#39;O14508|SOCS2|1|46|156&#39;</span><span class="p">,</span> <span class="s1">&#39;SOCS_box&#39;</span><span class="p">,</span>
+                                         <span class="s1">&#39;./Data/Feature_Fasta_files/SH2_interdomain_Afold&#39;</span><span class="p">,</span>
+                                          <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+</section>
 </section>
 </section>
 
@@ -478,28 +619,50 @@ Adding 3 c-terminal gaps
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">DOMAIN-DOMAIN CONTACT INTERFACE EXTRACTION</a><ul>
+<li><a class="reference internal" href="#">Analysis using PDB structures</a></li>
+<li><a class="reference internal" href="#A.-Domain-domain-contact-interface-extraction">A. Domain-domain contact interface extraction</a><ul>
 <li><a class="reference internal" href="#STEP-1:-Fetching-data-from-PDB-reference-file-for-a-PDB-examined">STEP 1: Fetching data from PDB reference file for a PDB examined</a></li>
-<li><a class="reference internal" href="#STEP2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions">STEP2: Create an entity specific class to align structure to reference sequence positions</a></li>
+<li><a class="reference internal" href="#STEP-2:-Create-an-entity-specific-class-to-align-structure-to-reference-sequence-positions">STEP 2: Create an entity specific class to align structure to reference sequence positions</a></li>
 <li><a class="reference internal" href="#STEP-3:-Identify-domain-boundaries">STEP 3: Identify domain boundaries</a></li>
 <li><a class="reference internal" href="#STEP-4:-Generate-fasta/feature-files-for-jalview-visualization">STEP 4: Generate fasta/feature files for jalview visualization</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#LIGAND-INTERFACE-CONTACT-EXTRACTION">LIGAND INTERFACE CONTACT EXTRACTION</a><ul>
-<li><a class="reference internal" href="#STEP-1:Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB">STEP 1:Identity PTMS from PDB reference file for a specific PDB</a></li>
+<li><a class="reference internal" href="#B.-Ligand-interface-contact-extraction-using-PDB-structures">B. Ligand interface contact extraction using PDB structures</a><ul>
+<li><a class="reference internal" href="#STEP-1:-Identity-PTMS-from-PDB-reference-file-for-a-specific-PDB">STEP 1: Identity PTMS from PDB reference file for a specific PDB</a></li>
 <li><a class="reference internal" href="#STEP-2:-Generate-single-dictionary-of-contact-map-for-each-entity-in-the-structure">STEP 2: Generate single dictionary of contact map for each entity in the structure</a></li>
 <li><a class="reference internal" href="#STEP-3:-Select-the-ligand-length-by-specifying-no-of-residues-N-and-C-terminal-of-PTM-of-interest-('y'-pTyr)">STEP 3: Select the ligand length by specifying no of residues N and C terminal of PTM of interest (‘y’-pTyr)</a></li>
 <li><a class="reference internal" href="#STEP-4:-Generate-contacts-between-two-single-entity-dictionaries-with-contactmaps-(domains-and-ligands-on-different-entities)">STEP 4: Generate contacts between two single entity dictionaries with contactmaps (domains and ligands on different entities)</a></li>
 <li><a class="reference internal" href="#STEP-5:-Generate-fasta/feature-files-for-jalview-visualization">STEP 5: Generate fasta/feature files for jalview visualization</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#Analysis-using-AlphaFold-structures">Analysis using AlphaFold structures</a><ul>
+<li><a class="reference internal" href="#STEP-1:-Generate-mmCIF-files">STEP 1: Generate mmCIF files</a></li>
+<li><a class="reference internal" href="#STEP-2:-Generate-AlphaFold-reference-csv-file">STEP 2: Generate AlphaFold reference csv file</a></li>
+<li><a class="reference internal" href="#STEP-3:-Generate-json-files-using-Arppegio">STEP 3: Generate json files using Arppegio</a></li>
+<li><a class="reference internal" href="#STEP-4:-Generate-binary-Adjacency-text-files">STEP 4: Generate binary Adjacency text files</a></li>
+<li><a class="reference internal" href="#STEP-5:-Generate-domain-domain-contact-maps">STEP 5: Generate domain-domain contact maps</a><ul>
+<li><a class="reference internal" href="#Print-fasta-and-feature-files-that-contain-contacts-extracted-across-specified-domain-domain-interface">Print fasta and feature files that contain contacts extracted across specified domain-domain interface</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="AdjacencyFiles_generation.html"
+                          title="previous chapter">Generate mmCIF files for PDBs of interest</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../Dependencies.html"
+                          title="next chapter">Dependencies (Examples)</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
@@ -508,7 +671,7 @@ Adding 3 c-terminal gaps
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -516,13 +679,13 @@ Adding 3 c-terminal gaps
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -531,13 +694,20 @@ Adding 3 c-terminal gaps
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="../Dependencies.html" title="Dependencies (Examples)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles_generation.html" title="Generate mmCIF files for PDBs of interest"
+             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">DOMAIN-DOMAIN CONTACT INTERFACE EXTRACTION</a></li> 
+          <li class="nav-item nav-item-1"><a href="Examples.html" >Examples</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Analysis using PDB structures</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Naegle Lab.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     </div>
   </body>
 </html>

@@ -1,0 +1,4 @@
+contactMap
+----------
+.. automodule:: CoDIAC.contactMap
+    :members: translate_chainMap_to_RefSeq, return_interChain_adj, print_fasta_feature_files

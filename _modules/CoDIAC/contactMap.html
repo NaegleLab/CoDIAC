@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.contactMap &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=def86cc0" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.contactMap</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.contactMap</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="n">urllib</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">exit</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="c1">#import globals</span>
+<span class="c1">#globals.initialize()</span>
+<span class="kn">from</span> <span class="nn">CoDIAC.PDBHelper</span> <span class="kn">import</span> <span class="n">PDBEntitiesClass</span>
+
+<span class="k">class</span> <span class="nc">globals</span><span class="p">:</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">():</span> 
+    <span class="k">global</span> <span class="n">PTM_CONTACT_DICT</span> 
+    <span class="c1">#to look up a ligand code replace the &lt;&gt; with intention in this URL</span>
+    <span class="c1"># https://www.rcsb.org/ligand/&lt;ALY&gt;</span>
+    
+    <span class="c1">#PTM_CONTACT_DICT created using AdjacencyFiles.makePTM_dict</span>
+    <span class="n">PTM_CONTACT_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;PTR&#39;</span><span class="p">:</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;CAS&#39;</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;SEP&#39;</span><span class="p">:</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;1PA&#39;</span><span class="p">:</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;PM3&#39;</span><span class="p">:</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;CME&#39;</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;FTY&#39;</span><span class="p">:</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;PTH&#39;</span><span class="p">:</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;CSO&#39;</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;ALY&#39;</span><span class="p">:</span> <span class="s1">&#39;K&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;MSE&#39;</span><span class="p">:</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;SLZ&#39;</span><span class="p">:</span> <span class="s1">&#39;K&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;PTM&#39;</span><span class="p">:</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;1AC&#39;</span><span class="p">:</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;02K&#39;</span><span class="p">:</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;CCS&#39;</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;TPO&#39;</span><span class="p">:</span> <span class="s1">&#39;T&#39;</span><span class="p">}</span>
+    <span class="c1">#FYQ, AYI, YEN are synthetic pTYR sequences that act as inhibitors, have to decide what to do about that.</span>
+    <span class="k">global</span> <span class="n">MOLECULES_TO_REMOVE</span>
+    <span class="n">MOLECULES_TO_REMOVE</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;HOH&#39;</span><span class="p">,</span> <span class="s1">&#39;SO4&#39;</span><span class="p">,</span> <span class="s1">&#39;NBS&#39;</span><span class="p">,</span> <span class="s1">&#39;CSO&#39;</span><span class="p">,</span> <span class="s1">&#39;MN&#39;</span><span class="p">,</span> <span class="s1">&#39;MG&#39;</span><span class="p">,</span> <span class="s1">&#39;ZN&#39;</span><span class="p">,</span> <span class="s1">&#39;MYR&#39;</span><span class="p">,</span> <span class="s1">&#39;P16&#39;</span><span class="p">,</span> <span class="s1">&#39;GOL&#39;</span><span class="p">,</span> <span class="s1">&#39;QUE&#39;</span><span class="p">,</span> <span class="s1">&#39;CA&#39;</span><span class="p">,</span> <span class="s1">&#39;ANP&#39;</span><span class="p">,</span> <span class="s1">&#39;EDO&#39;</span><span class="p">,</span> <span class="s1">&#39;DVT&#39;</span><span class="p">,</span> <span class="s1">&#39;CL&#39;</span><span class="p">,</span> <span class="s1">&#39;PO4&#39;</span><span class="p">,</span> <span class="s1">&#39;FMT&#39;</span><span class="p">,</span> <span class="s1">&#39;ACE&#39;</span><span class="p">,</span> <span class="s1">&#39;CAT&#39;</span><span class="p">,</span> <span class="s1">&#39;1N1&#39;</span><span class="p">,</span> <span class="s1">&#39;VSH&#39;</span><span class="p">,</span> <span class="s1">&#39;PB&#39;</span><span class="p">]</span>
+    <span class="n">synthetic_inhibitors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;FYQ&#39;</span><span class="p">,</span> <span class="s1">&#39;AYI&#39;</span><span class="p">,</span> <span class="s1">&#39;YEN&#39;</span><span class="p">,</span> <span class="s1">&#39;AYQ&#39;</span><span class="p">]</span>
+    <span class="n">MOLECULES_TO_REMOVE</span> <span class="o">=</span> <span class="n">MOLECULES_TO_REMOVE</span><span class="o">+</span><span class="n">synthetic_inhibitors</span>
+
+
+<span class="k">class</span> <span class="nc">chainMap</span><span class="p">:</span>
+
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns an empty chainMap object for filling by translation or by read of a path file (use construct)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">PDB_ID</span> <span class="o">=</span> <span class="n">PDB_ID</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">entity</span> <span class="o">=</span> <span class="n">entity</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">aaRes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">transDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">adjacencyDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">unmodeled_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="nb">globals</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+
+  <span class="k">def</span> <span class="nf">construct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">PATH</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a dataframe from a contact map, return an object with structure sequence extracted, unmodeled regions, modified amion acids, and the intrachain (within entity) contact map. </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    PDB_ID: str</span>
+<span class="sd">        The PDB_ID of interest, this assumes that the contactMap of this file exists in the target directory </span>
+<span class="sd">    PATH: string</span>
+<span class="sd">      location of PDB contact map files (directory root where folders of PDB ID are under)</span>
+<span class="sd">    chain: char</span>
+<span class="sd">        chain to create information about </span>
+<span class="sd">    ang_cutoff: float</span>
+<span class="sd">      Angstrom cutoff to use for considering something a contact (default &lt;= 4Angstroms)</span>
+<span class="sd">    noc: int</span>
+<span class="sd">      Number of minimum contacts required</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    PDB_ID: str</span>
+<span class="sd">      storing the PBD ID of this object</span>
+<span class="sd">    chain: char</span>
+<span class="sd">      stores the chain </span>
+<span class="sd">    adjacencyDict: dict</span>
+<span class="sd">      dict of dict, with outer key being the residue and inner keys being the residue that outer key interacts with and value is number of contacts</span>
+<span class="sd">    aaRes: list</span>
+<span class="sd">      lists of the amino acids, concatenated with the residue number</span>
+<span class="sd">    arr: array</span>
+<span class="sd">      A zeros-based index adjancency matrix of contact numbers between all residues extracted from the file, square as it is chain-chain contacts</span>
+<span class="sd">    structSeq: string</span>
+<span class="sd">      the amino acid string extracted directly from the contact map, using - for missing residues as the value</span>
+<span class="sd">    resNums: list</span>
+<span class="sd">      The list of amino acids extracted directly from the contact map. </span>
+<span class="sd">    transDict: dict</span>
+<span class="sd">      Dictionary of amino acid positions and the modification found (using globals.PTM_CONTACT_DICT to translate)</span>
+<span class="sd">    unmodeled_dict: list</span>
+<span class="sd">      resolved list of unmodeled residues with start, stop sets in the list</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#self.chainMap(PDB_ID, chain)</span>
+
+    <span class="n">PDB_ID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PDB_ID</span>
+    <span class="n">entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">PATH</span><span class="o">+</span><span class="n">PDB_ID</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">PDB_ID</span> <span class="o">+</span> <span class="s1">&#39;_BF.txt&#39;</span>
+
+    <span class="k">try</span><span class="p">:</span> 
+      <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+      <span class="n">exit</span><span class="p">(</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s2">&quot; does not exist at &quot;</span> <span class="o">+</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">molecule</span> <span class="ow">in</span> <span class="n">MOLECULES_TO_REMOVE</span><span class="p">:</span>
+      <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res1&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">molecule</span><span class="p">]</span>
+      <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res2&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">molecule</span><span class="p">]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
+   <span class="c1"># df = df[df[&#39;Distance&#39;] &lt;= ang_cutoff]</span>
+   <span class="c1"># df = df[df[&#39;Number of atomic contacts&#39;] &gt;= noc]</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">structSeq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transDict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacencyDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_struct_sequence_info</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">unmodeled_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_unmodeled_regions</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_symmetric_single_chain_arr</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;error constructing matrix&quot;</span><span class="p">)</span>
+
+    <span class="c1">#return the array</span>
+
+  
+
+  <span class="k">def</span> <span class="nf">return_struct_sequence_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">entity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This iterates through the dataframe, df, for a single chain to construct the structure sequence and intrachain array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    structSeq: str</span>
+<span class="sd">      The structure sequence, using &#39;-&#39; to indicate unmodeled locations</span>
+<span class="sd">    resNums: list</span>
+<span class="sd">      residue numbers extracted in sequential order including the missing residues</span>
+<span class="sd">    transDict: dict</span>
+<span class="sd">      Keys are the residue numbers, in structure sequence numbering, and value is the PTM (that was converted from)</span>
+<span class="sd">    adjacencyDict: dict</span>
+<span class="sd">      dict of dict, with outer key being the residue and inner keys being the residue that outer key interacts with and value is number of contacts  </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_single_chain</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">entity</span><span class="p">]</span>
+    <span class="n">df_single_chain</span> <span class="o">=</span> <span class="n">df_single_chain</span><span class="p">[</span><span class="n">df_single_chain</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">entity</span><span class="p">]</span>
+    
+    <span class="n">aa_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">adjList</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">transDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">df_single_chain</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]):</span>
+      <span class="n">res1_num</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">ResNum1</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">res1_aa</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">Res1</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">res2_num</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">ResNum2</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">res2_aa</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">Res2</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">res1_num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">aa_dict</span><span class="p">:</span>
+        <span class="n">aa_dict</span><span class="p">[</span><span class="n">res1_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">res1_aa</span>
+      <span class="k">if</span> <span class="n">res2_num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">aa_dict</span><span class="p">:</span>
+          <span class="n">aa_dict</span><span class="p">[</span><span class="n">res2_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">res2_aa</span>
+      <span class="n">innerDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+      <span class="n">innerDict</span><span class="p">[</span><span class="n">res1_num</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">res2_num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">adjList</span><span class="p">:</span>
+        <span class="c1">#if res2_num not in adjList:</span>
+        <span class="n">adjList</span><span class="p">[</span><span class="n">res2_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">innerDict</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="n">dict_temp</span> <span class="o">=</span> <span class="n">adjList</span><span class="p">[</span><span class="n">res2_num</span><span class="p">]</span> <span class="c1">#get a pointer to be able to append to the dictionary of dictionary</span>
+        <span class="k">if</span> <span class="n">res1_num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dict_temp</span><span class="p">:</span>
+          <span class="n">dict_temp</span><span class="p">[</span><span class="n">res1_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">Binary_Feature</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+    <span class="n">resNums_temp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">aa_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">resNums_temp</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="c1">#print(resNums_temp)</span>
+
+    <span class="n">resNums</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resNums_temp</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">resNums_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="c1">#not sure why, but the list with range ends one number prematurely</span>
+    <span class="c1">#print(resNums)</span>
+
+    <span class="n">structSeq</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">resNums</span><span class="p">)</span>
+    <span class="n">structSeqList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">structSeq</span><span class="p">)</span>
+
+    <span class="n">minRes</span> <span class="o">=</span> <span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">maxRes</span> <span class="o">=</span> <span class="n">resNums</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">resNums</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">aa_dict</span><span class="p">:</span>
+        <span class="n">aa</span> <span class="o">=</span> <span class="n">aa_dict</span><span class="p">[</span><span class="n">res</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">aa</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">aa</span> <span class="ow">in</span> <span class="n">PTM_CONTACT_DICT</span><span class="p">:</span>
+                <span class="n">transDict</span><span class="p">[</span><span class="n">res</span><span class="p">]</span> <span class="o">=</span> <span class="n">aa</span>
+                <span class="n">aa</span> <span class="o">=</span> <span class="n">PTM_CONTACT_DICT</span><span class="p">[</span><span class="n">aa</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: encountered new amino acid code </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">aa</span><span class="p">))</span>
+                <span class="n">aa</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">res</span> <span class="o">-</span> <span class="n">minRes</span>        
+        <span class="n">structSeqList</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">aa</span> <span class="c1">#update position, else it&#39;s left as -</span>
+          <span class="c1">#print(&quot;updating %d with %s&quot;%(pos, aa))</span>
+    <span class="n">structSeq</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">structSeqList</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">structSeq</span><span class="p">,</span> <span class="n">resNums</span><span class="p">,</span> <span class="n">transDict</span><span class="p">,</span> <span class="n">adjList</span>
+
+  <span class="k">def</span> <span class="nf">return_min_residue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+  <span class="k">def</span> <span class="nf">return_max_residue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+  <span class="k">def</span> <span class="nf">return_unmodeled_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses the structure sequence with the - to indicate there was missing data</span>
+<span class="sd">    unmodeled list is returned as 0-based counting </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unmodeled_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1">#add all missing contacts in the middle of the string</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">structSeq</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span> 
+      <span class="c1">#walk through and find the first and end of a sequence</span>
+      <span class="n">start</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">end</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="c1">#looking forward 1 to compare to current end. If it is a continuous number, then update end</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+          <span class="n">end</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+          <span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+          <span class="n">start</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+          <span class="n">end</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+      <span class="c1">#for the last one need to add the final start, end since we ran out of results</span>
+      <span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+      <span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">unmodeled_list</span>
+
+  <span class="k">def</span> <span class="nf">return_symmetric_single_chain_arr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an adjacencyDict for a single chain, create the symmetric adjacecny matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    
+    <span class="n">minResidue</span> <span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span>
+    <span class="n">maxResidue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_max_residue</span><span class="p">()</span>
+    <span class="c1">#print(&quot;minResidue is %d, maxresidue is %d&quot;%(minResidue, maxResidue))</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">maxResidue</span> <span class="o">-</span> <span class="n">minResidue</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span>
+    <span class="c1">#print(&quot;array size is: &quot;+str(size))</span>
+    <span class="c1">#for i in range(minResidue+1, maxResidue):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="p">:</span>
+      <span class="n">adjacencyDict_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+      <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">adjacencyDict_inner</span><span class="p">:</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">minResidue</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="n">minResidue</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjacencyDict_inner</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="n">minResidue</span><span class="p">][</span><span class="n">i</span><span class="o">-</span><span class="n">minResidue</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjacencyDict_inner</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+  
+      
+    <span class="k">return</span> <span class="n">arr</span>
+
+
+  <span class="k">def</span> <span class="nf">print_fasta_feature_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">featureStart</span><span class="p">,</span> <span class="n">N_offset1</span><span class="p">,</span><span class="n">featureEnd</span><span class="p">,</span> <span class="n">C_offset1</span><span class="p">,</span><span class="n">contactFromStart</span><span class="p">,</span> <span class="n">N_offset2</span><span class="p">,</span><span class="n">contactFromEnd</span><span class="p">,</span> <span class="n">C_offset2</span><span class="p">,</span><span class="n">fastaHeader</span><span class="p">,</span> <span class="n">contactLabel</span><span class="p">,</span> <span class="n">outputFileBase</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">append</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;117733&#39;</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a feature file for the ROI_1 that has contacts to ROI_2 of protein. </span>
+
+<span class="sd">    efined as ROI_1 and ROI_2 that are between (xStart, xEnd)</span>
+<span class="sd">    and (yStart, yEnd)</span>
+
+<span class="sd">    featureStart: int</span>
+<span class="sd">        start position of ROI_1</span>
+<span class="sd">    N_offset1: int</span>
+<span class="sd">        N terminal offset for ROI_1</span>
+<span class="sd">    featureEnd: int</span>
+<span class="sd">        end position of ROI_1</span>
+<span class="sd">    C_offset1: int</span>
+<span class="sd">        C terminal offset for ROI_1</span>
+<span class="sd">    contactFromStart: int</span>
+<span class="sd">        start position of ROI_2</span>
+<span class="sd">    N_offset2: int</span>
+<span class="sd">        N terminal offset for ROI_2</span>
+<span class="sd">    contactFromEnd: int</span>
+<span class="sd">        end position of ROI_2</span>
+<span class="sd">    C_offset2: int</span>
+<span class="sd">        C terminal offset for ROI_2</span>
+<span class="sd">    fastaHeader: str</span>
+<span class="sd">        fastaHeader to be used to reference in jalview </span>
+<span class="sd">    contactLabel: str</span>
+<span class="sd">        label of feature</span>
+<span class="sd">    outputFileBase: str</span>
+<span class="sd">        file name base to write feature and fasta to (it will be &lt;outputFileBase&gt;.fasta and &lt;outpufileBase&gt;.fea)</span>
+<span class="sd">    threshold: float</span>
+<span class="sd">        number of atomistic contacts to consider as a contact</span>
+<span class="sd">    append: bool</span>
+<span class="sd">        Whether to append or overwrite the feature file</span>
+<span class="sd">    color: </span>
+<span class="sd">        color number for javliew to use when loading feature.</span>
+<span class="sd">    use_ref_seq_aligned: bool</span>
+<span class="sd">      True if you want to use the ref_seq_aligned where unmodeled regions have been imputed during translation, otherwise uses structseq</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">minRes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span>  
+    <span class="k">if</span> <span class="n">use_ref_seq_aligned</span><span class="p">:</span>
+      <span class="n">seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refseq</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structSeq</span> <span class="c1">#right now there might be unmodeled regions </span>
+
+    <span class="n">print_fasta_feature_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arr</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">featureStart</span><span class="p">,</span> <span class="n">N_offset1</span><span class="p">,</span> <span class="n">featureEnd</span><span class="p">,</span><span class="n">C_offset1</span><span class="p">,</span> <span class="n">minRes</span><span class="p">,</span> <span class="n">contactFromStart</span><span class="p">,</span><span class="n">N_offset2</span><span class="p">,</span><span class="n">contactFromEnd</span><span class="p">,</span> <span class="n">C_offset2</span><span class="p">,</span><span class="n">minRes</span><span class="p">,</span> <span class="n">fastaHeader</span><span class="p">,</span> <span class="n">contactLabel</span><span class="p">,</span> <span class="n">outputFileBase</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">append</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+    
+
+  <span class="k">def</span> <span class="nf">generateAnnotatedHeatMap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xStart</span><span class="p">,</span> <span class="n">xEnd</span><span class="p">,</span> <span class="n">yStart</span><span class="p">,</span> <span class="n">yEnd</span><span class="p">,</span> <span class="n">remove_no_contacts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text_annotate</span> <span class="o">=</span> <span class="s1">&#39;on&#39;</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Create a heatmap between two different regions of the protein for a single chain. Defined as ROI_1 and ROI_2 that are between (xStart, xEnd)</span>
+<span class="sd">    and (yStart, yEnd). The heatmap will plot the first region as the rows and second as columns in the array.</span>
+
+<span class="sd">    xStart: int</span>
+<span class="sd">        start position of ROI_1, assumes it is in the crystal structure offset number</span>
+<span class="sd">    xEnd: int</span>
+<span class="sd">        end position of ROI_1, assumes it is in the crystal structure offset number</span>
+<span class="sd">    yStart: int</span>
+<span class="sd">        start position of ROI_2, assumes it is in the crystal structure offset number</span>
+<span class="sd">    yEnd: int</span>
+<span class="sd">        end position of ROI_1, assumes it is in the crystal structure offset number</span>
+<span class="sd">    text_annotate: str</span>
+<span class="sd">        &#39;on&#39; or any other string sets to not on</span>
+<span class="sd">    use_ref_seq_aligned: bool</span>
+<span class="sd">      True if you want to use the ref_seq_aligned where unmodeled regions have been imputed during translation, otherwise uses structseq</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">use_ref_seq_aligned</span><span class="p">:</span>
+      <span class="n">seqToUse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refseq</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">seqToUse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structSeq</span>
+
+    <span class="n">rowTickLabels</span> <span class="o">=</span> <span class="n">return_aa_pos_list</span><span class="p">(</span><span class="n">seqToUse</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resNums</span><span class="p">)</span>
+    <span class="n">generateAnnotatedHeatMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arr</span><span class="p">,</span> <span class="n">xStart</span><span class="p">,</span> <span class="n">xEnd</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">yStart</span><span class="p">,</span> <span class="n">yEnd</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">rowTickLabels</span><span class="p">,</span> <span class="n">rowTickLabels</span><span class="p">,</span> <span class="n">remove_no_contacts</span><span class="p">,</span> <span class="n">text_annotate</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">return_single_chain_dict</span><span class="p">(</span><span class="n">PDB_descriptive_df</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">entity</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  This will create a dictionary of a single entity contact map and aligned contact map for a entity of a PDB_ID. Keys of this dictionary include:</span>
+<span class="sd">    entity&#39;, &#39;PDB_ID&#39;, &#39;pdb_class&#39;, &#39;cm&#39;, &#39;cm_aligned&#39;</span>
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">      PDB_description_df: pandas dataframe</span>
+<span class="sd">        dataframe made by reading the descriptive file of PDBs and information</span>
+<span class="sd">      PDB_ID: str</span>
+<span class="sd">        PDB_ID</span>
+<span class="sd">      PATH: str</span>
+<span class="sd">        Path to where contact maps are</span>
+<span class="sd">      entity: int</span>
+<span class="sd">        entity number - should match a chain.</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">      cm_dict: dict</span>
+<span class="sd">        Dictionary with controlled keys that assemble the contact maps (unaligned and aligned) for a chain and entity. Keys</span>
+<span class="sd">        &#39;entity&#39; - entity (int)</span>
+<span class="sd">        &#39;pdb_class&#39; - pdb_class object for the master file</span>
+<span class="sd">        &#39;cm&#39; - chain map object</span>
+<span class="sd">        &#39;cm_aligned&#39; - aligned chain map</span>
+
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">cm_dict</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="c1">#cm_dict[&#39;chain&#39;] = chain</span>
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entity</span>
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">PDB_ID</span>
+
+  <span class="n">entities</span> <span class="o">=</span> <span class="n">PDBEntitiesClass</span><span class="p">(</span><span class="n">PDB_descriptive_df</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">entity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entities</span><span class="o">.</span><span class="n">pdb_dict</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;Entity </span><span class="si">%d</span><span class="s2"> not found in main file&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">entity</span><span class="p">))</span>
+
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;pdb_class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entities</span><span class="o">.</span><span class="n">pdb_dict</span><span class="p">[</span><span class="n">entity</span><span class="p">]</span>
+
+  <span class="c1">#if chain not in entities.pdb_dict[entity].chain_list:</span>
+   <span class="c1"># raise NameError(&quot;Chain %s not found for entity %d&quot;%(chain, entity))</span>
+
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;cm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chainMap</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;cm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">construct</span><span class="p">(</span><span class="n">PATH</span><span class="p">)</span>
+
+  <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;cm&#39;</span><span class="p">],</span> <span class="n">cm_dict</span><span class="p">[</span><span class="s1">&#39;pdb_class&#39;</span><span class="p">])</span>
+
+  <span class="k">return</span> <span class="n">cm_dict</span>
+
+
+
+<div class="viewcode-block" id="return_interChain_adj">
+<a class="viewcode-back" href="../../contactMap.html#CoDIAC.contactMap.return_interChain_adj">[docs]</a>
+<span class="k">def</span> <span class="nf">return_interChain_adj</span><span class="p">(</span><span class="n">PATH</span><span class="p">,</span> <span class="n">from_dict</span><span class="p">,</span> <span class="n">to_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given two single_chain_dict objects of two entities, return the adjList and the array </span>
+<span class="sd">    of contacts between entities. This uses the from_dict as the outer keys of adjList (row values of matrix)</span>
+<span class="sd">    and to_dict as the inner keys of adjList (col values of matrix)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PATH: str</span>
+<span class="sd">          Path to where contact maps are</span>
+<span class="sd">        from_dict: dict</span>
+<span class="sd">          The dict created by return_single_chain_dict that will serve as mapping FROM from_dict to to_dict</span>
+<span class="sd">        to_dict: dict</span>
+<span class="sd">          The dict created by return_single_chain_dict that will serve as mapping to_dict </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        adjDict: dict</span>
+<span class="sd">          adjacency dict with outer keys as the from_dict residue numbers, inner keys the to_dict residue numbers</span>
+<span class="sd">          and value equal to the contact made between pair of residues (binary value from adjacency file)</span>
+<span class="sd">        arr: array</span>
+<span class="sd">          Array with from_dict x to_dict size (numresidues) and values equal to the contact value from adjDict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">PDB_ID</span> <span class="o">=</span> <span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">PDB_ID</span> <span class="o">!=</span> <span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;The PDB_IDs of the two dictionaries are not the same&quot;</span><span class="p">)</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">PATH</span><span class="o">+</span><span class="n">PDB_ID</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">PDB_ID</span> <span class="o">+</span> <span class="s1">&#39;_BF.txt&#39;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+ <span class="c1">#   df = df[df[&#39;Distance&#39;] &lt;= ang_cutoff]</span>
+ <span class="c1">#   df = df[df[&#39;Number of atomic contacts&#39;] &gt;= noc]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Res2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">notnull</span><span class="p">()]</span>
+    
+    
+    <span class="n">chains</span> <span class="o">=</span> <span class="p">[</span><span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">],</span> <span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">]]</span>
+    <span class="n">df_a_to_b</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">])]</span>
+    <span class="n">df_b_to_a</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">])]</span>
+    <span class="c1"># df_multichain = df_a_to_b.append(df_b_to_a)</span>
+    <span class="n">df_multichain</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df_a_to_b</span><span class="p">,</span> <span class="n">df_b_to_a</span><span class="p">])</span>
+    
+    
+    
+    
+    <span class="c1">#this dict will allow me to access how to address the from versus to relationship by addressing directly </span>
+    <span class="n">dict_combined</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dict_combined</span><span class="p">[</span><span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">from_dict</span> 
+    <span class="n">dict_combined</span><span class="p">[</span><span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">to_dict</span>
+    <span class="n">adjList</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">df_multichain</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]):</span>
+        <span class="n">chain1</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">chain2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">res1</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">res2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">res1_offset</span> <span class="o">=</span> <span class="n">dict_combined</span><span class="p">[</span><span class="n">chain1</span><span class="p">][</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span>
+        <span class="n">res2_offset</span> <span class="o">=</span> <span class="n">dict_combined</span><span class="p">[</span><span class="n">chain2</span><span class="p">][</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span>
+
+        <span class="k">if</span> <span class="n">res1</span><span class="o">-</span><span class="n">res1_offset</span> <span class="ow">in</span> <span class="n">dict_combined</span><span class="p">[</span><span class="n">chain1</span><span class="p">][</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">res2</span> <span class="o">-</span> <span class="n">res2_offset</span> <span class="ow">in</span> <span class="n">dict_combined</span><span class="p">[</span><span class="n">chain2</span><span class="p">][</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+
+                <span class="c1">#have to figure out if the key is the outer dict or inner dict key based on from/to</span>
+                <span class="k">if</span> <span class="n">chain1</span> <span class="o">==</span> <span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;entity&#39;</span><span class="p">]:</span>
+                    <span class="n">outer_key</span> <span class="o">=</span> <span class="n">res1</span><span class="o">-</span><span class="n">res1_offset</span>
+                    <span class="n">inner_key</span> <span class="o">=</span> <span class="n">res2</span><span class="o">-</span><span class="n">res2_offset</span>
+                <span class="k">else</span><span class="p">:</span> 
+                    <span class="n">outer_key</span> <span class="o">=</span> <span class="n">res2</span><span class="o">-</span><span class="n">res2_offset</span>
+                    <span class="n">inner_key</span> <span class="o">=</span> <span class="n">res1</span><span class="o">-</span><span class="n">res1_offset</span>
+
+
+                <span class="n">innerDict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">innerDict</span><span class="p">[</span><span class="n">inner_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">outer_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">adjList</span><span class="p">:</span>
+            <span class="c1">#if res2_num not in adjList:</span>
+                    <span class="n">adjList</span><span class="p">[</span><span class="n">outer_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">innerDict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dict_temp</span> <span class="o">=</span> <span class="n">adjList</span><span class="p">[</span><span class="n">outer_key</span><span class="p">]</span> <span class="c1">#get a pointer to be able to append to the dictionary of dictionary</span>
+                    <span class="k">if</span> <span class="n">inner_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dict_temp</span><span class="p">:</span>
+                        <span class="n">dict_temp</span><span class="p">[</span><span class="n">inner_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+                        
+                        
+        
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resNums</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resNums</span><span class="p">)])</span>
+    
+    <span class="n">from_start</span> <span class="o">=</span> <span class="n">from_dict</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span>
+    <span class="n">to_start</span> <span class="o">=</span> <span class="n">to_dict</span><span class="p">[</span><span class="s1">&#39;cm_aligned&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">from_key</span> <span class="ow">in</span> <span class="n">adjList</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">from_index</span> <span class="o">=</span> <span class="n">from_key</span> <span class="o">-</span> <span class="n">from_start</span>
+        <span class="k">for</span> <span class="n">to_key</span> <span class="ow">in</span> <span class="n">adjList</span><span class="p">[</span><span class="n">from_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">to_index</span> <span class="o">=</span> <span class="n">to_key</span><span class="o">-</span><span class="n">to_start</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">from_index</span><span class="p">,</span> <span class="n">to_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjList</span><span class="p">[</span><span class="n">from_key</span><span class="p">][</span><span class="n">to_key</span><span class="p">]</span>
+            
+    <span class="k">return</span> <span class="n">adjList</span><span class="p">,</span> <span class="n">arr</span></div>
+
+
+<span class="k">def</span> <span class="nf">copy_chainMap</span><span class="p">(</span><span class="n">chain</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Returns a new copy of chain map</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">chain_copy</span> <span class="o">=</span> <span class="n">chainMap</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">chain</span><span class="o">.</span><span class="n">entity</span><span class="p">)</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">arr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">transDict</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">transDict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">structSeq</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">resNums</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">resNums</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">adjacencyDict</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+  <span class="n">chain_copy</span><span class="o">.</span><span class="n">unmodeled_list</span> <span class="o">=</span> <span class="n">chain</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">chain_copy</span>
+
+
+
+<div class="viewcode-block" id="translate_chainMap_to_RefSeq">
+<a class="viewcode-back" href="../../contactMap.html#CoDIAC.contactMap.translate_chainMap_to_RefSeq">[docs]</a>
+<span class="k">def</span> <span class="nf">translate_chainMap_to_RefSeq</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Given a chainMap class, which includes the defined entity, use the pdbClass information to return a new chainMap class that is aligned to the reference sequence positions and full sequence expected.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">      chain: chainMap</span>
+<span class="sd">        a chainMap created from a contact file</span>
+<span class="sd">      pdbClass: pdbClass</span>
+<span class="sd">        a pdbClass created from the annotation file for the matching PDB ID of chainMap</span>
+
+<span class="sd">  Returns</span>
+<span class="sd">  -------</span>
+<span class="sd">    chainMap_aligned: chainMap</span>
+<span class="sd">        A new chainmap that updates the residue numbers and array. This object appends the following things:</span>
+<span class="sd">            offset: int</span>
+<span class="sd">              The offset required to map from refseq to the pdb contact map file if returning to that structure file</span>
+<span class="sd">            ERROR_CODE: int</span>
+<span class="sd">              0 if no errors, otherwise following codes are indicated. 1:no match found; 2:issue between struct and reference sequences after alignment; 3:struct and reference were different lengths</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">chainMap_aligned</span> <span class="o">=</span> <span class="n">copy_chainMap</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+
+  <span class="n">match</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">find_offset</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">)</span>
+  <span class="n">n_term_gaps</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">c_term_gaps</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">c_term_excess</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">n_term_excass</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">structSeq_new</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+  <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="n">match</span>
+  <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+  <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">ERROR_CODE</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+  <span class="c1">#cases to handle:</span>
+  <span class="c1"># no match</span>
+  <span class="c1"># match and we have to remove sequence at the end (struct Seq is &gt; refseq)</span>
+  <span class="c1"># it matches and we have to pad either the start or the end of the sequence and array</span>
+
+  <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+    
+    <span class="c1">#here&#39;s where we translate old res nums to ref sequence resNums.</span>
+    <span class="n">newResNums</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+      <span class="n">newResNums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="o">-</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span> <span class="o">=</span> <span class="n">newResNums</span>
+    <span class="n">newUnmodeled_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">:</span>
+      <span class="n">newUnmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="o">-</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span> <span class="o">=</span> <span class="n">newUnmodeled_list</span>
+    <span class="k">if</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">transDict</span><span class="p">:</span>
+      <span class="n">tempDict</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">transDict</span><span class="p">:</span>
+        <span class="n">tempDict</span><span class="p">[</span><span class="n">key</span><span class="o">-</span><span class="n">offset</span><span class="p">]</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">transDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">transDict</span> <span class="o">=</span> <span class="n">tempDict</span>
+
+
+    <span class="n">n_term_gaps</span> <span class="o">=</span> <span class="n">newResNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">n_term_excess</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">newResNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#we have to cut stuff</span>
+
+    <span class="n">updateVals</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">n_term_gaps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># the contact map starts after pdbClass</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding </span><span class="si">%d</span><span class="s2"> n_term positions&quot;</span><span class="o">%</span><span class="n">n_term_gaps</span><span class="p">)</span>
+      <span class="n">structSeq_new</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_term_gaps</span><span class="p">]</span> <span class="o">+</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span>
+      <span class="c1"># the refseq positions starting at the first and going forward need to be added too</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_term_gaps</span><span class="p">):</span>
+        <span class="n">newResNums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+      <span class="n">newResNums</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+      <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_term_gaps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">)]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">new_arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_term_gaps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_arr</span><span class="p">)]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">updateVals</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newResNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">n_term_gaps</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1">#insert the end of the n-term gap and then insert the beginning</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newResNums</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+      
+
+    <span class="k">elif</span> <span class="n">n_term_excess</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Deleting </span><span class="si">%d</span><span class="s2"> amino acids&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">n_term_excess</span><span class="p">))</span>
+      <span class="n">structSeq_new</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span><span class="p">[</span><span class="n">n_term_excess</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">newResNums</span> <span class="o">=</span> <span class="n">newResNums</span><span class="p">[</span><span class="n">n_term_excess</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">new_arr</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_term_excess</span><span class="p">):</span> <span class="c1">#delete the number of rows and columns of excess from beginning of array</span>
+        <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">new_arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">new_arr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+      <span class="n">updateVals</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="c1">#Remove unmodeled from umodeled list -  is that best just to return the unmodeled from the new structSeq? </span>
+     
+
+    <span class="k">if</span> <span class="n">updateVals</span><span class="p">:</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">=</span> <span class="n">structSeq_new</span>
+      <span class="n">newResNums</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span> <span class="o">=</span> <span class="n">newResNums</span>
+      <span class="c1">#print(&quot;Debug: resnums after update&quot;)</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">new_arr</span>
+
+
+
+    <span class="n">c_term_gaps</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_max_residue</span><span class="p">()</span>
+    <span class="c1">#print(&quot;Debug: chainMap last residue currently is %d&quot;%(chainMap_aligned.return_max_residue()))</span>
+    <span class="n">c_term_excess</span> <span class="o">=</span> <span class="o">-</span><span class="n">c_term_gaps</span>
+
+    <span class="k">if</span> <span class="n">c_term_gaps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="c1"># need to pad the c-terminal tail</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding </span><span class="si">%d</span><span class="s2"> c-terminal gaps&quot;</span><span class="o">%</span><span class="n">c_term_gaps</span><span class="p">)</span>
+      <span class="n">len_ref</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span>
+      <span class="n">c_term_ext_str</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">[</span><span class="n">len_ref</span><span class="o">-</span><span class="n">c_term_gaps</span><span class="p">:</span><span class="n">len_ref</span><span class="p">]</span>
+      <span class="n">structSeq_new</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">+</span> <span class="n">c_term_ext_str</span>
+      <span class="n">maxRes</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_max_residue</span><span class="p">()</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">c_term_ext_str</span><span class="p">)):</span>
+        <span class="n">ind_to_add</span> <span class="o">=</span> <span class="n">maxRes</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span>
+        <span class="c1">#print(&quot;DEBUG: extending list of positions&quot;)</span>
+        <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind_to_add</span><span class="p">)</span>
+        <span class="c1">#add a new column and row of zero values to the array</span>
+      <span class="n">pos_of_end_of_arr</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">)</span>
+      <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">,</span> <span class="n">pos_of_end_of_arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">c_term_gaps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">)]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">new_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">new_arr</span><span class="p">,</span> <span class="n">pos_of_end_of_arr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">c_term_gaps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_arr</span><span class="p">)]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> 
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">new_arr</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">=</span> <span class="n">structSeq_new</span>
+
+      <span class="c1">#add the new unmodeled region at the ned</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maxRes</span><span class="p">)</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maxRes</span><span class="o">+</span><span class="n">c_term_gaps</span><span class="p">)</span>
+
+
+
+    <span class="k">elif</span> <span class="n">c_term_excess</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
+      <span class="c1">#need to remove some of the c-terminal</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removing an excess of </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">c_term_excess</span><span class="p">))</span>
+      <span class="c1">#remove the last resNums, update the structure sequence, drop columns and rows from the array and update the unmodeled list.</span>
+      <span class="n">len_ref</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">len_ref</span><span class="p">]</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">len_ref</span><span class="p">]</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">len_ref</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">len_ref</span><span class="p">]</span>
+      <span class="n">unmodeled_list_temp</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">while</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1">#go through in pairs, so we can repeat the start or stop if needed </span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">[</span><span class="n">count</span><span class="p">]</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">[</span><span class="n">count</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">count</span><span class="o">+=</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+          <span class="n">unmodeled_list_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+          <span class="k">if</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span> 
+            <span class="n">unmodeled_list_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+          <span class="k">else</span><span class="p">:</span> <span class="c1">#we&#39;ve hit the end of the protein and we should append the end</span>
+            <span class="n">unmodeled_list_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_max_residue</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span> <span class="c1">#the start of an unmodeled region is not in it, but the stop is</span>
+          <span class="n">unmodeled_list_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">())</span>
+          <span class="n">unmodeled_list_temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span> <span class="o">=</span> <span class="n">unmodeled_list_temp</span>
+
+      <span class="c1">#Remove unmodeled from umodeled list -  is that best just to return the unmodeled from the new structSeq? </span>
+
+    <span class="c1">#In adjacency dict, remove offset and keep only residues in list at the end</span>
+    <span class="n">adjacencyDict_temp</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="p">:</span>
+      <span class="n">new_res</span> <span class="o">=</span> <span class="n">res</span> <span class="o">-</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">offset</span>
+
+      <span class="k">if</span> <span class="n">new_res</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+        <span class="n">adjacencyDict_temp</span><span class="p">[</span><span class="n">new_res</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">innerDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">res_2</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="p">[</span><span class="n">res</span><span class="p">]:</span>
+          <span class="n">new_res2</span> <span class="o">=</span> <span class="n">res_2</span> <span class="o">-</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">offset</span>
+          <span class="k">if</span> <span class="n">new_res2</span> <span class="ow">in</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">resNums</span><span class="p">:</span>
+            <span class="n">innerDict</span><span class="p">[</span><span class="n">new_res2</span><span class="p">]</span> <span class="o">=</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">adjacencyDict</span><span class="p">[</span><span class="n">res</span><span class="p">][</span><span class="n">res_2</span><span class="p">]</span>
+        <span class="n">adjacencyDict_temp</span><span class="p">[</span><span class="n">new_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">innerDict</span>
+    <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">adjacencyDict</span> <span class="o">=</span> <span class="n">adjacencyDict_temp</span>
+
+    <span class="c1">#now add an object that is the refseq sequence for the residues of the structure. </span>
+    <span class="c1">#since sometimes we have seen mutations in refseq that were not denoted, we should simply replace unmodeled regions of structSeq with refSeq</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span><span class="p">):</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">refseq</span> <span class="o">=</span> <span class="n">build_string_by_replacing_unmodeled</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">structSeq</span><span class="p">,</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">,</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">,</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">(),</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">return_max_residue</span><span class="p">())</span>
+
+      
+      <span class="k">if</span> <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">refseq</span> <span class="o">!=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: When replacing unmodled regions, found that struct sequence and ref_seq_mutated are not the same&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">refseq</span><span class="p">)</span>
+        <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">ERROR_CODE</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: refseq is not the same size as structSeq. Did not assign a refseq&quot;</span><span class="p">)</span>
+      <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">ERROR_CODE</span> <span class="o">=</span> <span class="mi">3</span>
+
+  <span class="k">else</span><span class="p">:</span> <span class="c1">#else match did not work</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;FATAL ERROR, could not find match&quot;</span><span class="p">)</span>
+    <span class="n">chainMap_aligned</span><span class="o">.</span><span class="n">ERROR_CODE</span> <span class="o">=</span> <span class="mi">1</span>
+
+  <span class="k">return</span> <span class="n">chainMap_aligned</span> </div>
+
+
+<span class="k">def</span> <span class="nf">build_string_by_replacing_unmodeled</span><span class="p">(</span><span class="n">structSeq</span><span class="p">,</span> <span class="n">refSeq</span><span class="p">,</span> <span class="n">unmodeled_list</span><span class="p">,</span> <span class="n">struct_start</span><span class="p">,</span> <span class="n">struct_end</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Given the structure sequence with unmodeled_list of unmodeled regions</span>
+<span class="sd">  Build a string that uses refseq from the unmodeled list to replace &#39;-&#39;</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">structSeq</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">refSeq</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: cannot use refseq to replace unmodeled list&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s1">&#39;-1&#39;</span>
+  <span class="n">new_seq</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+  <span class="c1">#change the unmodeled_list into a list of positions that need to come from refseq</span>
+  <span class="n">unmodeled_pos</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">while</span> <span class="n">ind</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">unmodeled_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">unmodeled_list</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">-</span><span class="n">struct_start</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">unmodeled_list</span><span class="p">[</span><span class="n">ind</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">struct_start</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">))</span>
+    <span class="n">unmodeled_pos</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="n">ind</span><span class="o">+=</span><span class="mi">2</span>
+ <span class="c1"># print(&quot;DEBUG: unmodeled pos&quot;)</span>
+  <span class="c1"># print(unmodeled_pos)</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">struct_end</span><span class="o">-</span><span class="n">struct_start</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">unmodeled_pos</span><span class="p">:</span>
+      <span class="n">new_seq</span> <span class="o">=</span> <span class="n">new_seq</span> <span class="o">+</span> <span class="n">refSeq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="n">new_seq</span>  <span class="o">=</span> <span class="n">new_seq</span>  <span class="o">+</span> <span class="n">structSeq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+  <span class="k">return</span> <span class="n">new_seq</span>
+
+
+
+<span class="k">def</span> <span class="nf">find_offset</span><span class="p">(</span><span class="n">chainClass</span><span class="p">,</span> <span class="n">pdbClass</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Given a structure sequence, which may have unmodeled residues indicated by &#39;-&#39;</span>
+<span class="sd">  find a match within ref_seq of a string of struct_seq and identify the position where</span>
+<span class="sd">  struct_seq reliably begins in ref_seq. This uses the longest continuous chain of modeled residues</span>
+<span class="sd">  found in struct_seq s</span>
+
+<span class="sd">  Parameters:</span>
+<span class="sd">  -----------</span>
+<span class="sd">  chainClass: chainClass </span>
+<span class="sd">    chainClass built from a contact map</span>
+<span class="sd">  pdbClass: pdbClass</span>
+<span class="sd">    pdbClass that matches the chain for chainClass</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">  --------</span>
+<span class="sd">  match: bool</span>
+<span class="sd">    True if match was found, false if not</span>
+<span class="sd">  offset: int</span>
+<span class="sd">    offset, where the start of the structure sequence was found in the reference_sequence</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">pos_start</span><span class="p">,</span> <span class="n">length_str</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">return_longest_string</span><span class="p">(</span><span class="n">chainClass</span><span class="o">.</span><span class="n">resNums</span><span class="p">,</span> <span class="n">chainClass</span><span class="o">.</span><span class="n">unmodeled_list</span><span class="p">)</span>
+  <span class="n">start_in_structSeq</span> <span class="o">=</span> <span class="n">pos_start</span><span class="o">-</span><span class="n">chainClass</span><span class="o">.</span><span class="n">return_min_residue</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span>
+  <span class="n">substring</span> <span class="o">=</span> <span class="n">chainClass</span><span class="o">.</span><span class="n">structSeq</span><span class="p">[</span><span class="n">start_in_structSeq</span><span class="p">:</span><span class="n">start_in_structSeq</span><span class="o">+</span><span class="n">length_str</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">search</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">substring</span><span class="p">,</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span>
+  <span class="n">match</span> <span class="o">=</span> <span class="kc">False</span>
+  <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">search</span><span class="o">.</span><span class="n">span</span><span class="p">()</span>
+    <span class="n">ref_seq_pos</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">start</span><span class="c1">#position in the substring + </span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">ref_seq_pos</span><span class="p">)</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">pos_start</span> <span class="o">+</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ref_seq_pos</span> 
+    <span class="n">match</span> <span class="o">=</span> <span class="kc">True</span>
+
+  <span class="k">else</span><span class="p">:</span> <span class="c1"># if it didn&#39;t work to look for a substring (e.g. b/c there was a fusion component), let&#39;s look for refseq in structure.</span>
+    <span class="n">totalLength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">)</span>
+    <span class="n">numToTry</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">strSize</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">totalLength</span><span class="o">/</span><span class="n">numToTry</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+
+
+    <span class="k">if</span><span class="p">(</span><span class="n">totalLength</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">:</span>
+      <span class="n">numToTry</span> <span class="o">=</span> <span class="mi">3</span>
+      <span class="n">strSize</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">totalLength</span><span class="o">/</span><span class="n">numToTry</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span> <span class="c1">#if the string is too small, like in peptides, we can shorten match size</span>
+      <span class="c1">#print(&quot;DEBUG: shortening to 3&quot;)</span>
+
+    <span class="n">iterNum</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">,</span> <span class="n">chainClass</span><span class="o">.</span><span class="n">structSeq</span><span class="p">)</span>
+    <span class="n">subStart</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#if a full match did not occur of ref_seq_mutated in structSeq (due to unomdeled residues, then we&#39;ll take different segments )</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">search</span> <span class="ow">and</span> <span class="n">iterNum</span><span class="o">&lt;</span><span class="n">numToTry</span><span class="p">:</span>
+
+      <span class="n">subStart</span> <span class="o">=</span> <span class="n">iterNum</span><span class="o">*</span><span class="n">strSize</span>
+      <span class="c1">#print(&quot;DEBUG: Trying indexes %d and %d&quot;%(subStart, min(subStart+strSize, totalLength)))</span>
+      <span class="n">substring_val</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_mutated</span><span class="p">[</span><span class="n">subStart</span><span class="p">:</span><span class="n">subStart</span><span class="o">+</span><span class="nb">min</span><span class="p">(</span><span class="n">subStart</span><span class="o">+</span><span class="n">strSize</span><span class="p">,</span> <span class="n">totalLength</span><span class="p">)]</span>
+      <span class="n">search</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">substring_val</span><span class="p">,</span> <span class="n">chainClass</span><span class="o">.</span><span class="n">structSeq</span><span class="p">)</span>
+      <span class="c1">#print(&quot;DEBUG: trying a substring match with %s&quot;%(substring_val))</span>
+      <span class="n">iterNum</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+      <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="n">search</span><span class="o">.</span><span class="n">span</span><span class="p">()</span> <span class="c1">#in this case, start is the string position where ref_seq matched the crystal structure.</span>
+      <span class="c1">#print(&quot;DEBUG: start of refseq in crystal struct is %d, moved by %d of match&quot;%(start, subStart))</span>
+      <span class="n">pos_in_ref_seq_start</span> <span class="o">=</span> <span class="n">pdbClass</span><span class="o">.</span><span class="n">ref_seq_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">subStart</span>
+      <span class="n">pos_in_struct_where_match</span> <span class="o">=</span> <span class="n">chainClass</span><span class="o">.</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span>
+      <span class="n">offset</span> <span class="o">=</span> <span class="n">pos_in_struct_where_match</span> <span class="o">-</span> <span class="n">pos_in_ref_seq_start</span>
+      <span class="c1">#print(&quot;Found offset&quot;)</span>
+      <span class="c1">#therefore, that position in the crystal structure is the offset from ref_seq</span>
+      <span class="c1"># if chainClass.resNums[start] &gt; pdbClass.ref_seq_positions[0]:</span>
+      <span class="c1">#   offset = pdbClass.ref_seq_positions[0] - chainClass.resNums[start] #offset is positive, have to subtract the offset</span>
+      <span class="c1"># else:</span>
+      <span class="c1">#   offset = chainClass.resNums[start] - pdbClass.ref_seq_positions[0]  </span>
+
+      <span class="n">match</span> <span class="o">=</span> <span class="kc">True</span>
+  <span class="k">return</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+
+
+
+
+<span class="k">def</span> <span class="nf">return_longest_string</span><span class="p">(</span><span class="n">resNums</span><span class="p">,</span> <span class="n">unmodeled_list</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Give the residue numbers and the unomdeled list, return the position (in resNum space)</span>
+<span class="sd">  of the longest substring of a sequence.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  resNums: list</span>
+<span class="sd">    residue number list for understanding unmodeled list</span>
+
+<span class="sd">  unmodeled_list: list</span>
+<span class="sd">    paired list of unmodeled residues</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">stringSizes</span> <span class="o">=</span> <span class="p">{}</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">unmodeled_list</span><span class="p">:</span>
+    <span class="n">stringSizes</span><span class="p">[</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">resNums</span><span class="p">)</span>
+    <span class="n">pos_start_longest_str</span> <span class="o">=</span> <span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">length_longest_str</span>  <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">resNums</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">stringSizes</span><span class="p">[</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmodeled_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">resNums</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">i</span><span class="o">&lt;</span><span class="nb">len</span><span class="p">(</span><span class="n">unmodeled_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">stringSizes</span><span class="p">[</span><span class="n">unmodeled_list</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmodeled_list</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">unmodeled_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">i</span><span class="o">+=</span><span class="mi">2</span>
+    <span class="n">stringSizes</span><span class="p">[</span><span class="n">unmodeled_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">resNums</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">unmodeled_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">pos_start_longest_str</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">stringSizes</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">stringSizes</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
+    <span class="n">length_longest_str</span> <span class="o">=</span> <span class="n">stringSizes</span><span class="p">[</span><span class="n">pos_start_longest_str</span><span class="p">]</span>
+  <span class="k">return</span> <span class="n">pos_start_longest_str</span><span class="p">,</span> <span class="n">length_longest_str</span><span class="p">,</span> <span class="n">stringSizes</span>
+
+<div class="viewcode-block" id="print_fasta_feature_files">
+<a class="viewcode-back" href="../../contactMap.html#CoDIAC.contactMap.print_fasta_feature_files">[docs]</a>
+<span class="k">def</span> <span class="nf">print_fasta_feature_files</span><span class="p">(</span><span class="n">contact_arr</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">featureStart</span><span class="p">,</span> <span class="n">N_offset1</span><span class="p">,</span> <span class="n">featureEnd</span><span class="p">,</span> <span class="n">C_offset1</span><span class="p">,</span> <span class="n">feature_minRes</span><span class="p">,</span> <span class="n">contactFromStart</span><span class="p">,</span> <span class="n">N_offset2</span><span class="p">,</span> <span class="n">contactFromEnd</span><span class="p">,</span> <span class="n">C_offset2</span><span class="p">,</span><span class="n">contact_minRes</span><span class="p">,</span> <span class="n">fastaHeader</span><span class="p">,</span> <span class="n">contactLabel</span><span class="p">,</span> <span class="n">outputFileBase</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">append</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;117733&#39;</span><span class="p">,</span> <span class="n">use_ref_seq_aligned</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Create a feature file for the ROI_1 (Region of Interest) that has contacts to ROI_2 of an array of interest. This assumes that the region of interest is represented in the rows of </span>
+<span class="sd">  the contact_arr.</span>
+
+<span class="sd">  Parameters</span>
+<span class="sd">  ----------</span>
+<span class="sd">  contact_arr: array</span>
+<span class="sd">    Has rows of the [featureStart, featureEnd] of interest and cols of the [contactFromStart, contactFromEnd] ROI. Cols can be the same or different species</span>
+<span class="sd">  seq: str</span>
+<span class="sd">    Protein sequence used to generate fasta file</span>
+<span class="sd">  featureStart: int</span>
+<span class="sd">      start position of ROI_1, assumes it is in the crystal structure minRes number</span>
+<span class="sd">  N_offset1: int</span>
+<span class="sd">      N terminal offset for ROI_1</span>
+<span class="sd">  featureEnd: int</span>
+<span class="sd">      end position of ROI_1, assumes it is in the crystal structure minRes number</span>
+<span class="sd">  C_offset1: int</span>
+<span class="sd">      C terminal offset for ROI_1</span>
+<span class="sd">  feature_minRes: int</span>
+<span class="sd">    minimum residue of the feature </span>
+<span class="sd">  contactFromStart: int</span>
+<span class="sd">      start position of ROI_2, assumes it is in the crystal structure minRes number</span>
+<span class="sd">  N_offset2: int</span>
+<span class="sd">      N terminal offset for ROI_2</span>
+<span class="sd">  contactFromEnd: int</span>
+<span class="sd">      end position of ROI_1, assumes it is in the crystal structure minRes number</span>
+<span class="sd">  C_offset2: int</span>
+<span class="sd">      C terminal offset for ROI_2</span>
+<span class="sd">  contact_minRes: int</span>
+<span class="sd">    minimum residue of the contact component</span>
+<span class="sd">  fastaHeader: str</span>
+<span class="sd">      fastaHeader to be used to reference in jalview </span>
+<span class="sd">  contactLabel: str</span>
+<span class="sd">      label of feature</span>
+<span class="sd">  outputFileBase: str</span>
+<span class="sd">      file name base to write feature and fasta to (it will be &lt;outputFileBase&gt;.fasta and &lt;outpufileBase&gt;.fea)</span>
+<span class="sd">  threshold: float</span>
+<span class="sd">      binary value of the contact (&#39;1&#39;) in binary adjacency files</span>
+<span class="sd">  append: bool</span>
+<span class="sd">      Whether to append or overwrite the feature file</span>
+<span class="sd">  color: </span>
+<span class="sd">      color number for javliew to use when loading feature.</span>
+<span class="sd">  use_ref_seq_aligned: bool</span>
+<span class="sd">    True if you want to use the ref_seq_aligned where unmodeled regions have been imputed during translation, otherwise uses structseq</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">feature_file_name</span> <span class="o">=</span> <span class="n">outputFileBase</span><span class="o">+</span><span class="s1">&#39;.fea&#39;</span>
+  <span class="n">fasta_file_name</span> <span class="o">=</span> <span class="n">outputFileBase</span><span class="o">+</span><span class="s1">&#39;.fasta&#39;</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">append</span><span class="p">:</span>
+      <span class="n">feature_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">feature_file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+      <span class="n">feature_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+      <span class="n">fasta_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fasta_file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+      <span class="n">fasta_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+  <span class="c1"># account for offset by subtracting featureStart by it; also account for python beginning at index 0 by subtracting 1</span>
+  <span class="n">featureStart</span> <span class="o">=</span> <span class="n">featureStart</span><span class="o">-</span><span class="n">feature_minRes</span>
+  <span class="n">featureEnd</span> <span class="o">=</span> <span class="n">featureEnd</span><span class="o">-</span><span class="n">feature_minRes</span>
+  <span class="n">contactFromStart</span> <span class="o">=</span> <span class="n">contactFromStart</span><span class="o">-</span><span class="n">contact_minRes</span>
+  <span class="n">contactFromEnd</span> <span class="o">=</span> <span class="n">contactFromEnd</span><span class="o">-</span><span class="n">contact_minRes</span>
+  
+  <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">contact_arr</span><span class="o">.</span><span class="n">shape</span>
+  
+  <span class="k">if</span> <span class="n">featureStart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid value for featureStart: value reset to 0&quot;</span><span class="p">)</span>
+      <span class="n">featureStart</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">elif</span> <span class="n">contactFromStart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid value for contactFromStart: value reset to 0&quot;</span><span class="p">)</span>
+      <span class="n">contactFromStart</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="k">elif</span> <span class="n">featureEnd</span> <span class="o">&gt;</span> <span class="n">rows</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid value for featureEnd: value reset to max array index&quot;</span><span class="p">)</span>
+      <span class="n">featureEnd</span> <span class="o">=</span> <span class="n">rows</span>
+  <span class="k">elif</span> <span class="n">contactFromEnd</span> <span class="o">&gt;</span> <span class="n">cols</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid value for contactFromEnd: value reset to max array index&quot;</span><span class="p">)</span>
+      <span class="n">contactFromEnd</span> <span class="o">=</span> <span class="n">cols</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="k">pass</span>
+  
+  <span class="k">if</span> <span class="n">append</span><span class="p">:</span>
+      <span class="n">feature_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">feature_file_name</span><span class="p">,</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="n">feature_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">feature_file_name</span><span class="p">,</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+      <span class="n">feature_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="se">\t</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">contactLabel</span><span class="p">,</span> <span class="n">color</span><span class="p">))</span> <span class="c1">#this really needs to be added to the top of the file</span>
+
+  
+  <span class="n">arr</span> <span class="o">=</span> <span class="n">contact_arr</span><span class="p">[</span><span class="n">featureStart</span><span class="o">+</span><span class="n">N_offset1</span><span class="p">:</span><span class="n">featureEnd</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset1</span><span class="p">,</span> <span class="n">contactFromStart</span><span class="o">+</span><span class="n">N_offset2</span><span class="p">:</span><span class="n">contactFromEnd</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset2</span><span class="p">]</span>
+  <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">==</span> <span class="n">threshold</span>
+  <span class="n">arr_sum</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">featureLength</span> <span class="o">=</span> <span class="n">featureEnd</span> <span class="o">+</span><span class="n">N_offset1</span><span class="o">-</span> <span class="n">featureStart</span> <span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset1</span>
+  <span class="c1"># print(featureLength,len(arr_sum))</span>
+  <span class="c1">#contactLength = contactFromEnd - contactFromStart </span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">featureLength</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">arr_sum</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="c1">#if we wanted, could require arr_sum[i] &gt;= NumResiduesContacted</span>
+      <span class="n">feature_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="s2">-1</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\t</span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">contactLabel</span><span class="p">,</span> <span class="n">fastaHeader</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">contactLabel</span><span class="p">))</span>
+      <span class="c1"># print(i)</span>
+      <span class="c1">#for j in range(contactLength):</span>
+          <span class="c1">#if arr[i][j] &gt; threshold:</span>
+           <span class="c1">#   feature_file.write(&quot;%s\t%s\t-1\t%s\t%s\t%s\n&quot;%(contactLabel, fastaHeader, str(i+1), str(i+1), contactLabel))</span>
+            <span class="c1">#  break</span>
+  <span class="n">feature_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> 
+
+  <span class="c1">#write the fasta file</span>
+  <span class="n">fasta_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fasta_file_name</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>
+  <span class="n">fasta_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="o">+</span><span class="n">fastaHeader</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+  <span class="c1">#if use_ref_seq_aligned:</span>
+  <span class="c1">#  seq = self.refseq[featureStart:featureEnd]</span>
+  <span class="c1">#else:</span>
+  <span class="n">seq_sub</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="n">featureStart</span><span class="o">+</span><span class="n">N_offset1</span><span class="p">:</span><span class="n">featureEnd</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset1</span><span class="p">]</span> <span class="c1">#right now there might be unmodeled regions </span>
+  <span class="n">fasta_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">seq_sub</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+  <span class="n">fasta_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">return_aa_pos_list</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">resNums</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Given a sequence and list of residue numbers, create an array of strings with the aminoacid and residue numbers concatenated</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">list_AA</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resNums</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: resNums and struct Seq do not match in length&quot;</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">resNums</span><span class="p">)):</span>
+      <span class="n">list_AA</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">resNums</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+  <span class="k">return</span> <span class="n">list_AA</span>
+ <span class="c1"># print(list_AA)  </span>
+
+<span class="k">def</span> <span class="nf">generateAnnotatedHeatMap</span><span class="p">(</span><span class="n">contact_arr</span><span class="p">,</span> <span class="n">rowStart</span><span class="p">,</span> <span class="n">rowEnd</span><span class="p">,</span> <span class="n">rowMinRes</span><span class="p">,</span> <span class="n">colStart</span><span class="p">,</span> <span class="n">colEnd</span><span class="p">,</span> <span class="n">colMinRes</span><span class="p">,</span> <span class="n">rowTickLabels</span><span class="p">,</span> <span class="n">colTickLabels</span><span class="p">,</span> <span class="n">remove_no_contacts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text_annotate</span> <span class="o">=</span> <span class="s1">&#39;on&#39;</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Create a heatmap of arr for a subset of the array from ROI_1 defined by [rowStart,rowEnd] and columns from [colStart, colEnd]</span>
+<span class="sd">  using the minimum residues to adjust for moving from reference sequence into the array</span>
+
+<span class="sd">  rowStart: int</span>
+<span class="sd">      start position of ROI_1 (the &quot;from&quot; region)</span>
+<span class="sd">  rowEnd: int</span>
+<span class="sd">      end position of ROI_1</span>
+<span class="sd">  rowMinRes: int</span>
+<span class="sd">    minimum residue number of the sequence in rows</span>
+<span class="sd">  colStart: int</span>
+<span class="sd">      start position of ROI_2 (the &quot;to&quot; region)</span>
+<span class="sd">  colEnd: int</span>
+<span class="sd">      end position of ROI_2</span>
+<span class="sd">  colMinRes: int</span>
+<span class="sd">    minimum residue number of the sequence in cols</span>
+<span class="sd">  rowTickLabels: list</span>
+<span class="sd">    list of strings that will be used as labels for rows</span>
+<span class="sd">  colTickLabels: list</span>
+<span class="sd">    list of strings that will be used for column labels </span>
+<span class="sd">  remove_no_contacts: bool</span>
+<span class="sd">    Remove from the printed array any rows and columns that have no contacts.</span>
+<span class="sd">  text_annotate: str</span>
+<span class="sd">      &#39;on&#39; or any other string sets to not on</span>
+<span class="sd"> </span>
+<span class="sd">  &#39;&#39;&#39;</span>
+
+  <span class="c1"># xStart = colStart</span>
+  <span class="c1"># xEnd = colEnd</span>
+  <span class="c1"># x_offset = colMinRes</span>
+
+  <span class="c1"># yStart = rowStart</span>
+  <span class="c1"># yEnd = rowEnd</span>
+  <span class="c1"># y_offset = rowMinRes</span>
+
+  <span class="c1"># #account for the offset</span>
+  <span class="c1"># xStart = xStart-x_offset</span>
+  <span class="c1"># xEnd = xEnd-x_offset</span>
+  <span class="c1"># yStart = yStart-y_offset</span>
+  <span class="c1"># yEnd = yEnd-y_offset</span>
+
+  <span class="c1"># if xStart &lt; 0:</span>
+  <span class="c1">#   print(&quot;ERROR: xStart, when considering offset, is less than 0, setting new parameter&quot;)</span>
+  <span class="c1">#   xStart = 0</span>
+
+  <span class="c1"># if yStart &lt; 0:</span>
+  <span class="c1">#   print(&quot;ERROR: yStart, when considering offset, is less than 0, setting to 0&quot;)</span>
+  
+
+  <span class="c1"># rows, cols = contact_arr.shape</span>
+  <span class="c1"># if xEnd &gt; cols:</span>
+  <span class="c1">#   print(&quot;ERROR: xEnd is past the array, setting to end&quot;)</span>
+  <span class="c1">#   xEnd = cols</span>
+  <span class="c1"># if yEnd &gt; rows:</span>
+  <span class="c1">#   print(&quot;ERROR: yEnd is past the array, setting to end&quot;)</span>
+  <span class="c1">#   yEnd = rows</span>
+
+  <span class="c1"># x_AA = colTickLabels[xStart:xEnd+1]</span>
+  <span class="c1"># y_AA = rowTickLabels[yStart:yEnd+1]</span>
+  
+  <span class="c1"># arr = contact_arr[yStart:yEnd+1, xStart:xEnd+1]</span>
+
+  <span class="n">arr</span><span class="p">,</span> <span class="n">x_AA</span><span class="p">,</span> <span class="n">y_AA</span> <span class="o">=</span> <span class="n">return_arr_subset_by_ROI</span><span class="p">(</span><span class="n">contact_arr</span><span class="p">,</span> <span class="n">rowStart</span><span class="p">,</span> <span class="n">rowEnd</span><span class="p">,</span> <span class="n">rowMinRes</span><span class="p">,</span> <span class="n">colStart</span><span class="p">,</span> <span class="n">colEnd</span><span class="p">,</span> <span class="n">colMinRes</span><span class="p">,</span> <span class="n">rowTickLabels</span><span class="p">,</span> <span class="n">colTickLabels</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="n">remove_no_contacts</span><span class="p">:</span>
+    <span class="n">row_vals_to_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">col_vals_to_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">subset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">row_vals_to_keep</span><span class="p">,</span> <span class="n">col_vals_to_keep</span><span class="p">)</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">subset</span><span class="p">]</span>
+    <span class="n">x_AA_new</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y_AA_new</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">col_vals_to_keep</span><span class="p">:</span>
+      <span class="n">x_AA_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_AA</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">row_vals_to_keep</span><span class="p">:</span>
+      <span class="n">y_AA_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_AA</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+    <span class="n">x_AA</span> <span class="o">=</span> <span class="n">x_AA_new</span>
+    <span class="n">y_AA</span> <span class="o">=</span> <span class="n">y_AA_new</span>
+
+
+  <span class="c1">#print(&quot;DEBUG: size of array to print is&quot;)</span>
+  <span class="c1">#print(arr.shape)</span>
+  <span class="c1">#print(&quot;DEBUG: supposed to be %d x %d&quot;%(yEnd-yStart, xEnd-xStart))</span>
+  <span class="c1">#print(&quot;DEBUG: object starting array is&quot;)</span>
+  <span class="c1">#print(self.arr.shape)</span>
+
+  
+  <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+  <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;YlGn&#39;</span><span class="p">)</span>
+
+  <span class="c1"># We want to show all ticks...</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_AA</span><span class="p">)))</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_AA</span><span class="p">)))</span>
+  <span class="c1"># ... and label them with the respective list entries</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">x_AA</span><span class="p">)</span>
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">y_AA</span><span class="p">)</span>
+
+  <span class="c1"># Rotate the tick labels and set their alignment.</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span>
+          <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">&quot;anchor&quot;</span><span class="p">)</span>
+
+  <span class="c1"># Loop over data dimensions and create text annotations.</span>
+  <span class="k">if</span> <span class="n">text_annotate</span> <span class="o">==</span> <span class="s1">&#39;on&#39;</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_AA</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_AA</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
+
+  <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Annotated Contact Map&quot;</span><span class="p">)</span>
+  <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+  <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span> 
+
+
+<span class="k">def</span> <span class="nf">return_arr_subset_by_ROI</span><span class="p">(</span><span class="n">contact_arr</span><span class="p">,</span> <span class="n">rowStart</span><span class="p">,</span> <span class="n">rowEnd</span><span class="p">,</span> <span class="n">rowMinRes</span><span class="p">,</span> <span class="n">colStart</span><span class="p">,</span> <span class="n">colEnd</span><span class="p">,</span> <span class="n">colMinRes</span><span class="p">,</span> <span class="n">rowTickLabels</span><span class="o">=</span><span class="p">[],</span> <span class="n">colTickLabels</span><span class="o">=</span><span class="p">[]):</span>
+<span class="w">  </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">  Return a subset of the array from ROI_1 defined by [rowStart,rowEnd] and columns from [colStart, colEnd]</span>
+<span class="sd">  using the minimum residues to adjust for moving from reference sequence into the array</span>
+
+<span class="sd">  rowStart: int</span>
+<span class="sd">      start position of ROI_1 (the &quot;from&quot; region)</span>
+<span class="sd">  rowEnd: int</span>
+<span class="sd">      end position of ROI_1</span>
+<span class="sd">  rowMinRes: int</span>
+<span class="sd">    minimum residue number of the sequence in rows</span>
+<span class="sd">  colStart: int</span>
+<span class="sd">      start position of ROI_2 (the &quot;to&quot; region)</span>
+<span class="sd">  colEnd: int</span>
+<span class="sd">      end position of ROI_2</span>
+<span class="sd">  colMinRes: int</span>
+<span class="sd">    minimum residue number of the sequence in cols</span>
+<span class="sd">  rowTickLabels: list</span>
+<span class="sd">    list of strings that will be used as labels for rows</span>
+<span class="sd">  colTickLabels: list</span>
+<span class="sd">    list of strings that will be used for column labels </span>
+
+<span class="sd">  &#39;&#39;&#39;</span>
+  <span class="n">xStart</span> <span class="o">=</span> <span class="n">colStart</span>
+  <span class="n">xEnd</span> <span class="o">=</span> <span class="n">colEnd</span>
+  <span class="n">x_offset</span> <span class="o">=</span> <span class="n">colMinRes</span>
+
+  <span class="n">yStart</span> <span class="o">=</span> <span class="n">rowStart</span>
+  <span class="n">yEnd</span> <span class="o">=</span> <span class="n">rowEnd</span>
+  <span class="n">y_offset</span> <span class="o">=</span> <span class="n">rowMinRes</span>
+
+  <span class="c1">#account for the offset</span>
+  <span class="n">xStart</span> <span class="o">=</span> <span class="n">xStart</span><span class="o">-</span><span class="n">x_offset</span>
+  <span class="n">xEnd</span> <span class="o">=</span> <span class="n">xEnd</span><span class="o">-</span><span class="n">x_offset</span>
+  <span class="n">yStart</span> <span class="o">=</span> <span class="n">yStart</span><span class="o">-</span><span class="n">y_offset</span>
+  <span class="n">yEnd</span> <span class="o">=</span> <span class="n">yEnd</span><span class="o">-</span><span class="n">y_offset</span>
+
+  <span class="k">if</span> <span class="n">xStart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: xStart, when considering offset, is less than 0, setting new parameter&quot;</span><span class="p">)</span>
+    <span class="n">xStart</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="k">if</span> <span class="n">yStart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: yStart, when considering offset, is less than 0, setting to 0&quot;</span><span class="p">)</span>
+  
+
+  <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">contact_arr</span><span class="o">.</span><span class="n">shape</span>
+  <span class="k">if</span> <span class="n">xEnd</span> <span class="o">&gt;</span> <span class="n">cols</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: xEnd is past the array, setting to end&quot;</span><span class="p">)</span>
+    <span class="n">xEnd</span> <span class="o">=</span> <span class="n">cols</span>
+  <span class="k">if</span> <span class="n">yEnd</span> <span class="o">&gt;</span> <span class="n">rows</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: yEnd is past the array, setting to end&quot;</span><span class="p">)</span>
+    <span class="n">yEnd</span> <span class="o">=</span> <span class="n">rows</span>
+
+  <span class="n">x_AA</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="n">y_AA</span> <span class="o">=</span> <span class="p">[]</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rowTickLabels</span><span class="p">):</span>
+  
+    <span class="n">y_AA</span> <span class="o">=</span> <span class="n">rowTickLabels</span><span class="p">[</span><span class="n">yStart</span><span class="p">:</span><span class="n">yEnd</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colTickLabels</span><span class="p">):</span>
+    <span class="n">x_AA</span> <span class="o">=</span> <span class="n">colTickLabels</span><span class="p">[</span><span class="n">xStart</span><span class="p">:</span><span class="n">xEnd</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+  
+  <span class="n">arr</span> <span class="o">=</span> <span class="n">contact_arr</span><span class="p">[</span><span class="n">yStart</span><span class="p">:</span><span class="n">yEnd</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">xStart</span><span class="p">:</span><span class="n">xEnd</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+  <span class="k">return</span> <span class="n">arr</span><span class="p">,</span> <span class="n">x_AA</span><span class="p">,</span> <span class="n">y_AA</span>
+
+
+
+
+
+
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.contactMap</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    </div>
+  </body>
+</html>

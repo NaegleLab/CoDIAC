@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.AdjacencyFiles &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=def86cc0" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.AdjacencyFiles</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.AdjacencyFiles</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+
+<span class="kn">from</span> <span class="nn">Bio.PDB</span> <span class="kn">import</span> <span class="n">PDBList</span>
+<span class="kn">from</span> <span class="nn">Bio.PDB.MMCIF2Dict</span> <span class="kn">import</span> <span class="n">MMCIF2Dict</span>
+
+<span class="n">AA_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ALA&quot;</span><span class="p">:</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ARG&quot;</span><span class="p">:</span><span class="s1">&#39;R&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ASN&quot;</span><span class="p">:</span><span class="s1">&#39;N&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ASP&quot;</span><span class="p">:</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;CYS&quot;</span><span class="p">:</span><span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLU&quot;</span><span class="p">:</span><span class="s1">&#39;E&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLN&quot;</span><span class="p">:</span><span class="s1">&#39;Q&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLY&quot;</span><span class="p">:</span><span class="s1">&#39;G&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;HIS&quot;</span><span class="p">:</span><span class="s1">&#39;H&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ILE&quot;</span><span class="p">:</span><span class="s1">&#39;I&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;LEU&quot;</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;LYS&quot;</span><span class="p">:</span><span class="s1">&#39;K&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;MET&quot;</span><span class="p">:</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;PHE&quot;</span><span class="p">:</span><span class="s1">&#39;F&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;PRO&quot;</span><span class="p">:</span><span class="s1">&#39;P&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;SER&quot;</span><span class="p">:</span><span class="s1">&#39;S&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;THR&quot;</span><span class="p">:</span><span class="s1">&#39;T&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;TRP&quot;</span><span class="p">:</span><span class="s1">&#39;W&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;TYR&quot;</span><span class="p">:</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;VAL&quot;</span><span class="p">:</span><span class="s1">&#39;V&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="ProcessArpeggio">
+<a class="viewcode-back" href="../../AdjacencyFiles.html#CoDIAC.AdjacencyFiles.ProcessArpeggio">[docs]</a>
+<span class="k">def</span> <span class="nf">ProcessArpeggio</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">,</span> <span class="n">outfile_path</span><span class="p">,</span> <span class="n">mmCIF_file</span><span class="p">,</span> <span class="n">small_molecule</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39; This function generates a text file of contacts that is a processed version of contact information extracted using Arpeggio (json file) </span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">            input_file_path : str</span>
+<span class="sd">                Input a .json file generated by running Arpeggio</span>
+<span class="sd">            outfile_path : str </span>
+<span class="sd">                Path to save the output .txt contactmap file</span>
+<span class="sd">            mmCIF_file : str</span>
+<span class="sd">                Path to fetch the mmCIF file</span>
+<span class="sd">            small_molecule : bool</span>
+<span class="sd">                Whether to include or exclude protein interactions with any small molecules that may be present in the structure complex</span>
+<span class="sd">                    </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Adjacency file &#39;{PDB_ID}.txt&#39; to the specified path in outfile variable&#39;&#39;&#39;</span>
+
+       <span class="c1"># filepath = self.PATH + &#39;/&#39; + self.input_json</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            
+        <span class="n">pdb_info</span> <span class="o">=</span> <span class="n">MMCIF2Dict</span><span class="p">(</span><span class="n">mmCIF_file</span><span class="p">)</span>
+        
+        <span class="n">parse_cifpath</span> <span class="o">=</span> <span class="n">mmCIF_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="n">parse_cifpath</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;.cif&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">CIF_PDB_ID</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">CIF_PDB_ID</span><span class="p">)</span>
+                
+        <span class="k">if</span> <span class="n">small_molecule</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+
+            <span class="n">HETATMS_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="s1">&#39;_pdbx_nonpoly_scheme.pdb_mon_id&#39;</span> <span class="ow">in</span> <span class="n">pdb_info</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">het_res</span> <span class="o">=</span> <span class="n">pdb_info</span><span class="p">[</span><span class="s1">&#39;_pdbx_nonpoly_scheme.pdb_mon_id&#39;</span><span class="p">]</span>
+                <span class="n">het_res_id</span> <span class="o">=</span> <span class="n">pdb_info</span><span class="p">[</span><span class="s1">&#39;_pdbx_nonpoly_scheme.pdb_seq_num&#39;</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">het_res_id</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">het_res</span><span class="p">:</span>
+                        <span class="n">HETATMS_dict</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+                        <span class="n">het_res</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">small_molecule</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">HETATMS_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            
+        <span class="n">contact_types</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;aromatic&#39;</span><span class="p">,</span><span class="s1">&#39;carbonyl&#39;</span><span class="p">,</span><span class="s1">&#39;hbond&#39;</span><span class="p">,</span><span class="s1">&#39;hydrophobic&#39;</span><span class="p">,</span><span class="s1">&#39;ionic&#39;</span><span class="p">,</span><span class="s1">&#39;polar&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;vdw&#39;</span><span class="p">,</span><span class="s1">&#39;vdw_clash&#39;</span><span class="p">,</span><span class="s1">&#39;weak_hbond&#39;</span><span class="p">,</span><span class="s1">&#39;weak_polar&#39;</span><span class="p">,</span><span class="s1">&#39;xbond&#39;</span><span class="p">]</span>
+        
+        <span class="n">parse_path</span> <span class="o">=</span> <span class="n">input_file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="n">parse_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s1">&#39;.json&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">PDB_ID</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span>
+                
+        <span class="n">outfile</span> <span class="o">=</span> <span class="n">outfile_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span>
+
+        <span class="k">if</span> <span class="n">CIF_PDB_ID</span> <span class="o">==</span> <span class="n">PDB_ID</span> <span class="p">:</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PDB&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Chain1&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Chain2&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Res1&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;ResNum1&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span>
+                       <span class="s1">&#39;Res2&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;ResNum2&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Atoms&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Distance&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;Contact_type&#39;</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+                    <span class="n">chain_1</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;bgn&#39;</span><span class="p">][</span><span class="s1">&#39;auth_asym_id&#39;</span><span class="p">]))</span>
+                    <span class="n">atom_1</span> <span class="o">=</span><span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;bgn&#39;</span><span class="p">][</span><span class="s1">&#39;auth_atom_id&#39;</span><span class="p">]))</span>
+                    <span class="n">resnum_1</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;bgn&#39;</span><span class="p">][</span><span class="s1">&#39;auth_seq_id&#39;</span><span class="p">]))</span>
+                    <span class="n">res_1</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;bgn&#39;</span><span class="p">][</span><span class="s1">&#39;label_comp_id&#39;</span><span class="p">]))</span>
+                    <span class="n">chain_2</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">][</span><span class="s1">&#39;auth_asym_id&#39;</span><span class="p">]))</span>
+                    <span class="n">atom_2</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">][</span><span class="s1">&#39;auth_atom_id&#39;</span><span class="p">]))</span>
+                    <span class="n">resnum_2</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">][</span><span class="s1">&#39;auth_seq_id&#39;</span><span class="p">]))</span>
+                    <span class="n">res_2</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;end&#39;</span><span class="p">][</span><span class="s1">&#39;label_comp_id&#39;</span><span class="p">]))</span>
+                    <span class="n">distance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;distance&#39;</span><span class="p">]))</span>
+                    <span class="n">interaction</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;interacting_entities&#39;</span><span class="p">])</span>
+                    <span class="n">contactlist</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;contact&#39;</span><span class="p">]</span> <span class="c1">#stores data in a list </span>
+
+                    <span class="k">if</span> <span class="n">res_1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">HETATMS_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>               
+                        <span class="k">if</span> <span class="n">res_2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">HETATMS_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>                
+                            <span class="k">if</span> <span class="n">interaction</span> <span class="o">==</span> <span class="s1">&#39;INTRA_SELECTION&#39;</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+
+                                        <span class="k">for</span> <span class="n">contact</span> <span class="ow">in</span> <span class="n">contactlist</span><span class="p">:</span>
+
+                                            <span class="k">if</span> <span class="n">contact</span> <span class="ow">in</span> <span class="n">contact_types</span><span class="p">:</span>
+                                                <span class="k">if</span> <span class="n">resnum_1</span> <span class="o">&gt;</span> <span class="n">resnum_2</span><span class="p">:</span>
+                                                    <span class="n">atom_pair</span> <span class="o">=</span> <span class="n">atom_1</span> <span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="n">atom_2</span>
+
+                                                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chain_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chain_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span>
+                                                            <span class="nb">str</span><span class="p">(</span><span class="n">res_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resnum_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">res_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resnum_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span>
+                                                           <span class="nb">str</span><span class="p">(</span><span class="n">atom_pair</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">contactlist</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+                                                <span class="k">else</span><span class="p">:</span>
+                                                    <span class="n">atom_pair</span> <span class="o">=</span> <span class="n">atom_2</span> <span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="n">atom_1</span>
+                                                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chain_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">chain_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span>
+                                                            <span class="nb">str</span><span class="p">(</span><span class="n">res_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resnum_2</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">res_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resnum_1</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span>
+                                                           <span class="nb">str</span><span class="p">(</span><span class="n">atom_pair</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">contactlist</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+                                                <span class="k">break</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span>  <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">({</span><span class="s2">&quot;Res1&quot;</span><span class="p">:</span> <span class="n">AA_dict</span><span class="p">},</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">({</span><span class="s2">&quot;Res2&quot;</span><span class="p">:</span> <span class="n">AA_dict</span><span class="p">},</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;Chain1&quot;</span><span class="p">,</span><span class="s2">&quot;Chain2&quot;</span><span class="p">,</span><span class="s2">&quot;ResNum1&quot;</span><span class="p">,</span><span class="s2">&quot;ResNum2&quot;</span><span class="p">],</span>
+                            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+                            <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">outfile</span><span class="p">,</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adjacency File generated for </span><span class="si">{PDB}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">PDB</span> <span class="o">=</span> <span class="n">PDB_ID</span><span class="p">))</span></div>
+
+        
+
+<div class="viewcode-block" id="BinaryFeatures">
+<a class="viewcode-back" href="../../AdjacencyFiles.html#CoDIAC.AdjacencyFiles.BinaryFeatures">[docs]</a>
+<span class="k">def</span> <span class="nf">BinaryFeatures</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">translate_resid</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Produces an adjacency file for intra (domain-domain) and inter (liagnd) protein contacts that are represented as binary features. Contacts merged across and within protein entities and chains using defined thresholds. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID</span>
+<span class="sd">        PATH : str</span>
+<span class="sd">            Path to write the output file </span>
+<span class="sd">        translate_resid : bool</span>
+<span class="sd">            chose whether to update structure sequence residue positions to the ones in the Uniprot Reference</span>
+<span class="sd">            </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        OUTFILE : str</span>
+<span class="sd">            binarized version of the adjacency txt file is created</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">OUTFILE</span> <span class="o">=</span> <span class="n">PATH</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;_BF.txt&#39;</span>
+    <span class="n">interpro_Adj</span> <span class="o">=</span> <span class="n">Interprotein_AdjFile</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">translate_resid</span><span class="p">)</span>
+    <span class="n">intrapro_Adj</span> <span class="o">=</span> <span class="n">Intraprotein_AdjFile</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">translate_resid</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">intrapro_Adj</span><span class="p">,</span> <span class="n">interpro_Adj</span><span class="p">])</span> 
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">OUTFILE</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adjacency File with Binary features generated for&#39;</span><span class="p">,</span> <span class="n">PDB_ID</span><span class="p">)</span></div>
+
+    
+    
+<span class="k">def</span> <span class="nf">Intraprotein_AdjFile</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">PATH</span><span class="p">,</span> <span class="n">translate_resid</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Produces adjacency file for only Intraprotein contacts along with binary features</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID</span>
+<span class="sd">        PATH : str</span>
+<span class="sd">            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for intraprotein </span>
+<span class="sd">        translate_resid : bool</span>
+<span class="sd">            whether to update structure sequence residue positions to the ones in the Uniprot Reference</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">INPUTFILE</span> <span class="o">=</span> <span class="n">PATH</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span>
+    <span class="c1">#OUTFILE = PATH+&#39;/&#39;+PDB_ID+&#39;/&#39;+PDB_ID+&#39;_intra.txt&#39;</span>
+    
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">INPUTFILE</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="c1">#duplicate columns for residue numbers</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#join chain and residue number column values to use as identifier for updating the residue numbers if required</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        
+    <span class="c1">#update residue numbers if needed</span>
+    <span class="k">if</span> <span class="n">translate_resid</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dict_resnums</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">translate_resid</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dict_resnums</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span>
+         
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">dict_resnums</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">dict_resnums</span><span class="p">)</span>
+    
+    <span class="c1">#handle residues that are part of SEQADV record in PDB header (expression tags, variants, conflicts, etc.)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span>
+        
+    <span class="c1">#pair the chain and residue number for each row (representing a feature)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum pair&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain Pair&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="n">entity_dict</span> <span class="o">=</span> <span class="n">entity_for_chain</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">chain_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">entity_for_chain</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">unique_entities</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">entity_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="c1">#map entity values based on chain and add columns </span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">)</span>
+
+    <span class="c1">#for intraprotein we filter features within same chain and repeat this for all entities present</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">]]</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df2</span><span class="p">[</span><span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">df2</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]]</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df3</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">unique_entities</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">intraprotein_threshold</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df3</span><span class="p">)):</span>
+            <span class="n">check_entity</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">respair</span> <span class="o">=</span> <span class="n">df3</span><span class="p">[</span><span class="s1">&#39;ResNum pair&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">check_entity</span> <span class="o">==</span> <span class="n">entity</span><span class="p">:</span>
+
+                <span class="c1">#group chain pairs based on the respair to find the occurrence of the feature across all chains</span>
+                <span class="n">fea_in_chains</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df3</span><span class="p">[</span><span class="s1">&#39;ResNum pair&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">respair</span><span class="p">,</span> <span class="s1">&#39;Chain Pair&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+                <span class="c1">#modify threshold if needed</span>
+<span class="c1">#                 if chain_count == 2: #for two chains separate condition</span>
+<span class="c1">#                     if len(set(fea_in_chains)) &gt; threshold:</span>
+<span class="c1">#                         BF = 1</span>
+<span class="c1">#                     else:</span>
+<span class="c1">#                         BF = 0</span>
+<span class="c1">#                 else:</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">fea_in_chains</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">:</span>
+                    <span class="n">BF</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">BF</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="n">df3</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BF</span>
+
+    <span class="n">df_edit</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Chain Pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Atoms&#39;</span><span class="p">,</span> <span class="s1">&#39;Contact_type&#39;</span><span class="p">,</span> <span class="s1">&#39;Distance&#39;</span><span class="p">,</span><span class="s1">&#39;map1&#39;</span><span class="p">,</span><span class="s1">&#39;map2&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df_edit</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;Chain1&#39;</span><span class="p">,</span><span class="s1">&#39;Chain2&#39;</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>  
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">:</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">:</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">new_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PDB&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;Res1&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">,</span> <span class="s1">&#39;Res2&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity2&#39;</span><span class="p">,</span> <span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">new_cols</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+    <span class="n">df4</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;ResNum1&quot;</span><span class="p">,</span><span class="s2">&quot;ResNum2&quot;</span><span class="p">],</span> 
+                                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span> 
+                                    <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="c1">#df4.to_csv(OUTFILE, index=None, sep=&#39;\t&#39;, mode=&#39;w&#39;)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">df4</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">Interprotein_AdjFile</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span><span class="n">PATH</span><span class="p">,</span> <span class="n">translate_resid</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Produces adjacency file for only Interprotein contacts along with binary features</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID</span>
+<span class="sd">        PATH : str</span>
+<span class="sd">            Path to find the arpeggio generated adjacency file and produce dataframe with binarized features for interprotein </span>
+<span class="sd">        translate_resid : bool</span>
+<span class="sd">            whether to update structure sequence residue positions to the ones in the Uniprot Reference &#39;&#39;&#39;</span>
+    
+    <span class="n">INPUTFILE</span> <span class="o">=</span> <span class="n">PATH</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span>
+    <span class="c1">#OUTFILE = PATH+&#39;/&#39;+PDB_ID+&#39;/&#39;+PDB_ID+&#39;_inter.txt&#39;</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">INPUTFILE</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1">#duplicate columns for residue numbers</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#join chain and residue number column values to use as identifier for updating the residue numbers if required</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="c1">#update residue numbers if needed</span>
+    <span class="k">if</span> <span class="n">translate_resid</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dict_resnums</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">translate_resid</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dict_resnums</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span>
+         
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">dict_resnums</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;map2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">dict_resnums</span><span class="p">)</span>
+
+    <span class="c1">#handle residues that are part of SEQADV record in PDB header (expression tags, variants, conflicts, etc.)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span>
+    
+    <span class="c1">#pair the chain and residue number for each row (representing a feature)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum Pair&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain Pair&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="n">entity_dict</span> <span class="o">=</span> <span class="n">entity_for_chain</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">interprotein_threshold</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)</span>
+    
+    <span class="c1">#map entity values based on chain and add columns </span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Chain2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">entity_dict</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity Pair&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;-&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="c1">#for interprotein we filter features that are present between entities</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span><span class="o">!=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">]]</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df2</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df2</span><span class="p">)):</span>
+        <span class="n">respair</span> <span class="o">=</span> <span class="n">df2</span><span class="p">[</span><span class="s1">&#39;ResNum Pair&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> 
+        
+        <span class="c1">#group chain pairs based on the respair to find the occurrence of the feature across all chains</span>
+        <span class="n">fea_in_chains</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df2</span><span class="p">[</span><span class="s1">&#39;ResNum Pair&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">respair</span><span class="p">,</span> <span class="s1">&#39;Chain Pair&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="c1">#modify threshold if needed</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">fea_in_chains</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">BF</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">BF</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df2</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BF</span>
+    
+    <span class="n">df_edit</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum Pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Chain Pair&#39;</span><span class="p">,</span><span class="s1">&#39;Entity Pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Distance&#39;</span><span class="p">,</span><span class="s1">&#39;Atoms&#39;</span><span class="p">,</span><span class="s1">&#39;Contact_type&#39;</span><span class="p">,</span><span class="s1">&#39;map1&#39;</span><span class="p">,</span> <span class="s1">&#39;map2&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df_edit</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df3</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;Chain1&#39;</span><span class="p">,</span><span class="s1">&#39;Chain2&#39;</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df3</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df4</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   
+    <span class="n">df4</span><span class="p">[[</span><span class="s1">&#39;PDB&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">,</span> <span class="s1">&#39;Res1&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">,</span> <span class="s1">&#39;Res2&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity2&#39;</span><span class="p">,</span> <span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]]</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s1">&#39;ResNum1_upd&#39;</span><span class="p">:</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2_upd&#39;</span><span class="p">:</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">new_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PDB&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum1&#39;</span><span class="p">,</span> <span class="s1">&#39;Res1&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity1&#39;</span><span class="p">,</span> <span class="s1">&#39;ResNum2&#39;</span><span class="p">,</span> <span class="s1">&#39;Res2&#39;</span><span class="p">,</span> <span class="s1">&#39;Entity2&#39;</span><span class="p">,</span> <span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">new_cols</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="c1">#Flip the Residue number, residue name and entity values to align the features sequentially in the file</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df4</span><span class="p">)):</span>
+        <span class="n">ent1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Entity1&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">ent2</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Entity2&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">rn1</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">rn2</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">res1</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Res1&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">res2</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Res2&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ent1</span> <span class="o">&gt;</span> <span class="n">ent2</span><span class="p">:</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rn2</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rn1</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;Res1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res2</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;Res2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res1</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;Entity1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ent2</span>
+            <span class="n">df4</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;Entity2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ent1</span>
+    
+    <span class="n">df4</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s2">&quot;ResNum1&quot;</span><span class="p">,</span><span class="s2">&quot;ResNum2&quot;</span><span class="p">],</span> 
+                                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span> 
+                                    <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+    <span class="n">df4</span> <span class="o">=</span> <span class="n">df4</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;ResNum2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df4</span><span class="p">[</span><span class="s1">&#39;Binary_Feature&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span>
+    <span class="c1">#df4.to_csv(OUTFILE,index=None, sep=&#39;\t&#39;, mode=&#39;w&#39;)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">df4</span><span class="p">)</span>
+    
+    
+<span class="k">def</span> <span class="nf">ResID_from_DBREF</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; This function uses the DBREF record from PDB header to find differences in residue numbers between PDB and reference (such as Uniprot) If PDB legacy formats are unavailable, we make use of the mmCif headers and extract the same information </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        dbref_dict : dict</span>
+<span class="sd">            Dictionary with chains as keys and list of sequence start and end residue numbers for both databases as values</span>
+<span class="sd">        dict_upd_id : dict</span>
+<span class="sd">            Dictionary whose keys are chain and residue number of the residues and its values are updated residue number. </span>
+<span class="sd">            Upon finding differences in residue numbers, the PDB sequence numbers will be replaced by the Uniprot residue number values stored in this dict </span>
+<span class="sd">        dict_id : dict</span>
+<span class="sd">            Dictionary whose keys are chain and residue number of the residues and its values are residue number in the structure sequence(PDB). </span>
+<span class="sd">            &#39;&#39;&#39;</span>
+    
+    <span class="n">dbref_dict</span><span class="o">=</span><span class="p">{}</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://files.rcsb.org/header/&quot;</span><span class="o">+</span> \
+                            <span class="n">PDB_ID</span> <span class="o">+</span> <span class="s2">&quot;.pdb&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">404</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="s2">&quot;https://files.rcsb.org/header/&quot;</span><span class="o">+</span> \
+                        <span class="n">PDB_ID</span> <span class="o">+</span> <span class="s2">&quot;.pdb&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">list_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;DBREF &#39;</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                    <span class="n">data</span> <span class="o">=</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+                    <span class="n">chain</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span>
+                    <span class="n">begin_pdb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">18</span><span class="p">])</span>
+                    <span class="n">end_pdb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">24</span><span class="p">])</span>
+                    <span class="n">begin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">55</span><span class="p">:</span><span class="mi">60</span><span class="p">])</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">62</span><span class="p">:</span><span class="mi">67</span><span class="p">])</span>
+                    <span class="n">list_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">begin_pdb</span><span class="p">)</span>
+                    <span class="n">list_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end_pdb</span><span class="p">)</span>
+                    <span class="n">list_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">begin</span><span class="p">)</span>
+                    <span class="n">list_attributes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+                    <span class="n">dbref_dict</span><span class="p">[</span><span class="n">chain</span><span class="p">]</span> <span class="o">=</span> <span class="n">list_attributes</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">PDBList</span><span class="p">()</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">retrieve_pdb_file</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">,</span> <span class="n">pdir</span> <span class="o">=</span><span class="s1">&#39;Data/AdjacencyFiles/&#39;</span><span class="p">,</span><span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;mmCif&#39;</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">MMCIF2Dict</span><span class="p">(</span><span class="s2">&quot;Data/AdjacencyFiles/&quot;</span><span class="o">+</span>\
+                    <span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;chain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.pdbx_strand_id&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;pdb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.pdbx_PDB_id_code&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;pdb_start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.pdbx_auth_seq_align_beg&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;pdb_end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.pdbx_auth_seq_align_end&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;db_start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.db_align_beg&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;db_end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;_struct_ref_seq.db_align_end&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+            <span class="n">l</span><span class="o">=</span><span class="p">[]</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">3</span><span class="p">]))</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">5</span><span class="p">]))</span>
+            <span class="n">dbref_dict</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">l</span> 
+    
+    <span class="n">dict_id</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dbref_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span><span class="mi">1</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sequence_length</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">index</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">dict_id</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">index</span> <span class="o">+=</span><span class="mi">1</span>
+    
+    <span class="n">dict_upd_id</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dbref_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+        <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">and</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span><span class="mi">1</span>
+<span class="c1">#             print(&#39;No difference in residue numbers in chain&#39;,k) </span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sequence_length</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">index</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">dict_upd_id</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">index</span>
+                <span class="n">index</span> <span class="o">+=</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+<span class="c1">#             print(&#39;Difference in residue numbers in chain&#39;,k)</span>
+            <span class="n">sequence_length</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span><span class="mi">1</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sequence_length</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">index</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">dict_upd_id</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">index</span>
+                <span class="n">index</span> <span class="o">+=</span><span class="mi">1</span>
+                    
+    <span class="k">return</span><span class="p">(</span><span class="n">dbref_dict</span><span class="p">,</span> <span class="n">dict_upd_id</span><span class="p">,</span> <span class="n">dict_id</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">intraprotein_threshold</span><span class="p">(</span><span class="n">chain_entity_dict</span><span class="p">,</span> <span class="n">entity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Calculates threshold to collapse features within chains from same entity</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        chain_entity_dict : dict</span>
+<span class="sd">            Dict obtained from entity_for_chain function</span>
+<span class="sd">        entity : int</span>
+<span class="sd">            given an entity identifier (1, 2, etc.) </span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        threshold : int</span>
+<span class="sd">            threshold value to be used for intraprotein features</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">chain_entity_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">entity</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">+=</span><span class="mi">1</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="p">(</span><span class="n">index</span><span class="o">*</span><span class="mi">25</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
+    <span class="k">return</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>         
+        
+    
+<span class="k">def</span> <span class="nf">interprotein_threshold</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Calculates threshold to collapse features between chains from different entities</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID </span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        threshold : int</span>
+<span class="sd">            threshold value to be used for interprotein features</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+    
+    <span class="n">d</span> <span class="o">=</span> <span class="n">entity_for_chain</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">unique_entities</span> <span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">entity_val</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> 
+        <span class="k">if</span> <span class="n">entity_val</span> <span class="ow">in</span> <span class="n">unique_entities</span><span class="p">:</span> 
+            <span class="k">continue</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unique_entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity_val</span><span class="p">)</span>
+
+    <span class="n">len_of_entity</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">unique_entities</span><span class="p">:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">+=</span><span class="mi">1</span>
+        <span class="n">len_of_entity</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+        
+    <span class="c1">#here using 50% as threshold (can be modified) </span>
+    <span class="c1">#len_of_entity list stores values with the number of chains for each entity and the threshold calculated by using the maximum value of this list </span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="p">((</span><span class="nb">max</span><span class="p">(</span><span class="n">len_of_entity</span><span class="p">))</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
+    <span class="k">return</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>
+    
+
+<span class="k">def</span> <span class="nf">entity_for_chain</span><span class="p">(</span><span class="n">PDB_ID</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Gives us chain and entity information for a PDB structure</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_ID : str</span>
+<span class="sd">            Input a PDB ID </span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        chain_entity_dict : dict</span>
+<span class="sd">            Dictionary with entity (values) that are identified for each chain (key) in the structure</span>
+<span class="sd">        chainlist : list </span>
+<span class="sd">            List of chains present in the structure &#39;&#39;&#39;</span>
+    
+    <span class="n">response1</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;https://data.rcsb.org/rest/v1/core/entry/</span><span class="si">{</span><span class="n">PDB_ID</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="n">entity</span> <span class="o">=</span> <span class="n">response1</span><span class="p">[</span><span class="s1">&#39;rcsb_entry_container_identifiers&#39;</span><span class="p">][</span><span class="s1">&#39;polymer_entity_ids&#39;</span><span class="p">]</span>
+    <span class="n">chain_entity_dict</span><span class="o">=</span> <span class="p">{}</span>
+    <span class="n">chainlist</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">entity_id</span> <span class="ow">in</span> <span class="n">entity</span><span class="p">:</span>
+        <span class="n">polymer_entity_url</span> <span class="o">=</span> <span class="s2">&quot;https://data.rcsb.org/rest/v1/core/polymer_entity/&quot;</span> <span class="o">+</span> \
+                            <span class="n">PDB_ID</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">entity_id</span>
+        <span class="n">response2</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">polymer_entity_url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">chains</span> <span class="o">=</span> <span class="n">response2</span><span class="p">[</span><span class="s1">&#39;entity_poly&#39;</span><span class="p">][</span><span class="s1">&#39;pdbx_strand_id&#39;</span><span class="p">]</span>
+        <span class="n">splitchains</span> <span class="o">=</span> <span class="n">chains</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">splitchains</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">chain_entity_dict</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span> <span class="c1">#removed E</span>
+                <span class="n">chainlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">chain_entity_dict</span><span class="p">,</span> <span class="n">chainlist</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">makePTM_dict</span><span class="p">(</span><span class="n">pdb_ref_file</span><span class="p">,</span> <span class="n">cif_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Creates a dictionary of PTMs that are present in the structures of the PDB Reference file. This dictionary is used as PTM_CONTACT_DICT in contactMap globals class. </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        pdb_ref_file : str</span>
+<span class="sd">            Path to input the PDB reference file</span>
+<span class="sd">        cif_file_path : str</span>
+<span class="sd">            Path to find the cif files</span>
+<span class="sd">            </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ptm_dict : dict</span>
+<span class="sd">            dictionary with PTMs and their one letter code of amino acid</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+        
+    <span class="n">ptm_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">pdb_ref_file</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+        <span class="n">PDB_ID</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cif_file</span> <span class="o">=</span> <span class="n">cif_file_path</span><span class="o">+</span><span class="n">PDB_ID</span><span class="o">+</span><span class="s1">&#39;.cif&#39;</span>
+        <span class="n">cif_info</span> <span class="o">=</span> <span class="n">MMCIF2Dict</span><span class="p">(</span><span class="n">cif_file</span><span class="p">)</span>
+<span class="c1">#         print(PDB_ID)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;_pdbx_struct_mod_residue.auth_comp_id&#39;</span> <span class="ow">in</span> <span class="n">cif_info</span><span class="p">:</span>
+            <span class="n">length_of_dict</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cif_info</span><span class="p">[</span><span class="s1">&#39;_pdbx_struct_mod_residue.auth_comp_id&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length_of_dict</span><span class="p">):</span>
+                <span class="n">mod_res</span> <span class="o">=</span> <span class="n">cif_info</span><span class="p">[</span><span class="s1">&#39;_pdbx_struct_mod_residue.auth_comp_id&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">mod_res_parent</span> <span class="o">=</span> <span class="n">cif_info</span><span class="p">[</span><span class="s1">&#39;_pdbx_struct_mod_residue.parent_comp_id&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">ptm_dict</span><span class="p">[</span><span class="n">mod_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_res_parent</span>
+                <span class="n">tmp_dict</span><span class="p">[</span><span class="n">mod_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_res_parent</span>
+       
+        
+    <span class="k">for</span> <span class="n">mod_res</span><span class="p">,</span> <span class="n">mod_res_parent</span> <span class="ow">in</span> <span class="n">ptm_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">mod_res_parent</span> <span class="ow">in</span> <span class="n">AA_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ptm_dict</span><span class="p">[</span><span class="n">mod_res</span><span class="p">]</span> <span class="o">=</span> <span class="n">AA_dict</span><span class="p">[</span><span class="n">mod_res_parent</span><span class="p">]</span>
+            
+    <span class="k">return</span> <span class="n">ptm_dict</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.AdjacencyFiles</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    </div>
+  </body>
+</html>

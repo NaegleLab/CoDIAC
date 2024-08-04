@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>contactMap &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=def86cc0" />
+    
+    <script src="_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="AdjacencyFiles" href="AdjacencyFiles.html" />
+    <link rel="prev" title="Integrate the Structure and Reference files" href="IntegrateStructure_Reference.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles.html" title="AdjacencyFiles"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">contactMap</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-CoDIAC.contactMap">
+<span id="contactmap"></span><h1>contactMap<a class="headerlink" href="#module-CoDIAC.contactMap" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.contactMap.print_fasta_feature_files">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.contactMap.</span></span><span class="sig-name descname"><span class="pre">print_fasta_feature_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contact_arr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">featureStart</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_offset1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">featureEnd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_offset1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_minRes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contactFromStart</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_offset2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contactFromEnd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_offset2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contact_minRes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fastaHeader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contactLabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputFileBase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'117733'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ref_seq_aligned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/contactMap.html#print_fasta_feature_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.contactMap.print_fasta_feature_files" title="Link to this definition">¶</a></dt>
+<dd><p>Create a feature file for the ROI_1 (Region of Interest) that has contacts to ROI_2 of an array of interest. This assumes that the region of interest is represented in the rows of 
+the contact_arr.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>contact_arr: array</strong></dt><dd><p>Has rows of the [featureStart, featureEnd] of interest and cols of the [contactFromStart, contactFromEnd] ROI. Cols can be the same or different species</p>
+</dd>
+<dt><strong>seq: str</strong></dt><dd><p>Protein sequence used to generate fasta file</p>
+</dd>
+<dt><strong>featureStart: int</strong></dt><dd><p>start position of ROI_1, assumes it is in the crystal structure minRes number</p>
+</dd>
+<dt><strong>N_offset1: int</strong></dt><dd><p>N terminal offset for ROI_1</p>
+</dd>
+<dt><strong>featureEnd: int</strong></dt><dd><p>end position of ROI_1, assumes it is in the crystal structure minRes number</p>
+</dd>
+<dt><strong>C_offset1: int</strong></dt><dd><p>C terminal offset for ROI_1</p>
+</dd>
+<dt><strong>feature_minRes: int</strong></dt><dd><p>minimum residue of the feature</p>
+</dd>
+<dt><strong>contactFromStart: int</strong></dt><dd><p>start position of ROI_2, assumes it is in the crystal structure minRes number</p>
+</dd>
+<dt><strong>N_offset2: int</strong></dt><dd><p>N terminal offset for ROI_2</p>
+</dd>
+<dt><strong>contactFromEnd: int</strong></dt><dd><p>end position of ROI_1, assumes it is in the crystal structure minRes number</p>
+</dd>
+<dt><strong>C_offset2: int</strong></dt><dd><p>C terminal offset for ROI_2</p>
+</dd>
+<dt><strong>contact_minRes: int</strong></dt><dd><p>minimum residue of the contact component</p>
+</dd>
+<dt><strong>fastaHeader: str</strong></dt><dd><p>fastaHeader to be used to reference in jalview</p>
+</dd>
+<dt><strong>contactLabel: str</strong></dt><dd><p>label of feature</p>
+</dd>
+<dt><strong>outputFileBase: str</strong></dt><dd><p>file name base to write feature and fasta to (it will be &lt;outputFileBase&gt;.fasta and &lt;outpufileBase&gt;.fea)</p>
+</dd>
+<dt><strong>threshold: float</strong></dt><dd><p>binary value of the contact (‘1’) in binary adjacency files</p>
+</dd>
+<dt><strong>append: bool</strong></dt><dd><p>Whether to append or overwrite the feature file</p>
+</dd>
+<dt><strong>color:</strong></dt><dd><p>color number for javliew to use when loading feature.</p>
+</dd>
+<dt><strong>use_ref_seq_aligned: bool</strong></dt><dd><p>True if you want to use the ref_seq_aligned where unmodeled regions have been imputed during translation, otherwise uses structseq</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.contactMap.return_interChain_adj">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.contactMap.</span></span><span class="sig-name descname"><span class="pre">return_interChain_adj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">PATH</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/contactMap.html#return_interChain_adj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.contactMap.return_interChain_adj" title="Link to this definition">¶</a></dt>
+<dd><p>Given two single_chain_dict objects of two entities, return the adjList and the array 
+of contacts between entities. This uses the from_dict as the outer keys of adjList (row values of matrix)
+and to_dict as the inner keys of adjList (col values of matrix)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>PATH: str</strong></dt><dd><p>Path to where contact maps are</p>
+</dd>
+<dt><strong>from_dict: dict</strong></dt><dd><p>The dict created by return_single_chain_dict that will serve as mapping FROM from_dict to to_dict</p>
+</dd>
+<dt><strong>to_dict: dict</strong></dt><dd><p>The dict created by return_single_chain_dict that will serve as mapping to_dict</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>adjDict: dict</dt><dd><p>adjacency dict with outer keys as the from_dict residue numbers, inner keys the to_dict residue numbers
+and value equal to the contact made between pair of residues (binary value from adjacency file)</p>
+</dd>
+<dt>arr: array</dt><dd><p>Array with from_dict x to_dict size (numresidues) and values equal to the contact value from adjDict</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.contactMap.translate_chainMap_to_RefSeq">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.contactMap.</span></span><span class="sig-name descname"><span class="pre">translate_chainMap_to_RefSeq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdbClass</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/contactMap.html#translate_chainMap_to_RefSeq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.contactMap.translate_chainMap_to_RefSeq" title="Link to this definition">¶</a></dt>
+<dd><p>Given a chainMap class, which includes the defined entity, use the pdbClass information to return a new chainMap class that is aligned to the reference sequence positions and full sequence expected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>chain: chainMap</strong></dt><dd><p>a chainMap created from a contact file</p>
+</dd>
+<dt><strong>pdbClass: pdbClass</strong></dt><dd><p>a pdbClass created from the annotation file for the matching PDB ID of chainMap</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>chainMap_aligned: chainMap</dt><dd><dl class="simple">
+<dt>A new chainmap that updates the residue numbers and array. This object appends the following things:</dt><dd><dl class="simple">
+<dt>offset: int</dt><dd><p>The offset required to map from refseq to the pdb contact map file if returning to that structure file</p>
+</dd>
+<dt>ERROR_CODE: int</dt><dd><p>0 if no errors, otherwise following codes are indicated. 1:no match found; 2:issue between struct and reference sequences after alignment; 3:struct and reference were different lengths</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">contactMap</a><ul>
+<li><a class="reference internal" href="#CoDIAC.contactMap.print_fasta_feature_files"><code class="docutils literal notranslate"><span class="pre">print_fasta_feature_files()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.contactMap.return_interChain_adj"><code class="docutils literal notranslate"><span class="pre">return_interChain_adj()</span></code></a></li>
+<li><a class="reference internal" href="#CoDIAC.contactMap.translate_chainMap_to_RefSeq"><code class="docutils literal notranslate"><span class="pre">translate_chainMap_to_RefSeq()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="IntegrateStructure_Reference.html"
+                          title="previous chapter">Integrate the Structure and Reference files</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="AdjacencyFiles.html"
+                          title="next chapter">AdjacencyFiles</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/contactMap.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="AdjacencyFiles.html" title="AdjacencyFiles"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="IntegrateStructure_Reference.html" title="Integrate the Structure and Reference files"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">contactMap</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    </div>
+  </body>
+</html>

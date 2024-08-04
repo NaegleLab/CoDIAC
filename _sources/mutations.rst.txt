@@ -1,4 +1,6 @@
-Mutations via gnomAD
-----------------------
+Mutations
+---------
+
 .. automodule:: CoDIAC.mutations
+    :members: gnomAD_mutations, OMIM_mutations, PDB_mutations
     

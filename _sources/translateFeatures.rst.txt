@@ -1,0 +1,5 @@
+translateFeatures
+-----------------
+
+.. automodule:: CoDIAC.translateFeatures
+    :members: return_translated_features

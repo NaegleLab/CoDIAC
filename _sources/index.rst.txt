@@ -21,7 +21,7 @@ Indices and tables
 Overview
 --------
 
-.. figure:: img/overview.png
+.. figure:: CoDIAC_OverView.pdf
     :class: with-border
 
     An overview of the key aspects of CoDIAC. The modules and pipeline for :ref:`setting up the reference files<reference>`.
@@ -69,8 +69,8 @@ Annotation tools
 	:maxdepth: 2
 	:caption: Contents: 
     
+    Mutations
     PTM
-	mutations
 
 .. _jalview:
 

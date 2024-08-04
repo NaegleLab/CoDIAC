@@ -1,14 +1,11 @@
 Installation
 =============
-PROJECT_PACKAGE can be installed via `pip`, `conda`, tarball, and directly from the Git repository. We recommend using conda to install the scientific packages `conda install anaconda` before installing PROJECT_PACKAGE. 
+CoDIAC can be installed via `pip`, and directly from the Git repository. We recommend using conda to install the scientific packages `conda install anaconda` before installing CoDIAC. 
 
 Pip
 ----
-To install via pip, execute `pip install <PROJECT_PACKAGE>`.
+To install via pip, execute `pip install codiac`.
 
-Conda
----------
-To install via conda, execute `conda install -c naeglelab <PROJECT_PACKAGE>`.
 
 Tarball
 ---------

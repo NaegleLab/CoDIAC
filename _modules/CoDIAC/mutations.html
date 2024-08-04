@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.mutations &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=def86cc0" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.mutations</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.mutations</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver</span> <span class="kn">import</span> <span class="n">Chrome</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.by</span> <span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="n">NoSuchElementException</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">Bio</span> <span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="kn">from</span> <span class="nn">pybiomart</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">xml.dom</span> <span class="kn">import</span> <span class="n">minidom</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="n">clinvar_sig</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Benign&#39;</span><span class="p">,</span> <span class="s1">&#39;Likely benign&#39;</span><span class="p">,</span><span class="s1">&#39;Likely pathogenic&#39;</span><span class="p">,</span> <span class="s1">&#39;Pathogenic&#39;</span><span class="p">,</span><span class="s1">&#39;Likely pathogenic, low penetrance&#39;</span><span class="p">,</span><span class="s1">&#39;Pathogenic, low penetrance&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;Likely risk allele&#39;</span><span class="p">]</span>
+
+<span class="n">AA_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ALA&quot;</span><span class="p">:</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ARG&quot;</span><span class="p">:</span><span class="s1">&#39;R&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ASN&quot;</span><span class="p">:</span><span class="s1">&#39;N&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ASP&quot;</span><span class="p">:</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;CYS&quot;</span><span class="p">:</span><span class="s1">&#39;C&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLU&quot;</span><span class="p">:</span><span class="s1">&#39;E&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLN&quot;</span><span class="p">:</span><span class="s1">&#39;Q&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;GLY&quot;</span><span class="p">:</span><span class="s1">&#39;G&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;HIS&quot;</span><span class="p">:</span><span class="s1">&#39;H&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;ILE&quot;</span><span class="p">:</span><span class="s1">&#39;I&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;LEU&quot;</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;LYS&quot;</span><span class="p">:</span><span class="s1">&#39;K&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;MET&quot;</span><span class="p">:</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;PHE&quot;</span><span class="p">:</span><span class="s1">&#39;F&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;PRO&quot;</span><span class="p">:</span><span class="s1">&#39;P&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;SER&quot;</span><span class="p">:</span><span class="s1">&#39;S&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;THR&quot;</span><span class="p">:</span><span class="s1">&#39;T&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;TRP&quot;</span><span class="p">:</span><span class="s1">&#39;W&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;TYR&quot;</span><span class="p">:</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                  <span class="s2">&quot;VAL&quot;</span><span class="p">:</span><span class="s1">&#39;V&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="gnomAD_mutations">
+<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.gnomAD_mutations">[docs]</a>
+<span class="k">def</span> <span class="nf">gnomAD_mutations</span><span class="p">(</span><span class="n">fastafile</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">,</span> <span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">output_feafile</span><span class="p">,</span> <span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Mutations found on the domain of interest and are extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID are stored in feature files</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        fastafile : str</span>
+<span class="sd">            the reference fasta file that is created using UniProt.py and key_array_order= [&#39;uniprot&#39;, &#39;gene&#39;, &#39;domain_num&#39;, &#39;start&#39;, &#39;end&#39;]</span>
+<span class="sd">        downloads_path : str</span>
+<span class="sd">            the path to the downloads folder on the device where files downloaded are placed</span>
+<span class="sd">        csvfiles_dir : str</span>
+<span class="sd">            path of the directory where we would like to move and save the downloaded variant csv files from the downloads folder</span>
+<span class="sd">        output_feafile : str</span>
+<span class="sd">            the path to save the output feature file</span>
+<span class="sd">        N_offset : int</span>
+<span class="sd">            number of residues to add or remove from the N terminal end of the domain boundary</span>
+<span class="sd">        C_offset : int</span>
+<span class="sd">            number of residues to add or remove from the C terminal end of the domain boundary</span>
+<span class="sd"> </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">fetch_VariantCSV</span><span class="p">(</span><span class="n">fastafile</span><span class="p">,</span> <span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">)</span>
+    
+    <span class="n">listfiles</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">csvfiles_dir</span><span class="p">)</span>
+    
+    <span class="n">header_EnsmblID_dict</span> <span class="o">=</span> <span class="n">ensembleID_dict</span><span class="p">(</span><span class="n">fastafile</span><span class="p">)</span>
+    <span class="n">tmp</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_feafile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;gnomAD_Mutation</span><span class="se">\t</span><span class="s1">882255</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">csvfile</span> <span class="ow">in</span> <span class="n">listfiles</span><span class="p">:</span>
+            <span class="n">csv_path</span> <span class="o">=</span> <span class="n">csvfiles_dir</span> <span class="o">+</span> <span class="n">csvfile</span>
+            <span class="k">if</span> <span class="n">csvfile</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;gnomAD&#39;</span><span class="p">):</span>
+                <span class="n">ensembleID</span> <span class="o">=</span> <span class="n">csvfile</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">header_EnsmblID_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">ensembleID</span> <span class="o">==</span> <span class="n">key</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">fasta_header</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                            <span class="n">header</span> <span class="o">=</span> <span class="n">fasta_header</span>
+                            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">])</span>
+                            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)[</span><span class="mi">4</span><span class="p">])</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                           
+                            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csv_path</span><span class="p">)</span>
+                            <span class="n">df_missense</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;VEP Annotation&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;missense_variant&#39;</span><span class="p">]</span>
+                            <span class="n">df_sig</span> <span class="o">=</span> <span class="n">df_missense</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df_missense</span><span class="p">[</span><span class="s1">&#39;ClinVar Clinical Significance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">clinvar_sig</span><span class="p">)]</span>
+                            <span class="n">mutation</span> <span class="o">=</span> <span class="n">df_sig</span><span class="p">[</span><span class="s1">&#39;HGVS Consequence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                            <span class="n">significance</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">df_missense</span><span class="p">[</span><span class="s1">&#39;ClinVar Clinical Significance&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                            
+                            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mutation</span><span class="p">:</span>
+                                <span class="n">mut_resid</span> <span class="o">=</span> <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">m</span><span class="p">))</span>
+                          
+                                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">mut_resid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">N_offset</span><span class="p">,</span> <span class="n">end</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset</span><span class="p">):</span>
+                                    <span class="n">resid_upd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mut_resid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span>
+                                    <span class="k">if</span> <span class="n">header</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resid_upd</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">:</span>
+                                        <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resid_upd</span><span class="p">))</span>
+                                        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;gnomAD_Mutation</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">header</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resid_upd</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">resid_upd</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="s1">&#39;gnomAD_Mutation</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;GnomAD mutation feature file created!&#39;</span><span class="p">)</span></div>
+
+    
+
+<div class="viewcode-block" id="OMIM_mutations">
+<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.OMIM_mutations">[docs]</a>
+<span class="k">def</span> <span class="nf">OMIM_mutations</span><span class="p">(</span><span class="n">uniprot_refFile</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">ref_fastaFile</span><span class="p">,</span> <span class="n">output_featureFile</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">,</span><span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span> 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a feature file whose features are mutations found on the domain of interest and are extracted from OMIM database</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        uniprot_refFile : str</span>
+<span class="sd">            input a uniprot reference file to get a list of uniprot IDs</span>
+<span class="sd">        api_key : str</span>
+<span class="sd">            this key needs to be generated through OMIM to be able to access their programmatic interface </span>
+<span class="sd">        ref_fastaFile : str</span>
+<span class="sd">            fasta file with reference sequences of the domains</span>
+<span class="sd">        domain_of_interest : str</span>
+<span class="sd">            mutations on domains of interest (SH2 domains)</span>
+<span class="sd">        N_offset : int</span>
+<span class="sd">            number of residues to add or remove from the N terminal end of the domain boundary</span>
+<span class="sd">        C_offset : int</span>
+<span class="sd">            number of residues to add or remove from the C terminal end of the domain boundary</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        
+    <span class="n">df_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">uniprot_refFile</span><span class="p">)</span>
+    <span class="n">uniprot_ids</span> <span class="o">=</span> <span class="n">df_ref</span><span class="p">[</span><span class="s1">&#39;UniProt ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> 
+    <span class="n">mutation_dict</span> <span class="o">=</span> <span class="n">omim_mutation_dict</span><span class="p">(</span><span class="n">uniprot_ids</span><span class="p">,</span> <span class="n">api_key</span><span class="p">)</span>
+    
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_featureFile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;OMIM_Mutation</span><span class="se">\t</span><span class="s1">CC6677</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">mutation_dict</span><span class="p">:</span>
+            
+            <span class="n">uniprot_id</span> <span class="o">=</span> <span class="n">entry</span>
+            <span class="n">gene</span> <span class="o">=</span> <span class="n">mutation_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">mutations</span> <span class="o">=</span> <span class="n">mutation_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="n">sh2_mutations</span><span class="o">=</span><span class="p">{}</span> 
+            <span class="k">if</span> <span class="n">gene</span> <span class="o">!=</span> <span class="s1">&#39;NA&#39;</span> <span class="ow">and</span> <span class="n">mutations</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="n">mut_pos</span> <span class="o">=</span> <span class="n">mutations</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                
+                <span class="n">interpro_domains</span> <span class="o">=</span> <span class="n">df_ref</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df_ref</span><span class="p">[</span><span class="s1">&#39;Gene&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">gene</span><span class="p">,</span> <span class="s1">&#39;Interpro Domains&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+        
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">interpro_domains</span><span class="p">:</span>
+                    <span class="n">domain</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">query_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="n">N_offset</span>
+                    <span class="n">query_stop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset</span>
+                    <span class="n">tmp_fea</span><span class="o">=</span><span class="p">[]</span>
+                    <span class="k">if</span> <span class="n">domain_of_interest</span> <span class="ow">in</span> <span class="n">domain</span><span class="p">:</span>
+                        <span class="c1"># print(i, start, end)</span>
+                        <span class="k">for</span> <span class="n">mut</span> <span class="ow">in</span> <span class="n">mut_pos</span><span class="p">:</span>
+                            <span class="c1"># print(mut)</span>
+                            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">mut</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">query_start</span><span class="p">,</span> <span class="n">query_stop</span><span class="p">):</span>
+                                <span class="n">feature_pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mut</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                                <span class="n">tmp_fea</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span>
+                        <span class="n">sh2_mutations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp_fea</span>
+        
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">sh2_mutations</span><span class="p">:</span>
+                
+                <span class="c1"># target = gene+&#39;|&#39;+entry.split(&#39;:&#39;)[2]+&#39;|&#39;+entry.split(&#39;:&#39;)[3]</span>
+                <span class="n">ref_header</span><span class="o">=</span> <span class="n">makeheader</span><span class="p">(</span><span class="n">gene</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">ref_fastaFile</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">sh2_mutations</span><span class="p">[</span><span class="n">entry</span><span class="p">]:</span>
+                    <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;OMIM_Mutation</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">ref_header</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">OMIM_mutation</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># print(ref_header, gene, sh2_mutations,&#39;\n&#39;)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;OMIM mutation feature file created!&#39;</span><span class="p">)</span>       </div>
+
+
+<div class="viewcode-block" id="PDB_mutations">
+<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.PDB_mutations">[docs]</a>
+<span class="k">def</span> <span class="nf">PDB_mutations</span><span class="p">(</span><span class="n">PDB_refFile</span><span class="p">,</span><span class="n">ref_fastaFile</span><span class="p">,</span> <span class="n">output_featureFile</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">,</span><span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Generates a feature file with mutations found on the domain of interest within PDB structures</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        PDB_refFile : str</span>
+<span class="sd">            input PDB reference file path</span>
+<span class="sd">        ref_fastaFile : str</span>
+<span class="sd">            fasta file with reference sequences of the domains</span>
+<span class="sd">        output_featureFile : str</span>
+<span class="sd">            output feature file path</span>
+<span class="sd">        domain_of_interest : str</span>
+<span class="sd">            mutations on domains of interest (SH2 domains)</span>
+<span class="sd">        N_offset : int</span>
+<span class="sd">            number of residues to add or remove from the N terminal end of the domain boundary</span>
+<span class="sd">        C_offset : int</span>
+<span class="sd">            number of residues to add or remove from the C terminal end of the domain boundary</span>
+<span class="sd">            </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        feature file with mutations/variants reported in PDB structures that are present within the domain of interest &#39;&#39;&#39;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">PDB_refFile</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">tmp_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_featureFile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PDB_Mutation</span><span class="se">\t</span><span class="s1">44AA99</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)):</span>
+            <span class="n">variants</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ref:variants&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">uniprotid</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;database_accession&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">genename</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ref:gene name&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">pdb_mutation</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;pdbx_mutation joined&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variants</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pdb_mutation</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;SH2&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ref:struct domain architecture&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="s1">&#39;-&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdb_mutation</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)):</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                            <span class="n">variant_list</span> <span class="o">=</span> <span class="n">variants</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+                            <span class="n">variant_pos</span> <span class="o">=</span> <span class="p">[]</span>
+                            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variant_list</span><span class="p">:</span>
+                                <span class="n">posnum</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+                                <span class="n">variant_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">posnum</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                            <span class="c1"># print(variant_pos, df[&#39;PDB_ID&#39;][i])</span>
+                            <span class="n">domains</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ref:domains&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+                            <span class="n">domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                            <span class="c1"># for dom in domains:</span>
+                            <span class="c1">#     domname, iprid, ranges = dom.split(&#39;:&#39;)</span>
+                            <span class="c1">#     start, stop, gap, mut = ranges.split(&#39;,&#39;)</span>
+                            <span class="c1">#     if domain_of_interest in domname:</span>
+                            <span class="c1">#         domain_dict[domname] = [start, stop]</span>
+                            <span class="n">dom_index</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="k">for</span> <span class="n">dom</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+                                <span class="n">domname</span><span class="p">,</span> <span class="n">iprid</span><span class="p">,</span> <span class="n">ranges</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">mut</span> <span class="o">=</span> <span class="n">ranges</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">domain_of_interest</span> <span class="ow">in</span> <span class="n">domname</span><span class="p">:</span>
+                                    <span class="n">domain_dict</span><span class="p">[</span><span class="n">dom_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">domname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">]</span>
+                                <span class="n">dom_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                                
+                            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
+                                <span class="n">domain_id</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="p">(</span><span class="n">stop</span><span class="p">)</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">]</span>
+                                <span class="k">for</span> <span class="n">varpos</span> <span class="ow">in</span> <span class="n">variant_pos</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="n">varpos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="n">N_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset</span><span class="p">):</span>
+                                        <span class="n">header</span> <span class="o">=</span> <span class="n">makeheader</span><span class="p">(</span><span class="n">genename</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">),</span><span class="n">ref_fastaFile</span><span class="p">)</span>
+                                        <span class="n">feature_pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">varpos</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                                        <span class="c1"># print(j,df[&#39;PDB_ID&#39;][i], varpos, start, stop, genename, header, feature_pos)</span>
+                                        <span class="n">check_entry</span> <span class="o">=</span> <span class="n">header</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span>
+                                        <span class="k">if</span> <span class="n">check_entry</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tmp_list</span><span class="p">:</span>
+                                            <span class="n">tmp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_entry</span><span class="p">)</span>
+                                            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PDB_Mutation</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">header</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">PDB_Mutation</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                                        <span class="n">j</span><span class="o">+=</span><span class="mi">1</span>
+    
+    
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdb_mutation</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)):</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;PDB_ID&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">variants</span><span class="p">)</span>
+                            <span class="n">variant_list</span> <span class="o">=</span> <span class="n">variants</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+                            <span class="n">variant_pos</span> <span class="o">=</span> <span class="p">[]</span>
+                            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variant_list</span><span class="p">:</span>
+                                <span class="n">posnum</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+                                <span class="n">variant_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">posnum</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                           
+                            <span class="n">domains</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ref:domains&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+                            <span class="n">domain_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                            <span class="n">dom_index</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="k">for</span> <span class="n">dom</span> <span class="ow">in</span> <span class="n">domains</span><span class="p">:</span>
+                                <span class="n">domname</span><span class="p">,</span> <span class="n">iprid</span><span class="p">,</span> <span class="n">ranges</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                                <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">mut</span> <span class="o">=</span> <span class="n">ranges</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">domain_of_interest</span> <span class="ow">in</span> <span class="n">domname</span><span class="p">:</span>
+                                    <span class="n">domain_dict</span><span class="p">[</span><span class="n">dom_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">domname</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">]</span>
+                                <span class="n">dom_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">domain_dict</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">domain_dict</span><span class="p">:</span>
+                                <span class="n">domain_id</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="p">(</span><span class="n">stop</span><span class="p">)</span> <span class="o">=</span> <span class="n">domain_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">]</span>
+                                <span class="k">for</span> <span class="n">varpos</span> <span class="ow">in</span> <span class="n">variant_pos</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="n">varpos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span><span class="o">+</span><span class="n">N_offset</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">C_offset</span><span class="p">):</span>
+                                        <span class="n">header</span> <span class="o">=</span> <span class="n">makeheader</span><span class="p">(</span><span class="n">genename</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">),</span><span class="n">ref_fastaFile</span><span class="p">)</span>
+                                        <span class="n">feature_pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">varpos</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                                        <span class="c1"># print(j,df[&#39;PDB_ID&#39;][i], varpos, start, stop, genename, header, feature_pos,&#39;\n&#39;)</span>
+                                        <span class="n">check_entry</span> <span class="o">=</span> <span class="n">header</span><span class="o">+</span><span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span>
+                                        <span class="k">if</span> <span class="n">check_entry</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tmp_list</span><span class="p">:</span>
+                                            <span class="n">tmp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_entry</span><span class="p">)</span>
+                                            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;PDB_Mutation</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">header</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_pos</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">PDB_Mutation</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                                        <span class="c1"># else:</span>
+                                        <span class="c1">#     tmp_list.append(check_str)</span>
+                                        <span class="n">j</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;PDB Mutation feature file created!&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">makeheader</span><span class="p">(</span><span class="n">gene</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">ref_fastaFile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Using the reference sequence fasta file, we retrive specific headers of SH2 domains. Here to handle the differences in start and stop positions between experiments and references, we use +- 5 amino acid cut off of start/end domain boundary positions and identify the right domain header</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        gene : str</span>
+<span class="sd">            gene of interest</span>
+<span class="sd">        start : int</span>
+<span class="sd">            start position of the sH2 domain</span>
+<span class="sd">        stop : int</span>
+<span class="sd">            end position of SH2 domain</span>
+<span class="sd">        ref_fastaFile : str</span>
+<span class="sd">            fasta file with unaligned reference sequences</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        header : str</span>
+<span class="sd">            based on the input, thsi function identifies the fasta header from reference sequence fasta file &#39;&#39;&#39;</span>
+        
+    <span class="n">ref_seq</span> <span class="o">=</span> <span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">ref_fastaFile</span><span class="p">),</span> <span class="s1">&#39;fasta&#39;</span><span class="p">)</span>
+    <span class="n">ref_headers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fasta</span> <span class="ow">in</span> <span class="n">ref_seq</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">fasta</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">ref_headers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">ref_headers</span><span class="p">:</span>
+        <span class="n">uid</span><span class="p">,</span> <span class="n">refgene</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">ref_start</span><span class="p">,</span> <span class="n">ref_end</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gene</span> <span class="o">==</span> <span class="n">refgene</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ref_start</span><span class="p">)</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_start</span><span class="p">)</span><span class="o">+</span><span class="mi">5</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ref_end</span><span class="p">)</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">ref_end</span><span class="p">)</span><span class="o">+</span><span class="mi">5</span><span class="p">):</span>
+                <span class="n">header</span> <span class="o">=</span> <span class="n">entry</span>
+            
+    <span class="k">return</span> <span class="n">header</span>
+    
+<span class="k">def</span> <span class="nf">get_transcriptID</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Fetch transcript ID that is associated to a specific UniProt ID</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        uniprot_id : str</span>
+<span class="sd">            UniProt accession ID</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        ID : str</span>
+<span class="sd">            Returns a transcript ID &#39;&#39;&#39;</span>
+    
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hsapiens_gene_ensembl&#39;</span><span class="p">,</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;http://www.ensembl.org&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ensembl_transcript_id&#39;</span><span class="p">,</span><span class="s1">&#39;ensembl_gene_id&#39;</span><span class="p">,</span> <span class="s1">&#39;external_gene_name&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">,</span><span class="s1">&#39;uniprotswissprot&#39;</span><span class="p">])</span>
+    <span class="n">df_filter</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;UniProtKB/Swiss-Prot ID&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">uniprot_id</span><span class="p">]</span>
+    <span class="n">ID</span> <span class="o">=</span> <span class="p">(</span><span class="n">df_filter</span><span class="p">[</span><span class="s1">&#39;Gene stable ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">ID</span>
+    
+<span class="k">def</span> <span class="nf">reference_Dict</span><span class="p">(</span><span class="n">fastafile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Generates a dictionary with fasta headers and transcript IDs for every uniprot ID found in the input fasta file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        fastafile : str</span>
+<span class="sd">            the reference fasta file that is created using UniProt.py and key_array_order= [&#39;uniprot&#39;, &#39;gene&#39;, &#39;domain_num&#39;, &#39;start&#39;, &#39;end&#39;]</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        uniprot_dict : dict</span>
+<span class="sd">            dictionary whose keys are uniprot IDs and values are lists that holds the corresponding fasta headers and transcript IDs. &#39;&#39;&#39;</span>
+    <span class="n">uniprot_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">fastafile</span><span class="p">),</span> <span class="s1">&#39;fasta&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fasta</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">fasta</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">uniprot_id</span><span class="p">,</span> <span class="n">gene</span><span class="p">,</span> <span class="n">sh2_index</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="n">uniprot_dict</span><span class="p">[</span><span class="n">uniprot_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span> 
+    
+    <span class="k">for</span> <span class="n">uniprotID</span> <span class="ow">in</span> <span class="n">uniprot_dict</span><span class="p">:</span>
+        <span class="n">transcriptID</span> <span class="o">=</span> <span class="n">get_transcriptID</span><span class="p">(</span><span class="n">uniprotID</span><span class="p">)</span>
+        <span class="n">uniprot_dict</span><span class="p">[</span><span class="n">uniprotID</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transcriptID</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">uniprot_dict</span>
+
+<span class="k">def</span> <span class="nf">ensembleID_dict</span><span class="p">(</span><span class="n">fasta_refFile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Using an input fasta reference file, this function generates a dictionary with keys as Ensemble ID (associated to Uniprot ID) and values are list of headers. For tandem SH2 domain proteins, we will find more than one header linked to a single Uniprot/Ensemble ID. &#39;&#39;&#39;</span>
+    <span class="n">df_id</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">ensmbl_id</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">headerlist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">fasta_refFile</span><span class="p">),</span> <span class="s1">&#39;fasta&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fasta</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">fasta</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">fasta</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        <span class="n">uniprot_id</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ensmbl_id</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_transcriptID</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">))</span>
+        <span class="n">headerlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">df_id</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">headerlist</span>
+    <span class="n">df_id</span><span class="p">[</span><span class="s1">&#39;ensmbl_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ensmbl_id</span>
+
+    <span class="n">header_EnsmblID_dict</span> <span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">df_id</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ensmbl_id&#39;</span><span class="p">):</span>
+        <span class="n">header_EnsmblID_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">header_EnsmblID_dict</span>
+
+<span class="k">def</span> <span class="nf">check_exists_by_xpath</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Checks whether GnomAD has mutations recorded for specific transcript ID. For the ones that do not have any information available, it pops up &#39;Gene not found&#39; error. And we use this to identify Uniprot IDs/genes for which data doesnt exist on GnomAD.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        driver : str</span>
+<span class="sd">            input the created Chrome browser object</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        boolean value &#39;&#39;&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">XPATH</span><span class="p">,</span> <span class="s2">&quot;//*[contains(text(), &#39;Gene not found&#39;)]&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NoSuchElementException</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span>
+    
+<span class="k">def</span> <span class="nf">fetch_VariantCSV</span><span class="p">(</span><span class="n">fastafile</span><span class="p">,</span> <span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;fetches variant CSV files from GnomAD for every UniProt ID/transcript ID found in the input fastafile.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        fastafile : str</span>
+<span class="sd">            the reference fasta file that is created using UniProt.py and key_array_order= [&#39;uniprot&#39;, &#39;gene&#39;, &#39;domain_num&#39;, &#39;start&#39;, &#39;end&#39;]</span>
+<span class="sd">        csvfiles_dir : str</span>
+<span class="sd">            path of the directory where we would like to move and save the downloaded variant csv files from the downloads folder</span>
+<span class="sd">        downloads_path : str</span>
+<span class="sd">            the path to the downloads folder on the device where files downloaded are placed</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        .csv files downloaded from GnomAD &#39;&#39;&#39;</span>
+    
+    <span class="n">uniprot_dict</span> <span class="o">=</span> <span class="n">reference_Dict</span><span class="p">(</span><span class="n">fastafile</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Exported Variant CSV files for transcript ID ...&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">uniprot_dict</span><span class="p">:</span>
+        <span class="n">ensembleID</span> <span class="o">=</span> <span class="n">uniprot_dict</span><span class="p">[</span><span class="n">entry</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">ChromeOptions</span><span class="p">()</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">page_load_strategy</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+        <span class="n">driver</span> <span class="o">=</span> <span class="n">Chrome</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">implicitly_wait</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://gnomad.broadinstitute.org/gene/&quot;</span><span class="o">+</span><span class="n">ensembleID</span><span class="o">+</span><span class="s2">&quot;?dataset=gnomad_r4&quot;</span>
+        <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">myReturnValue</span> <span class="o">=</span> <span class="n">check_exists_by_xpath</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">myReturnValue</span> <span class="o">==</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">button</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">XPATH</span><span class="p">,</span> <span class="s2">&quot;//*[contains(text(), &#39;Export variants to CSV&#39;)]&quot;</span><span class="p">)</span>
+            <span class="n">button</span><span class="o">.</span><span class="n">click</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Gene not found for transcriptID&#39;</span><span class="p">,</span><span class="n">ensembleID</span><span class="p">)</span>
+            
+        <span class="n">driver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">ensembleID</span><span class="p">)</span>
+
+    <span class="n">changeDirectory</span><span class="p">(</span><span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Variant CSV files moved from </span><span class="si">%s</span><span class="s1"> to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">downloads_path</span><span class="p">,</span><span class="n">csvfiles_dir</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">changeDirectory</span><span class="p">(</span><span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Change the directory of the downloaded files&#39;&#39;&#39;</span>
+        
+    <span class="n">listfiles</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">downloads_path</span><span class="p">)</span>
+    <span class="n">variant_csvfiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">listfiles</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;gnomAD&#39;</span><span class="p">):</span>
+            <span class="n">variant_csvfiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">downloads_path</span><span class="o">+</span><span class="s1">&#39;/&#39;</span><span class="o">+</span><span class="n">file</span><span class="p">,</span> <span class="n">csvfiles_dir</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_MIMID</span><span class="p">(</span><span class="n">uniprot_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns the MIM ID (OMIM accession number) for a given UniProt ID &quot;&quot;&quot;</span>
+    <span class="n">get_url</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;http://www.ebi.ac.uk/proteins/api/proteins/</span><span class="si">{</span><span class="n">uniprot_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">get_url</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">get_url</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="n">mim_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>  
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;dbReferences&#39;</span><span class="p">])):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;dbReferences&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s1">&#39;MIM&#39;</span> <span class="ow">in</span> <span class="n">j</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;dbReferences&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;MIM&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;dbReferences&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;gene&#39;</span><span class="p">:</span>
+                        <span class="n">mim_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;dbReferences&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>   
+            
+    <span class="k">return</span> <span class="n">mim_id</span>
+    
+<span class="k">def</span> <span class="nf">separateNumbersAlphabets</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; separates numeric and characters in a string&#39;&#39;&#39;</span>
+    <span class="n">numbers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">alphabets</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;(\d+)&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="s1">&#39;0&#39;</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="s1">&#39;9&#39;</span><span class="p">:</span>
+            <span class="n">numbers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">alphabets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            
+    <span class="k">return</span> <span class="n">numbers</span><span class="p">,</span> <span class="n">alphabets</span>
+
+<span class="k">def</span> <span class="nf">get_omim_content</span><span class="p">(</span><span class="n">api_key</span><span class="p">,</span> <span class="n">mim_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; downloading content from OMIM &#39;&#39;&#39;</span>
+    <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://api.omim.org/api/entry/allelicVariantList?mimNumber=</span><span class="si">{</span><span class="n">mim_id</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;apiKey&#39;</span><span class="p">:</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">api_key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;_content&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">content</span>
+
+<span class="k">def</span> <span class="nf">get_omim_mutations</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; extracts gene specific mutation from OMIM database</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        content : bytes</span>
+<span class="sd">            The response object returned for a MIM ID is parsed to extract mutations associated to the MIM ID </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Outputs a list of mutations for specific gene&#39;&#39;&#39;</span>
+    
+    <span class="n">dat</span> <span class="o">=</span> <span class="n">minidom</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">mutation_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">mutation_positions</span> <span class="o">=</span><span class="p">[]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s1">&#39;mutations&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="n">gene</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s1">&#39;mutations&#39;</span><span class="p">))):</span>
+        <span class="n">tagname</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s1">&#39;mutations&#39;</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">nodeValue</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">tagname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">gene</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
+        <span class="n">mutations</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="c1"># print(tagname)</span>
+        <span class="n">mut</span> <span class="o">=</span> <span class="p">[]</span> 
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">mutations</span><span class="p">:</span>
+            
+            <span class="n">j1</span> <span class="o">=</span> <span class="n">j</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">j1</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">AA_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">j1</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">AA_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c1">#print(j)</span>
+                <span class="n">numbers</span><span class="p">,</span> <span class="n">chars</span> <span class="o">=</span> <span class="n">separateNumbersAlphabets</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                
+                <span class="n">short</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chars</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">AA_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="c1">#print(&#39;true&#39;)</span>
+                        <span class="n">short</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">AA_dict</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)])</span>
+                        <span class="k">if</span> <span class="n">j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mutation_list</span><span class="p">:</span>
+                            <span class="n">mutation_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+         
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mutation_positions</span><span class="p">:</span>
+                        <span class="n">mutation_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        
+    <span class="k">return</span><span class="p">(</span><span class="n">gene</span><span class="p">,</span> <span class="n">mutation_positions</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">listToString</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+ 
+    <span class="n">str1</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+ 
+    <span class="c1"># return string</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">str1</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">omim_mutation_dict</span><span class="p">(</span><span class="n">uniprot_ids</span><span class="p">,</span> <span class="n">api_key</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Creates a dictionary to identify what mutations are extracted for a UniProt ID from OMIM </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters </span>
+<span class="sd">    ----------</span>
+<span class="sd">        uniprot_ids : list</span>
+<span class="sd">            list of uniprot IDS to assess</span>
+<span class="sd">        api_key : str</span>
+<span class="sd">            this key needs to be generated through OMIM to be able to access their programmatic interface </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        mutation_dict : dict</span>
+<span class="sd">            dictionary whose keys are uniprot IDS and values are a list of gene name and mutation list in the form of a string</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+    <span class="n">mutation_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">uniprot_ids</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="n">mim_id</span> <span class="o">=</span> <span class="n">get_MIMID</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="c1"># print(mim_id)</span>
+        
+        <span class="k">if</span> <span class="n">mim_id</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span> 
+            <span class="n">api_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://api.omim.org/api/entry/allelicVariantList?mimNumber=</span><span class="si">{</span><span class="n">mim_id</span><span class="si">}</span><span class="s1">&#39;</span> 
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;apiKey&#39;</span><span class="p">:</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">api_key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>  
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span> 
+            <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;_content&#39;</span><span class="p">]</span> 
+            <span class="n">gene</span><span class="p">,</span> <span class="n">mutation_list</span> <span class="o">=</span> <span class="n">get_omim_mutations</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> 
+            <span class="n">mut_list_str</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">mutation_list</span><span class="p">)))</span> 
+            <span class="c1"># print(id, gene, mutation_list, mut_list_str) </span>
+            <span class="n">mutation_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">gene</span><span class="p">,</span> <span class="n">mut_list_str</span><span class="p">]</span>
+            
+    <span class="k">return</span> <span class="n">mutation_dict</span>
+
+    
+            
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.mutations</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    </div>
+  </body>
+</html>

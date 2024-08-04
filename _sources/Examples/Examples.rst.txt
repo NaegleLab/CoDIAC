@@ -10,4 +10,19 @@ Demo of the CoDIAC package - the full pipeline
    :maxdepth: 1
 
    SH2_get_specific_proteins_example.ipynb
+
+Adjacency file generation
+-------------------------
+.. toctree::
+   :maxdepth: 1
+
    AdjacencyFiles_generation.ipynb
+
+Contact mapping 
+---------------
+.. toctree::
+   :maxdepth: 1
+
+   contacts_extraction.ipynb
+
+  

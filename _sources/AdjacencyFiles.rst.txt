@@ -1,0 +1,5 @@
+AdjacencyFiles
+--------------
+
+.. automodule:: CoDIAC.AdjacencyFiles
+    :members: BinaryFeatures, ProcessArpeggio

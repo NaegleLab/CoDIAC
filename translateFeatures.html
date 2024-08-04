@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Dependencies (Examples) &#8212; CoDIAC 1 documentation</title>
+    <title>translateFeatures &#8212; CoDIAC 1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/classic.css?v=def86cc0" />
     
@@ -16,8 +16,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="Installation.html" />
-    <link rel="prev" title="Analysis using PDB structures" href="Examples/contacts_extraction.html" /> 
+    <link rel="prev" title="Jalview Tools" href="jalviewFunctions.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -29,13 +28,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="Installation.html" title="Installation"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="Examples/contacts_extraction.html" title="Analysis using PDB structures"
+          <a href="jalviewFunctions.html" title="Jalview Tools"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Dependencies (Examples)</a></li> 
+        <li class="nav-item nav-item-this"><a href="">translateFeatures</a></li> 
       </ul>
     </div>  
 
@@ -44,19 +40,16 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="dependencies-examples">
-<h1>Dependencies (Examples)<a class="headerlink" href="#dependencies-examples" title="Link to this heading">¶</a></h1>
-<ul class="simple">
-<li><p>python==3.9.*</p></li>
-<li><p>numpy==1.26.*</p></li>
-<li><p>matplotlib==3.7.0</p></li>
-<li><p>pandas==2.1.*</p></li>
-<li><p>scipy==1.11.*</p></li>
-<li><p>scikit_learn==1.2.*</p></li>
-<li><p>seaborn==0.13.*</p></li>
-<li><p>biopython==1.79</p></li>
-<li><p>cogent3==2023.7.18a1</p></li>
-</ul>
+  <section id="module-CoDIAC.translateFeatures">
+<span id="translatefeatures"></span><h1>translateFeatures<a class="headerlink" href="#module-CoDIAC.translateFeatures" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="CoDIAC.translateFeatures.return_translated_features">
+<span class="sig-prename descclassname"><span class="pre">CoDIAC.translateFeatures.</span></span><span class="sig-name descname"><span class="pre">return_translated_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_trans_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent_match_threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/CoDIAC/translateFeatures.html#return_translated_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#CoDIAC.translateFeatures.return_translated_features" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new dictionary of features, with output headers and feature positions 
+based on a feature_trans_dict. Will only translate features if the total match is betterh
+than percent_match_threshold</p>
+</dd></dl>
+
 </section>
 
 
@@ -67,19 +60,24 @@
       <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="Examples/contacts_extraction.html"
-                          title="previous chapter">Analysis using PDB structures</a></p>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">translateFeatures</a><ul>
+<li><a class="reference internal" href="#CoDIAC.translateFeatures.return_translated_features"><code class="docutils literal notranslate"><span class="pre">return_translated_features()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
   </div>
   <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="Installation.html"
-                          title="next chapter">Installation</a></p>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="jalviewFunctions.html"
+                          title="previous chapter">Jalview Tools</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/Dependencies.rst.txt"
+      <li><a href="_sources/translateFeatures.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -107,13 +105,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="Installation.html" title="Installation"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="Examples/contacts_extraction.html" title="Analysis using PDB structures"
+          <a href="jalviewFunctions.html" title="Jalview Tools"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">CoDIAC 1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Dependencies (Examples)</a></li> 
+        <li class="nav-item nav-item-this"><a href="">translateFeatures</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

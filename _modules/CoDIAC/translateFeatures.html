@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoDIAC.translateFeatures &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=def86cc0" />
+    
+    <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.translateFeatures</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for CoDIAC.translateFeatures</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">cogent3</span>
+<span class="kn">from</span> <span class="nn">Bio</span> <span class="kn">import</span> <span class="n">pairwise2</span>
+<span class="kn">from</span> <span class="nn">Bio</span> <span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">jalviewFunctions</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">These tools allow you to translate features from an input fasta version of protein or protein coding regions onto a reference.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="k">def</span> <span class="nf">translate_features</span><span class="p">(</span><span class="n">input_fasta_file</span><span class="p">,</span> <span class="n">input_features</span><span class="p">,</span> <span class="n">reference_fasta_file</span><span class="p">,</span> <span class="n">output_feature_file</span><span class="p">,</span> <span class="n">percent_matched_threshold</span><span class="o">=</span><span class="mi">85</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an input fasta file and it&#39;s features, translate the features to a reference fasta file. </span>
+<span class="sd">    Save these features in output_feature_file. Will not translate features in the following scenarios:</span>
+<span class="sd">        1. If the best match of an input sequence has less than percent_matched_threshold.</span>
+<span class="sd">        2. If the amino acid at the input does not match the amino acid in the reference (by pairwise alignment)</span>
+<span class="sd">     </span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_dict</span><span class="p">,</span> <span class="n">input_errors</span> <span class="o">=</span> <span class="n">return_sequence_dict_from_fasta</span><span class="p">(</span><span class="n">input_fasta_file</span><span class="p">)</span>
+    <span class="n">reference_dict</span><span class="p">,</span> <span class="n">reference_errors</span> <span class="o">=</span> <span class="n">return_sequence_dict_from_fasta</span><span class="p">(</span><span class="n">reference_fasta_file</span><span class="p">)</span>
+    <span class="n">type_dict</span><span class="p">,</span> <span class="n">feature_dict</span> <span class="o">=</span> <span class="n">jalviewFunctions</span><span class="o">.</span><span class="n">return_features_from_file</span><span class="p">(</span><span class="n">input_features</span><span class="p">)</span>
+    <span class="n">feature_trans_dict</span><span class="o">=</span> <span class="n">return_translation_dict_for_all_feature_seqs</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">)</span>
+    <span class="n">feature_output_dict</span> <span class="o">=</span> <span class="n">return_translated_features</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">,</span> <span class="n">feature_trans_dict</span><span class="p">,</span> <span class="n">percent_matched_threshold</span><span class="p">)</span>
+    <span class="n">write_feature_file</span><span class="p">(</span><span class="n">type_dict</span><span class="p">,</span> <span class="n">feature_output_dict</span><span class="p">,</span> <span class="n">output_feature_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">feature_output_dict</span>
+<span class="k">def</span> <span class="nf">aligned_file_check</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">):</span>
+    <span class="n">sequences</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">,</span> <span class="s2">&quot;fasta&quot;</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;-&#39;</span> <span class="ow">in</span> <span class="n">seq</span><span class="o">.</span><span class="n">seq</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span> <span class="c1">#found dashes, alignment file is being used</span>
+    <span class="k">return</span> <span class="kc">False</span> <span class="c1">#no dashes found, everything is good</span>
+<span class="k">def</span> <span class="nf">fasta_file_check</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">):</span>
+    <span class="n">records</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">,</span><span class="s2">&quot;fasta&quot;</span><span class="p">))</span>
+    <span class="c1">#check if there is at least one sequence</span>
+    <span class="k">if</span> <span class="n">records</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="n">valid_characters</span><span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="s2">&quot;ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span> <span class="o">&lt;=</span> <span class="n">valid_characters</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">return_sequence_dict_from_fasta</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dictionary with keys equal to the fasta headers in a file and values equal to the protein sequence</span>
+<span class="sd">    reports if redundant fasta header is found by returning that in a error_list</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fasta : str</span>
+<span class="sd">        Name of fasta file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    seq_dict: dict</span>
+<span class="sd">        Keys are the fasta header of the fasta file. Values or protein sequences (strings)</span>
+<span class="sd">    error_list: list</span>
+<span class="sd">        A list of headers that had more than one entry </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seqIO_obj</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">fasta_file</span><span class="p">),</span> <span class="s2">&quot;fasta&quot;</span><span class="p">))</span>
+    <span class="n">seq_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">error_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">seqIO_obj</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seq_dict</span><span class="p">:</span> 
+    <span class="c1">#for those cases where more than one SH2 domain exists, need to reference that according to start position in protein</span>
+            <span class="n">seq_dict</span><span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">seq_dict</span><span class="p">,</span> <span class="n">error_list</span>
+
+
+
+
+<span class="k">def</span> <span class="nf">returnAlignment</span><span class="p">(</span><span class="n">seq1</span><span class="p">,</span> <span class="n">seq2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given two protein sequences and the names for reference, create an alignment using BioSeq pairwise alignment</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq1 : str</span>
+<span class="sd">        first sequence</span>
+<span class="sd">    seq2: str</span>
+<span class="sd">        second sequence</span>
+<span class="sd">    name1: str</span>
+<span class="sd">        name reference for hanlde to seq1</span>
+<span class="sd">    name2: str</span>
+<span class="sd">        name reference for handle to seq2</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    aln: cogent3 pairwise alignment object</span>
+<span class="sd">        The alignment object of seq1, name1 with seq2, name2    </span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">alignments</span> <span class="o">=</span> <span class="n">pairwise2</span><span class="o">.</span><span class="n">align</span><span class="o">.</span><span class="n">localms</span><span class="p">(</span><span class="n">seq1</span><span class="p">,</span> <span class="n">seq2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">alignments</span><span class="p">:</span>
+        <span class="c1">#ERROR in alignment, return 0</span>
+            <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">aln_seq_1</span> <span class="o">=</span> <span class="n">alignments</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">aln_seq_2</span><span class="o">=</span> <span class="n">alignments</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">aln</span> <span class="o">=</span> <span class="n">cogent3</span><span class="o">.</span><span class="n">make_aligned_seqs</span><span class="p">([[</span><span class="s1">&#39;Input&#39;</span><span class="p">,</span><span class="n">aln_seq_1</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;Reference&#39;</span><span class="p">,</span> <span class="n">aln_seq_2</span><span class="p">]],</span> <span class="n">array_align</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="c1">#cogent3 pairwise alignment object</span>
+    <span class="k">return</span> <span class="n">aln</span>
+
+
+<span class="k">def</span> <span class="nf">return_best_match</span><span class="p">(</span><span class="n">input_header</span><span class="p">,</span> <span class="n">input_sequence</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an input header and sequence, find the best match inside a reference_dict (keys are headers and values are sequences from a reference fasta)</span>
+<span class="sd">    Will try quick search first, assumes the same ID is used at the front of the headers. Otherwise, performs a brute-force all by all pairwise alignment</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_header: str</span>
+<span class="sd">        Input header, string separated by | for fields. Uses the [0] element in quick search by split(&#39;|&#39;)</span>
+<span class="sd">    input_sequence: str</span>
+<span class="sd">        input sequence</span>
+<span class="sd">    reference_dict: dict</span>
+<span class="sd">        Reference fasta converted to dictionary, keys are fasta headers and values are sequences</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    best_header: str</span>
+<span class="sd">        The header of the best match in reference_dict</span>
+<span class="sd">    best_aln: cogent3 alignment object</span>
+<span class="sd">        alignment of &#39;Input&#39; to &#39;Reference&#39; of best match</span>
+<span class="sd">    aln_score: float</span>
+<span class="sd">        score of alignment</span>
+<span class="sd">    percent_matched:</span>
+<span class="sd">        percent of input sequence that matches the reference (excludes gaps)</span>
+<span class="sd">    percent_gapped:</span>
+<span class="sd">        percent of input sequence with gaps to reference</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">header_vals</span> <span class="o">=</span> <span class="n">input_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+    <span class="n">match_headers</span> <span class="o">=</span> <span class="n">return_headers_with_matching_ID</span><span class="p">(</span><span class="n">header_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reference_dict</span><span class="p">)</span>
+    <span class="n">aln_dict</span> <span class="o">=</span> <span class="n">generate_alignment_dict</span><span class="p">(</span><span class="n">match_headers</span><span class="p">,</span> <span class="n">input_sequence</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">)</span>
+    <span class="n">best_header</span><span class="p">,</span> <span class="n">best_aln</span><span class="p">,</span> <span class="n">aln_score</span> <span class="o">=</span> <span class="n">return_best_match_from_set</span><span class="p">(</span><span class="n">aln_dict</span><span class="p">)</span>
+    <span class="n">percent_matched</span><span class="p">,</span> <span class="n">percent_gapped</span> <span class="o">=</span> <span class="n">return_percent_matched</span><span class="p">(</span><span class="n">best_aln</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">best_header</span><span class="p">,</span> <span class="n">best_aln</span><span class="p">,</span> <span class="n">aln_score</span><span class="p">,</span> <span class="n">percent_matched</span><span class="p">,</span> <span class="n">percent_gapped</span>
+
+
+
+<span class="k">def</span> <span class="nf">return_headers_with_matching_ID</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For a string ID (e.g. an accession number like &#39;P00533&#39;), find all sequences in seq_dict that have that common ID at the start of the headers</span>
+<span class="sd">    Requires an exact match of ID to the first value of fasta header, where fasta headers are separated by &#39;|&#39;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ID: string</span>
+<span class="sd">        The common ID we are looking for at start of fasta headers</span>
+<span class="sd">    seq_dict: dict</span>
+<span class="sd">        Keys are the fasta header of the fasta file. Values or protein sequences (strings)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    match_list: list</span>
+<span class="sd">        List of headers in seq_dict that have common ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fasta_header</span> <span class="ow">in</span> <span class="n">reference_dict</span><span class="p">:</span>
+        <span class="n">header_items</span> <span class="o">=</span> <span class="n">fasta_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">header_items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="n">ID</span><span class="p">:</span>
+            <span class="n">match_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fasta_header</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">match_list</span>
+
+
+<span class="k">def</span> <span class="nf">generate_alignment_dict</span><span class="p">(</span><span class="n">match_list</span><span class="p">,</span> <span class="n">input_sequence</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If there are matches in the match_list for the given input_sequence, this generates an alignment dict of those </span>
+<span class="sd">    sequences with the input_sequence. If there are no matches identified, it generates an alignment_dict of all of the </span>
+<span class="sd">    reference sequences aligned with the input_sequence.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    aln_dict: dictionary of alignments between the input_sequence and either the sequences in the match_list, or all </span>
+<span class="sd">    sequences in the reference_dict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">aln_dict</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ref_header</span> <span class="ow">in</span> <span class="n">match_list</span><span class="p">:</span>
+            <span class="n">aln_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">]</span><span class="o">=</span><span class="n">returnAlignment</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span><span class="n">reference_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ref_header</span> <span class="ow">in</span> <span class="n">reference_dict</span><span class="p">:</span>
+            <span class="n">aln_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">]</span><span class="o">=</span><span class="n">returnAlignment</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span><span class="n">reference_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">aln_dict</span>
+
+
+
+<span class="k">def</span> <span class="nf">match_and_align</span><span class="p">(</span><span class="n">input_header</span><span class="p">,</span> <span class="n">input_sequence</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For a string ID (e.g. an accession number like &#39;P00533&#39;), find all sequences in seq_dict that have that common ID at the start of the headers</span>
+<span class="sd">    Requires an exact match of ID to the first value of fasta header, where fasta headers are separated by &#39;|&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    Then, If there are matches in the match_list for the given input_sequence, this generates an alignment dict of those </span>
+<span class="sd">    sequences with the input_sequence. If there are no matches identified, it generates an alignment_dict of all of the </span>
+<span class="sd">    reference sequences aligned with the input_sequence.</span>
+
+<span class="sd">    If the fast match cannot be made, then will return </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ID: string</span>
+<span class="sd">        The common ID we are looking for at start of fasta headers</span>
+<span class="sd">    input_sequence: string</span>
+<span class="sd">        the protein sequence that will be used to align to proteins identified from the match_list</span>
+<span class="sd">    reference_dict: dict</span>
+<span class="sd">        Keys are the fasta header of the fasta file. Values or protein sequences (strings)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    match_list: list</span>
+<span class="sd">        List of headers in seq_dict that have common ID</span>
+<span class="sd">        </span>
+<span class="sd">    matched_dict: dict</span>
+<span class="sd">        alignments between the input_sequence and either the sequences in the match_list, or all </span>
+<span class="sd">    sequences in the reference_dict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+        <span class="n">match_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">matched_dict</span><span class="o">=</span><span class="p">{}</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+        <span class="n">ID</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">fasta_header</span> <span class="ow">in</span> <span class="n">reference_dict</span><span class="p">:</span>
+            <span class="n">header_items</span> <span class="o">=</span> <span class="n">fasta_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">header_items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="n">ID</span><span class="p">:</span>
+                <span class="n">match_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fasta_header</span><span class="p">)</span>
+        <span class="c1">#align based on match_list results</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ref_header</span> <span class="ow">in</span> <span class="n">match_list</span><span class="p">:</span>
+                <span class="n">matched_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">]</span><span class="o">=</span><span class="n">returnAlignment</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span><span class="n">reference_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ref_header</span> <span class="ow">in</span> <span class="n">reference_dict</span><span class="p">:</span>
+                <span class="n">matched_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">]</span><span class="o">=</span><span class="n">returnAlignment</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span><span class="n">reference_dict</span><span class="p">[</span><span class="n">ref_header</span><span class="p">])</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">matched_dict</span><span class="p">,</span><span class="n">match_list</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">return_best_match_from_set</span><span class="p">(</span><span class="n">matched_dict</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an input header, alignment dictionary, and the positions of the features in the given input protein, this will systematically         align the input sequence with all options identified previously and return the header, alignment object, and alignment quality that         best matched. This will also give the percent similarity for the input header and the corresponding reference header. Lastly, this will     give the positions of any positions that are not able to be mapped as a feature due to mutation or a gap in the sequence.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -------</span>
+<span class="sd">    alignment_dict: dict</span>
+<span class="sd">        dictionary of all of the alignment objects corresponding to your input header</span>
+<span class="sd">    gaps: arr</span>
+<span class="sd">        array of which positions correspond to gaps. This is important so that these gaps do not affect the sequence alignment </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    best_header: string</span>
+<span class="sd">        The best matched header based on alignment for the given input_sequence</span>
+<span class="sd">    aln_score: int</span>
+<span class="sd">        The alignment score for the best aligned pair</span>
+<span class="sd">    percent_match: int</span>
+<span class="sd">        The percent similarity value between 0-100</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">best_header</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    <span class="n">aln_score</span><span class="o">=</span><span class="mi">0</span>
+    <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">matched_dict</span><span class="p">:</span>
+        <span class="n">aln_score_temp</span><span class="o">=</span><span class="n">matched_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]</span><span class="o">.</span><span class="n">alignment_quality</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">aln_score_temp</span> <span class="o">&gt;</span> <span class="n">aln_score</span><span class="p">:</span>
+            <span class="n">aln_score</span> <span class="o">=</span> <span class="n">aln_score_temp</span>
+            <span class="n">best_header</span><span class="o">=</span><span class="n">header</span>
+            <span class="n">best_aln</span><span class="o">=</span><span class="n">matched_dict</span><span class="p">[</span><span class="n">best_header</span><span class="p">]</span>
+
+    <span class="c1">#Return percent matched here as well. </span>
+
+
+
+    <span class="k">return</span> <span class="n">best_header</span><span class="p">,</span> <span class="n">best_aln</span><span class="p">,</span> <span class="n">aln_score</span>
+
+
+<span class="k">def</span> <span class="nf">return_percent_matched</span><span class="p">(</span><span class="n">aln</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a cogent3 alignment object, calculate the percent matched (exact amino acid matches of the input sequence to the comparator)</span>
+<span class="sd">    and percent gapped</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    aln: cogent3 alignment object</span>
+<span class="sd">        assumes two sequences, &#39;Input&#39; and &#39;Reference&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    percent_matched: float</span>
+<span class="sd">        percent matched, excluding gaps</span>
+<span class="sd">    percent_gapped: float</span>
+<span class="sd">        percent of input that is gapped, relative to reference</span>
+<span class="sd">    </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">total_gaps</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">count_gaps_per_seq</span><span class="p">()[</span><span class="s1">&#39;Input&#39;</span><span class="p">]</span>
+    <span class="n">input_length</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_lengths</span><span class="p">()[</span><span class="s1">&#39;Input&#39;</span><span class="p">]</span>
+    <span class="n">seq_input</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span>
+    <span class="n">seq_reference</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="s1">&#39;Reference&#39;</span><span class="p">)</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="n">b</span> <span class="ow">and</span> <span class="n">a</span><span class="o">!=</span><span class="s1">&#39;-&#39;</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">seq_input</span><span class="p">,</span> <span class="n">seq_reference</span><span class="p">))</span>
+    <span class="n">percent_matched</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="n">matches</span><span class="o">/</span><span class="n">input_length</span>
+    <span class="n">percent_gaps</span> <span class="o">=</span> <span class="mi">100</span><span class="o">*</span><span class="n">total_gaps</span><span class="o">/</span><span class="n">input_length</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">percent_matched</span><span class="p">,</span> <span class="n">percent_gaps</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">return_translation_dict_for_all_feature_seqs</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">,</span> <span class="n">reference_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of unique features that we need to translate from an input feature file (see ead_feature_file)</span>
+<span class="sd">    Return a dictionary with input fasta headers and a dictionary type that includes the matching output header, alignment and quality scores</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    feature_dict: dict</span>
+<span class="sd">        keys are fasta headers, values are dictionaries, whose keys are the list of features to translate and values are a list of the feature types</span>
+<span class="sd">    input_dict: dict</span>
+<span class="sd">        input dictionary, keys fasta headers and values are sequences</span>
+<span class="sd">    reference_dict: dict</span>
+<span class="sd">        reference dictionary, keys fasta headers, and values are sequences</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    feature_trans_dict: dict</span>
+<span class="sd">        Dict of dicts, outer key is the header and inner keys are the following special keys</span>
+<span class="sd">            &#39;header&#39;: header to output</span>
+<span class="sd">            &#39;aln&#39;: alignment object of best header</span>
+<span class="sd">            &#39;percent_matched&#39;: percent of input sequence that matches, not including gaps</span>
+<span class="sd">            &#39;percent_gapped&#39;: percent of input sequence that is gapped </span>
+<span class="sd">            &#39;aln_score&#39;: alignment score, calculated by cogent3</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">feature_trans_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">fasta_header</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+        <span class="n">header</span><span class="p">,</span> <span class="n">aln</span><span class="p">,</span> <span class="n">aln_score</span><span class="p">,</span> <span class="n">percent_matched</span><span class="p">,</span> <span class="n">percent_gapped</span> <span class="o">=</span> <span class="n">return_best_match</span><span class="p">(</span><span class="n">fasta_header</span><span class="p">,</span>  <span class="n">input_dict</span><span class="p">[</span><span class="n">fasta_header</span><span class="p">],</span> <span class="n">reference_dict</span><span class="p">)</span>
+        <span class="n">temp_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;aln&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aln</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;percent_matched&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">percent_matched</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;percent_gapped&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">percent_gapped</span>
+        <span class="n">temp_dict</span><span class="p">[</span><span class="s1">&#39;aln_score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aln_score</span>
+        <span class="n">feature_trans_dict</span><span class="p">[</span><span class="n">fasta_header</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_dict</span>
+    <span class="k">return</span> <span class="n">feature_trans_dict</span>
+
+
+<div class="viewcode-block" id="return_translated_features">
+<a class="viewcode-back" href="../../translateFeatures.html#CoDIAC.translateFeatures.return_translated_features">[docs]</a>
+<span class="k">def</span> <span class="nf">return_translated_features</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">,</span> <span class="n">feature_trans_dict</span><span class="p">,</span> <span class="n">percent_match_threshold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a new dictionary of features, with output headers and feature positions </span>
+<span class="sd">    based on a feature_trans_dict. Will only translate features if the total match is betterh</span>
+<span class="sd">    than percent_match_threshold</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>       
+    <span class="n">feature_dict_output</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">input_header</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+        <span class="n">features_to_trans</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">feature_dict</span><span class="p">[</span><span class="n">input_header</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">aln</span> <span class="o">=</span> <span class="n">feature_trans_dict</span><span class="p">[</span><span class="n">input_header</span><span class="p">][</span><span class="s1">&#39;aln&#39;</span><span class="p">]</span>
+        <span class="n">output_header</span> <span class="o">=</span> <span class="n">feature_trans_dict</span><span class="p">[</span><span class="n">input_header</span><span class="p">][</span><span class="s1">&#39;header&#39;</span><span class="p">]</span>
+        <span class="n">percent_matched</span> <span class="o">=</span> <span class="n">feature_trans_dict</span><span class="p">[</span><span class="n">input_header</span><span class="p">][</span><span class="s1">&#39;percent_matched&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">percent_matched</span> <span class="o">&gt;</span> <span class="n">percent_match_threshold</span><span class="p">:</span> <span class="c1">#check, match is good</span>
+            <span class="n">validated_features</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">map_to_ref</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_gapped_seq</span><span class="p">(</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">gap_maps</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1">#in order to use the positions of input feature, have to degap</span>
+            <span class="n">aln_temp</span> <span class="o">=</span> <span class="n">aln</span><span class="o">.</span><span class="n">get_degapped_relative_to</span><span class="p">(</span><span class="s1">&#39;Input&#39;</span><span class="p">)</span> 
+            <span class="n">aa</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">aln_temp</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features_to_trans</span><span class="p">:</span>
+                <span class="c1">#get the position in the alignment of the &#39;Input&#39;, then translate to </span>
+                <span class="c1"># what position that is in the output, keeping it only if the two amino acids match</span>
+                <span class="c1"># at that aligned position.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">aa</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">aa</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># amino acids are the same</span>
+                        <span class="c1">#validated_features.append(map_to_ref[int(feature)-1]+1) #validated features are integer values</span>
+                        <span class="c1">#validated features is an array of validated mappings from the input sequence to the output sequence. This is </span>
+                        <span class="c1"># using the sequence based one counting. </span>
+                        <span class="n">feature_temp</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="n">feature_temp</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="p">)]</span> <span class="o">=</span>  <span class="n">map_to_ref</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span> <span class="c1">#this maps the input feature to the output feature.</span>
+                        <span class="n">validated_features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">feature_temp</span><span class="p">)</span>
+                        <span class="c1">#if int(feature)-1 != map_to_ref[int(feature)-1]:</span>
+                            <span class="c1">#print(&quot;DEBUG: %s feature %d mapped to %d&quot;%(input_header, int(feature), map_to_ref[int(feature)]))</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR: position </span><span class="si">%d</span><span class="s2"> is out of range for match </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">feature</span><span class="p">),</span> <span class="n">input_header</span><span class="p">,</span> <span class="n">output_header</span><span class="p">))</span>
+
+            <span class="c1">## feature_dict_output[output_header]=validated_features</span>
+            <span class="c1">#having found the features that can be translated, rebuild the output feature_dictionary, keeping the construct </span>
+            <span class="c1"># of the input dictionary format</span>
+            <span class="k">for</span> <span class="n">feature_dict_temp</span> <span class="ow">in</span> <span class="n">validated_features</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">input_feature</span> <span class="ow">in</span> <span class="n">feature_dict_temp</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">output_feature</span> <span class="o">=</span> <span class="n">feature_dict_temp</span><span class="p">[</span><span class="n">input_feature</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">output_header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">feature_dict_output</span><span class="p">:</span>
+                        <span class="n">feature_dict_output</span><span class="p">[</span><span class="n">output_header</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c1">#if str(feature) not in feature_dict[input_header]:</span>
+                    <span class="c1">#    print(&quot;ERROR: %s did not have feature %d&quot;%(input_header, feature))</span>
+                    <span class="c1">#else:</span>
+                    <span class="n">feature_dict_output</span><span class="p">[</span><span class="n">output_header</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">output_feature</span><span class="p">)]</span> <span class="o">=</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">input_header</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">input_feature</span><span class="p">)]</span> <span class="c1">#copy the feature type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;LOG: </span><span class="si">%s</span><span class="s2"> did not have sufficent match that meant </span><span class="si">%0.2f</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">input_header</span><span class="p">,</span> <span class="n">percent_match_threshold</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">feature_dict_output</span></div>
+
+
+<span class="k">def</span> <span class="nf">write_feature_file</span><span class="p">(</span><span class="n">type_dict</span><span class="p">,</span> <span class="n">feature_dict</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="nb">type</span> <span class="ow">in</span> <span class="n">type_dict</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">type_dict</span><span class="p">[</span><span class="nb">type</span><span class="p">]))</span>
+        <span class="c1"># ptm_type = list(type_dict.keys())[0]</span>
+        <span class="c1"># color = list(type_dict.values())[0]</span>
+        <span class="c1"># file.write(&#39;{}\t{}\n&#39;.format(ptm_type, color))</span>
+        <span class="k">for</span> <span class="n">header</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">feature_pos</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">feature_name</span> <span class="ow">in</span> <span class="n">feature_dict</span><span class="p">[</span><span class="n">header</span><span class="p">][</span><span class="n">feature_pos</span><span class="p">]:</span>
+                <span class="c1">#feature_name = feature_dict[header][feature_pos][0]</span>
+                    <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="s1">-1</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">feature_pos</span><span class="p">,</span> <span class="n">feature_pos</span><span class="p">,</span> <span class="n">feature_name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">file</span>
+
+
+
+
+
+        
+          
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CoDIAC 1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">CoDIAC.translateFeatures</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2023, Naegle Lab.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
+    </div>
+  </body>
+</html>

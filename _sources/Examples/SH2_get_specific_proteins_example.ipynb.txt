@@ -4,7 +4,14 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# Fetch all reference files for an Interpro_ID of interest"
+    "# Reference Structure Files generation"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Fetch all reference files for an Interpro_ID of interest"
    ]
   },
   {
@@ -99,7 +106,6 @@
     }
    ],
    "source": [
-    "\n",
     "CoDIAC.PDB.generateStructureRefFile_fromUniprotFile(uniprot_reference_file, PDB_file)"
    ]
   },
@@ -146,6 +152,13 @@
    ]
   },
   {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Reference FASTA file generation"
+   ]
+  },
+  {
    "attachments": {},
    "cell_type": "markdown",
    "metadata": {},
@@ -177,6 +190,13 @@
     "key_array_order= ['uniprot', 'gene', 'domain_num', 'start', 'end']\n",
     "#translation creates a mapping file \n",
     "output_fasta, mapping_file = CoDIAC.UniProt.translate_fasta_to_new_headers(fasta_long_header_file, fasta_file, key_array_order)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Feature and annotation files generation"
    ]
   },
   {
@@ -327,9 +347,9 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.9.16"
+   "version": "3.9.18"
   }
  },
  "nbformat": 4,
- "nbformat_minor": 2
+ "nbformat_minor": 4
 }

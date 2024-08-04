@@ -5,18 +5,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CoDIAC.InterPro &#8212; CoDIAC 1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=514cf933" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=def86cc0" />
     
     <script src="../../_static/documentation_options.js?v=29a6c3e3"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,33 +49,34 @@
 <a class="viewcode-back" href="../../InterPro.html#CoDIAC.InterPro.fetch_uniprotids">[docs]</a>
 <span class="k">def</span> <span class="nf">fetch_uniprotids</span><span class="p">(</span><span class="n">interpro_ID</span><span class="p">,</span> <span class="n">REVIEWED</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="s1">&#39;Homo sapiens&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given an InterPro_ID, fetch all the records (or only reviewed records)</span>
-<span class="sd">    for all species or for a specific taxonomy. </span>
+<span class="sd">    Given an InterPro_ID, fetch all the records (or only reviewed records) for all species or for a specific taxonomy. </span>
 
-<span class="sd">    Examples:</span>
-<span class="sd">    Examples, use this module like this, the first being a more restrictive human with reviewed, versus all </span>
-<span class="sd">    records associated within an Interpro ID:</span>
-<span class="sd">    .. code-block:: python</span>
-<span class="sd">        fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=True, species=&#39;Homo sapiens&#39;) # human proteins with reviewed records</span>
-<span class="sd">        fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=False, species=&#39;all&#39;) #all species records, reviewed and unreviewed</span>
+<span class="sd">    Examples: Examples, use this module like this, the first being a more restrictive human with reviewed, versus all records associated within an Interpro ID: </span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">        </span>
+<span class="sd">            fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=True, species=&#39;Homo sapiens&#39;) # human proteins with reviewed records</span>
+<span class="sd">            fetch_uniprotids(&#39;IPR000980&#39;, REVIEWED=False, species=&#39;all&#39;) #all species records, reviewed and unreviewed</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    interpro_ID: str</span>
-<span class="sd">        InterPro ID to search for</span>
-<span class="sd">    REVIEWED: bool</span>
-<span class="sd">        If TRUE, only reviewed records will be returned </span>
-<span class="sd">    species: string</span>
-<span class="sd">        Using scientific name under the Uniprot taxonomy to define species. </span>
-<span class="sd">        See here for taxonomy names: https://www.uniprot.org/taxonomy?query=*</span>
+<span class="sd">        interpro_ID: str</span>
+<span class="sd">            InterPro ID to search for</span>
+<span class="sd">        REVIEWED: bool</span>
+<span class="sd">            If TRUE, only reviewed records will be returned </span>
+<span class="sd">        species: string</span>
+<span class="sd">            Using scientific name under the Uniprot taxonomy to define species. </span>
+<span class="sd">            See here for taxonomy names: https://www.uniprot.org/taxonomy?query=*</span>
+<span class="sd">    </span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    uniprot_ID_list: list</span>
-<span class="sd">        list of all uniprot IDs found in search. If a species was set, all uniprot IDs for a species</span>
-<span class="sd">        will be returned in this list, otherwise, all species from search will be returned.</span>
-<span class="sd">    species_dict: dict</span>
-<span class="sd">        Dictionary, with top keys equal to the species scientific name and </span>
-<span class="sd">        points to an inner dict that keeps track of the database source &#39;reviewed&#39; or &#39;unreviewed&#39;</span>
-<span class="sd">        and has lists of the uniprot IDs found for that species under that database source.</span>
+<span class="sd">        uniprot_ID_list: list</span>
+<span class="sd">            list of all uniprot IDs found in search. If a species was set, all uniprot IDs for a species</span>
+<span class="sd">            will be returned in this list, otherwise, all species from search will be returned.</span>
+<span class="sd">        species_dict: dict</span>
+<span class="sd">            Dictionary, with top keys equal to the species scientific name and </span>
+<span class="sd">            points to an inner dict that keeps track of the database source &#39;reviewed&#39; or &#39;unreviewed&#39;</span>
+<span class="sd">            and has lists of the uniprot IDs found for that species under that database source.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">count_data</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># count of records expected to be found</span>
     <span class="c1">#species = species.replace(&quot; &quot;, &quot;+&quot;)</span>
@@ -629,9 +630,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -639,13 +640,13 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -661,7 +662,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Naegle Lab.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     </div>
   </body>
 </html>

@@ -1,4 +1,4 @@
-PTMS
-----------------------
+PTM
+---
 .. automodule:: CoDIAC.PTM
-    
+    :members: write_PTM_features

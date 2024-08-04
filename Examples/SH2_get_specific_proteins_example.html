@@ -5,22 +5,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Fetch all reference files for an Interpro_ID of interest &#8212; CoDIAC 1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
-    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=514cf933" />
-    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <title>Reference Structure Files generation &#8212; CoDIAC 1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=def86cc0" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
     
     <script src="../_static/documentation_options.js?v=29a6c3e3"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="STEP 1: Generate mmCIF files for PDBs of interest" href="AdjacencyFiles_generation.html" />
+    <link rel="next" title="Generate mmCIF files for PDBs of interest" href="AdjacencyFiles_generation.html" />
     <link rel="prev" title="Examples" href="Examples.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -30,14 +30,14 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="AdjacencyFiles_generation.html" title="STEP 1: Generate mmCIF files for PDBs of interest"
+          <a href="AdjacencyFiles_generation.html" title="Generate mmCIF files for PDBs of interest"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="Examples.html" title="Examples"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="Examples.html" accesskey="U">Examples</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Fetch all reference files for an Interpro_ID of interest</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Reference Structure Files generation</a></li> 
       </ul>
     </div>  
 
@@ -46,8 +46,10 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <section id="Fetch-all-reference-files-for-an-Interpro_ID-of-interest">
-<h1>Fetch all reference files for an Interpro_ID of interest<a class="headerlink" href="#Fetch-all-reference-files-for-an-Interpro_ID-of-interest" title="Link to this heading">¶</a></h1>
+  <section id="Reference-Structure-Files-generation">
+<h1>Reference Structure Files generation<a class="headerlink" href="#Reference-Structure-Files-generation" title="Link to this heading">¶</a></h1>
+<section id="Fetch-all-reference-files-for-an-Interpro_ID-of-interest">
+<h2>Fetch all reference files for an Interpro_ID of interest<a class="headerlink" href="#Fetch-all-reference-files-for-an-Interpro_ID-of-interest" title="Link to this heading">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
@@ -85,7 +87,7 @@
 </div>
 </div>
 <section id="STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">
-<h2>STEP 2: Make a human reference file of the family of interest<a class="headerlink" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest" title="Link to this heading">¶</a></h2>
+<h3>STEP 2: Make a human reference file of the family of interest<a class="headerlink" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest" title="Link to this heading">¶</a></h3>
 <p>(Skipping Step 1, fetch of all proteins, since we’re using targeted Uniprot fetch)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -111,12 +113,12 @@ Interpro metadata succesfully incorporated
 </div>
 </section>
 <section id="STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest">
-<h2>STEP 3: Get information about all PDB IDs that exist for the reference proteins of interest<a class="headerlink" href="#STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest" title="Link to this heading">¶</a></h2>
+<h3>STEP 3: Get information about all PDB IDs that exist for the reference proteins of interest<a class="headerlink" href="#STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest" title="Link to this heading">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDB</span><span class="o">.</span><span class="n">generateStructureRefFile_fromUniprotFile</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">CoDIAC</span><span class="o">.</span><span class="n">PDB</span><span class="o">.</span><span class="n">generateStructureRefFile_fromUniprotFile</span><span class="p">(</span><span class="n">uniprot_reference_file</span><span class="p">,</span> <span class="n">PDB_file</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -131,7 +133,7 @@ All PDBs successfully fetched
 </div>
 </section>
 <section id="STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">
-<h2>STEP 4: Annotate the structure file with reference, for domain annotation<a class="headerlink" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation" title="Link to this heading">¶</a></h2>
+<h3>STEP 4: Annotate the structure file with reference, for domain annotation<a class="headerlink" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation" title="Link to this heading">¶</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -142,7 +144,7 @@ All PDBs successfully fetched
 </div>
 </section>
 <section id="STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">
-<h2>STEP 5: Reduce the structure file to just those that contain the domain of interest<a class="headerlink" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest" title="Link to this heading">¶</a></h2>
+<h3>STEP 5: Reduce the structure file to just those that contain the domain of interest<a class="headerlink" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest" title="Link to this heading">¶</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
@@ -161,8 +163,10 @@ Made Data/PDB_Reference/SH2_IPR000980_PDB_reference.csv file: 84 structures reta
 </pre></div></div>
 </div>
 </section>
-<section id="STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest">
-<h2>STEP 6: Create the FASTA Reference file for domain of interest<a class="headerlink" href="#STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+<section id="Reference-FASTA-file-generation">
+<h1>Reference FASTA file generation<a class="headerlink" href="#Reference-FASTA-file-generation" title="Link to this heading">¶</a></h1>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
@@ -188,10 +192,11 @@ n offset is 0 and c offset is -1
 Created files: Data/Uniprot_Reference/SH2_IPR000980.fasta and Data/Uniprot_Reference/SH2_IPR000980_mapping.csv
 </pre></div></div>
 </div>
+</section>
+<section id="Feature-and-annotation-files-generation">
+<h1>Feature and annotation files generation<a class="headerlink" href="#Feature-and-annotation-files-generation" title="Link to this heading">¶</a></h1>
 <section id="STEP-7-Create-the-PTM-feature-files">
-<h3>STEP 7 Create the PTM feature files<a class="headerlink" href="#STEP-7-Create-the-PTM-feature-files" title="Link to this heading">¶</a></h3>
-<section id="STEP-7a-create-the-ProteomeScout-based-Features-files">
-<h4>STEP 7a create the ProteomeScout based Features files<a class="headerlink" href="#STEP-7a-create-the-ProteomeScout-based-Features-files" title="Link to this heading">¶</a></h4>
+<h2>STEP 7 Create the PTM feature files<a class="headerlink" href="#STEP-7-Create-the-PTM-feature-files" title="Link to this heading">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
@@ -220,9 +225,6 @@ Data/Uniprot_Reference/SH2_IPR000980.fasta
 {&#39;Phosphoserine&#39;: 4, &#39;Phosphothreonine&#39;: 2, &#39;Phosphotyrosine&#39;: 5, &#39;N6-acetyllysine&#39;: 2, &#39;Ubiquitination&#39;: 1}
 </pre></div></div>
 </div>
-</section>
-<section id="STEP-7b-create-the-PhosphoSite-based-Features-files">
-<h4>STEP 7b create the PhosphoSite based Features files<a class="headerlink" href="#STEP-7b-create-the-PhosphoSite-based-Features-files" title="Link to this heading">¶</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
@@ -251,11 +253,8 @@ Data/Uniprot_Reference/SH2_IPR000980.fasta
 {&#39;Phosphoserine&#39;: 6, &#39;Phosphothreonine&#39;: 2, &#39;Phosphotyrosine&#39;: 5, &#39;Ubiquitination&#39;: 4, &#39;Acetylation&#39;: 2}
 </pre></div></div>
 </div>
-</section>
-</section>
-</section>
 <section id="Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks.">
-<h2>Step 8 combine feature files from ProteomeScout and PhosphoSitePlus and generate annotation tracks.<a class="headerlink" href="#Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks." title="Link to this heading">¶</a></h2>
+<h3>Step 8 combine feature files from ProteomeScout and PhosphoSitePlus and generate annotation tracks.<a class="headerlink" href="#Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks." title="Link to this heading">¶</a></h3>
 <p>#paired list</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
@@ -295,31 +294,34 @@ Created Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/Combi
 </div>
 </section>
 </section>
+</section>
 
 
             <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="../index.html">Table of Contents</a></h3>
     <ul>
-<li><a class="reference internal" href="#">Fetch all reference files for an Interpro_ID of interest</a><ul>
+<li><a class="reference internal" href="#">Reference Structure Files generation</a><ul>
+<li><a class="reference internal" href="#Fetch-all-reference-files-for-an-Interpro_ID-of-interest">Fetch all reference files for an Interpro_ID of interest</a><ul>
 <li><a class="reference internal" href="#STEP-2:-Make-a-human-reference-file-of-the-family-of-interest">STEP 2: Make a human reference file of the family of interest</a></li>
 <li><a class="reference internal" href="#STEP-3:-Get-information-about-all-PDB-IDs-that-exist-for-the-reference-proteins-of-interest">STEP 3: Get information about all PDB IDs that exist for the reference proteins of interest</a></li>
 <li><a class="reference internal" href="#STEP-4:-Annotate-the-structure-file-with-reference,-for-domain-annotation">STEP 4: Annotate the structure file with reference, for domain annotation</a></li>
 <li><a class="reference internal" href="#STEP-5:-Reduce-the-structure-file-to-just-those-that-contain-the-domain-of-interest">STEP 5: Reduce the structure file to just those that contain the domain of interest</a></li>
-<li><a class="reference internal" href="#STEP-6:-Create-the-FASTA-Reference-file-for-domain-of-interest">STEP 6: Create the FASTA Reference file for domain of interest</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#Reference-FASTA-file-generation">Reference FASTA file generation</a></li>
+<li><a class="reference internal" href="#Feature-and-annotation-files-generation">Feature and annotation files generation</a><ul>
 <li><a class="reference internal" href="#STEP-7-Create-the-PTM-feature-files">STEP 7 Create the PTM feature files</a><ul>
-<li><a class="reference internal" href="#STEP-7a-create-the-ProteomeScout-based-Features-files">STEP 7a create the ProteomeScout based Features files</a></li>
-<li><a class="reference internal" href="#STEP-7b-create-the-PhosphoSite-based-Features-files">STEP 7b create the PhosphoSite based Features files</a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li><a class="reference internal" href="#Step-8-combine-feature-files-from-ProteomeScout-and-PhosphoSitePlus-and-generate-annotation-tracks.">Step 8 combine feature files from ProteomeScout and PhosphoSitePlus and generate annotation tracks.</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -333,7 +335,7 @@ Created Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/Combi
   <div>
     <h4>Next topic</h4>
     <p class="topless"><a href="AdjacencyFiles_generation.html"
-                          title="next chapter">STEP 1: Generate mmCIF files for PDBs of interest</a></p>
+                          title="next chapter">Generate mmCIF files for PDBs of interest</a></p>
   </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
@@ -342,7 +344,7 @@ Created Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/Combi
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -350,13 +352,13 @@ Created Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/Combi
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -366,19 +368,19 @@ Created Data/Uniprot_Reference/Features_relative_to_reference/PTM_features/Combi
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="AdjacencyFiles_generation.html" title="STEP 1: Generate mmCIF files for PDBs of interest"
+          <a href="AdjacencyFiles_generation.html" title="Generate mmCIF files for PDBs of interest"
              >next</a> |</li>
         <li class="right" >
           <a href="Examples.html" title="Examples"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">CoDIAC 1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="Examples.html" >Examples</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Fetch all reference files for an Interpro_ID of interest</a></li> 
+        <li class="nav-item nav-item-this"><a href="">Reference Structure Files generation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Naegle Lab.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     </div>
   </body>
 </html>
