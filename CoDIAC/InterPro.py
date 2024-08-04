@@ -8,33 +8,34 @@ import timeit
 
 def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     """
-    Given an InterPro_ID, fetch all the records (or only reviewed records)
-    for all species or for a specific taxonomy. 
+    Given an InterPro_ID, fetch all the records (or only reviewed records) for all species or for a specific taxonomy. 
 
-    Examples:
-    Examples, use this module like this, the first being a more restrictive human with reviewed, versus all 
-    records associated within an Interpro ID:
-    .. code-block:: python
-        fetch_uniprotids('IPR000980', REVIEWED=True, species='Homo sapiens') # human proteins with reviewed records
-        fetch_uniprotids('IPR000980', REVIEWED=False, species='all') #all species records, reviewed and unreviewed
+    Examples: Examples, use this module like this, the first being a more restrictive human with reviewed, versus all records associated within an Interpro ID: 
+        .. code-block:: python
+        
+            fetch_uniprotids('IPR000980', REVIEWED=True, species='Homo sapiens') # human proteins with reviewed records
+            fetch_uniprotids('IPR000980', REVIEWED=False, species='all') #all species records, reviewed and unreviewed
+        
+        
     Parameters
     ----------
-    interpro_ID: str
-        InterPro ID to search for
-    REVIEWED: bool
-        If TRUE, only reviewed records will be returned 
-    species: string
-        Using scientific name under the Uniprot taxonomy to define species. 
-        See here for taxonomy names: https://www.uniprot.org/taxonomy?query=*
+        interpro_ID: str
+            InterPro ID to search for
+        REVIEWED: bool
+            If TRUE, only reviewed records will be returned 
+        species: string
+            Using scientific name under the Uniprot taxonomy to define species. 
+            See here for taxonomy names: https://www.uniprot.org/taxonomy?query=*
+    
     Returns
     -------
-    uniprot_ID_list: list
-        list of all uniprot IDs found in search. If a species was set, all uniprot IDs for a species
-        will be returned in this list, otherwise, all species from search will be returned.
-    species_dict: dict
-        Dictionary, with top keys equal to the species scientific name and 
-        points to an inner dict that keeps track of the database source 'reviewed' or 'unreviewed'
-        and has lists of the uniprot IDs found for that species under that database source.
+        uniprot_ID_list: list
+            list of all uniprot IDs found in search. If a species was set, all uniprot IDs for a species
+            will be returned in this list, otherwise, all species from search will be returned.
+        species_dict: dict
+            Dictionary, with top keys equal to the species scientific name and 
+            points to an inner dict that keeps track of the database source 'reviewed' or 'unreviewed'
+            and has lists of the uniprot IDs found for that species under that database source.
     """
     count_data = 0 # count of records expected to be found
     #species = species.replace(" ", "+")

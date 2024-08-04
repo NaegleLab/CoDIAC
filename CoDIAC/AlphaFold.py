@@ -7,18 +7,20 @@ import csv
 import shutil
 
 def makeRefFile(refUniprot_file, cifFile_path, outputFile):
-    '''make a structure reference file for alphafodl structures
+    '''
+    Make a structure reference file for alphaFold structures
+    
     Parameters
     ----------
         refUniprot_file : str
             input uniprot reference file
         cifFile_path : str
             input path to find mmcif files downloaded for AlphaFold structures
+    
     Returns
     -------
         outputFile : str
             file path for output reference csv file
-
     '''
         
     df = pd.read_csv(refUniprot_file)

@@ -64,8 +64,7 @@ class chainMap:
 
   def construct(self, PATH):
     """
-    Given a dataframe from a contact map, return an object with structure sequence extracted, unmodeled regions, modified amion acids, and the intrachain 
-    contact map. 
+    Given a dataframe from a contact map, return an object with structure sequence extracted, unmodeled regions, modified amion acids, and the intrachain (within entity) contact map. 
 
     Parameters
     ----------
@@ -271,12 +270,20 @@ class chainMap:
 
     featureStart: int
         start position of ROI_1
+    N_offset1: int
+        N terminal offset for ROI_1
     featureEnd: int
         end position of ROI_1
+    C_offset1: int
+        C terminal offset for ROI_1
     contactFromStart: int
         start position of ROI_2
+    N_offset2: int
+        N terminal offset for ROI_2
     contactFromEnd: int
         end position of ROI_2
+    C_offset2: int
+        C terminal offset for ROI_2
     fastaHeader: str
         fastaHeader to be used to reference in jalview 
     contactLabel: str
@@ -336,33 +343,27 @@ class chainMap:
 
 def return_single_chain_dict(PDB_descriptive_df, PDB_ID, PATH, entity):
   """
-  This will create a dictionary of a single chain contact map and aligned contact map for a chain, entity  
-  of a PDB_ID. Keys of this dictionary include:
-    'chain'
-    entity'
-    'pdb_class', 'cm', 'cm_aligned'
+  This will create a dictionary of a single entity contact map and aligned contact map for a entity of a PDB_ID. Keys of this dictionary include:
+    entity', 'PDB_ID', 'pdb_class', 'cm', 'cm_aligned'
   Parameters
   ----------
-  PDB_description_df: pandas dataframe
-    dataframe made by reading the descriptive file of PDBs and information
-  PDB_ID: str
-    PDB_ID
-  PATH: str
-    Path to where contact maps are
-  chain: char
-    chain 
-  entity: int
-    entity number - should match a chain.
+      PDB_description_df: pandas dataframe
+        dataframe made by reading the descriptive file of PDBs and information
+      PDB_ID: str
+        PDB_ID
+      PATH: str
+        Path to where contact maps are
+      entity: int
+        entity number - should match a chain.
 
   Returns
   -------
-  cm_dict: dict
-    Dictionary with controlled keys that assemble the contact maps (unaligned and aligned) for a chain and entity. Keys
-    'chain' - chain (char)
-    'entity' - entity (int)
-    'pdb_class' - pdb_class object for the master file
-    'cm' - chain map object
-    'cm_aligned' - aligned chain map
+      cm_dict: dict
+        Dictionary with controlled keys that assemble the contact maps (unaligned and aligned) for a chain and entity. Keys
+        'entity' - entity (int)
+        'pdb_class' - pdb_class object for the master file
+        'cm' - chain map object
+        'cm_aligned' - aligned chain map
 
 
   """
@@ -391,30 +392,26 @@ def return_single_chain_dict(PDB_descriptive_df, PDB_ID, PATH, entity):
 
 def return_interChain_adj(PATH, from_dict, to_dict):
     """
-    Given two single_chain_dict objects of two chains, return the adjList and the array 
-    of contacts between chains. This uses the from_dict as the outer keys of adjList (row values of matrix)
+    Given two single_chain_dict objects of two entities, return the adjList and the array 
+    of contacts between entities. This uses the from_dict as the outer keys of adjList (row values of matrix)
     and to_dict as the inner keys of adjList (col values of matrix)
     
     Parameters
     ----------
-    PATH: str
-      Path to where contact maps are
-    from_dict: dict
-      The dict created by return_single_chain_dict that will serve as mapping FROM from_dict to to_dict
-    to_dict: dict
-      The dict created by return_single_chain_dict that will serve as mapping to_dict 
-    ang_cutoff: float
-      Angstrom cutoff to use for considering something a contact (default <= 4Angstroms)
-    noc: int
-      Number of minimum contacts required
+        PATH: str
+          Path to where contact maps are
+        from_dict: dict
+          The dict created by return_single_chain_dict that will serve as mapping FROM from_dict to to_dict
+        to_dict: dict
+          The dict created by return_single_chain_dict that will serve as mapping to_dict 
 
     Returns
     -------
-    adjDict: dict
-      adjacency dict with outer keys as the from_dict residue numbers, inner keys the to_dict residue numbers
-      and value equal to the number of contacts made between pair of residues (between chains) of ang_cutoff and noc
-    arr: array
-      Array with from_dict x to_dict size (numresidues) and values equal to the number of contacts from adjDict
+        adjDict: dict
+          adjacency dict with outer keys as the from_dict residue numbers, inner keys the to_dict residue numbers
+          and value equal to the contact made between pair of residues (binary value from adjacency file)
+        arr: array
+          Array with from_dict x to_dict size (numresidues) and values equal to the contact value from adjDict
     """
     
     PDB_ID = from_dict['PDB_ID']
@@ -507,25 +504,23 @@ def copy_chainMap(chain):
 
 def translate_chainMap_to_RefSeq(entity, pdbClass):
   """
-  Given a chainMap class, which includes the defined chain, use the pdbClass information to return
-  a new chainMap class that is aligned to the reference sequence positions and full sequence expected.
+  Given a chainMap class, which includes the defined entity, use the pdbClass information to return a new chainMap class that is aligned to the reference sequence positions and full sequence expected.
 
   Parameters
   ----------
-  chain: chainMap
-    a chainMap created from a contact file
-  pdbClass: pdbClass
-    a pdbClass created from the annotation file for the matching PDB ID of chainMap
+      chain: chainMap
+        a chainMap created from a contact file
+      pdbClass: pdbClass
+        a pdbClass created from the annotation file for the matching PDB ID of chainMap
 
   Returns
   -------
-  chainMap_aligned: chainMap
-    A new chainmap that updates the residue numbers and array. This object appends the following things
-    offset: int
-      The offset required to map from refseq to the pdb contact map file if returning to that structure file
-    ERROR_CODE: int
-      0 if no errors, otherwise following codes are indicated. 1:no match found; 2:issue between struct and reference sequences after alignment; 3:struct and reference were different lengths
-
+    chainMap_aligned: chainMap
+        A new chainmap that updates the residue numbers and array. This object appends the following things:
+            offset: int
+              The offset required to map from refseq to the pdb contact map file if returning to that structure file
+            ERROR_CODE: int
+              0 if no errors, otherwise following codes are indicated. 1:no match found; 2:issue between struct and reference sequences after alignment; 3:struct and reference were different lengths
 
   """
 
@@ -850,14 +845,22 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, N_offset1, feature
     Protein sequence used to generate fasta file
   featureStart: int
       start position of ROI_1, assumes it is in the crystal structure minRes number
+  N_offset1: int
+      N terminal offset for ROI_1
   featureEnd: int
       end position of ROI_1, assumes it is in the crystal structure minRes number
+  C_offset1: int
+      C terminal offset for ROI_1
   feature_minRes: int
     minimum residue of the feature 
   contactFromStart: int
       start position of ROI_2, assumes it is in the crystal structure minRes number
+  N_offset2: int
+      N terminal offset for ROI_2
   contactFromEnd: int
       end position of ROI_1, assumes it is in the crystal structure minRes number
+  C_offset2: int
+      C terminal offset for ROI_2
   contact_minRes: int
     minimum residue of the contact component
   fastaHeader: str
@@ -867,7 +870,7 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, N_offset1, feature
   outputFileBase: str
       file name base to write feature and fasta to (it will be <outputFileBase>.fasta and <outpufileBase>.fea)
   threshold: float
-      number of atomistic contacts to consider as a contact
+      binary value of the contact ('1') in binary adjacency files
   append: bool
       Whether to append or overwrite the feature file
   color: 

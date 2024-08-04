@@ -18,40 +18,39 @@ def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file 
 
     Parameters
     ----------
-    Interpro_ID: string 
-        Interpro ID - for example in a reference line such as 
-        SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
-        the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
-    uniprot_reference_file: string
-        File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
-    feature_dir: string
-        Feature Directory to place files in
-    mapping_file: string
-        A CSV file location, if wanted, that holds a translation of the long header into a shorter header
-        If this is an empty string, then it will not attempt mapping
-    n_term_offset: int
-        Number of amino acids to extend in the n-term direction (up to start of protein)
-    c_term_offset: int
-        Number of amino acids to extend in the c-term direction (up to end of protein)
-    gap_threshold: float
-        fraction gap allowed before dispanding with PTM translation from ProteomeScout
-    num_PTM_threshold: int
-        Number of PTMs in all domains of a type required to generate a feature file
-    PHOSPHOSITE_PLUS: bool
-        If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
-        See PhosphoSitePlus_Tools.py convert_pSiteDataFiles can be used to update or create the 
-        API-formatted files. These resources are stored in GitHub LFS.
+        Interpro_ID: string 
+            Interpro ID - for example in a reference line such as 
+            SH3_domain:IPR001452:82:143; SH2:IPR000980:147:246; Prot_kinase_dom:IPR000719:271:524
+            the interpro ID for the SH3_domain is IPR001452; for the SH2 domain is IPR000980
+        uniprot_reference_file: string
+            File location that contains the reference of interest (like produced from Uniprot.makeRefFile)
+        feature_dir: string
+            Feature Directory to place files in
+        mapping_file: string
+            A CSV file location, if wanted, that holds a translation of the long header into a shorter header
+            If this is an empty string, then it will not attempt mapping
+        n_term_offset: int
+            Number of amino acids to extend in the n-term direction (up to start of protein)
+        c_term_offset: int
+            Number of amino acids to extend in the c-term direction (up to end of protein)
+        gap_threshold: float
+            fraction gap allowed before dispanding with PTM translation from ProteomeScout
+        num_PTM_threshold: int
+            Number of PTMs in all domains of a type required to generate a feature file
+        PHOSPHOSITE_PLUS: bool
+            If True, will generate PTMs from PhosphoSitePlus instead of ProteomeScout. 
+            See PhosphoSitePlus_Tools.py convert_pSiteDataFiles can be used to update or create the 
+            API-formatted files. These resources are stored in GitHub LFS.
     
-
     Returns
     -------
-    file_list: list
-        List of files generated as features
-    ptm_count_dict: dict
-        keys are the modification type and values are total number encountered
-    domain_feature_dict: dict of dicts
-        keys are the fasta headers 
-        Inner dict keys are the modification types and the values of this is a list of zero-based positions. 
+        file_list: list
+            List of files generated as features
+        ptm_count_dict: dict
+            keys are the modification type and values are total number encountered
+        domain_feature_dict: dict of dicts
+            keys are the fasta headers 
+            Inner dict keys are the modification types and the values of this is a list of zero-based positions. 
 
     
     """
@@ -167,28 +166,52 @@ def translate_PTMs(uniprot_ID, uniprot_seq, gap_threshold, PHOSPHOSITE_PLUS):
         errors = "Error: Percent gap too large %s, has %0.2f percent gap"%(uniprot_ID, numGaps/len(uniprot_seq))
         return errors, [], []
 
-    structure_aln = aln.get_degapped_relative_to('structure')
-    aa_list  = list(structure_aln)
+    # structure_aln = aln.get_degapped_relative_to('structure')
+    # aa_list  = list(structure_aln)
+    # pos_dict = {}
+    # translated_PTMs = []
+    # failed_PTMs = []
+    # proteomescout_ind = 0
+    # uniprot_ind = 1
+    # for a_PTM in PTMs:
+    #     #print(a_PTM)
+    #     pos, aa, ptm_type = a_PTM
+    #     pos = int(pos) #this is ones-based counted
+    #     if aa_list[pos-1][proteomescout_ind]!=aa:
+    #         #print("error: proteomescout position is %s not %s"%(aa_list[int(pos)-1][proteomescout_ind], aa))
+    #         failed_PTMs.append((pos, aa, ptm_type, 'PTM reference issue, non-matching amino acid'))
+    #     else:
+    #         if aa_list[pos-1][uniprot_ind]!=aa:
+    #             #print("Skipping %s, proteomescout and uniprot don't match"%(pos))
+    #             failed_PTMs.append((pos, aa, ptm_type, 'different amino acid'))
+    #             pos_dict[pos] = 'error'
+    #         else:
+    #             pos_translated = map_to_ref[pos-1]+1
+    #             translated_PTMs.append((str(pos_translated), aa, ptm_type))
+    #             pos_dict[pos] = pos_translated
     translated_PTMs = []
     failed_PTMs = []
-    proteomescout_ind = 0
-    uniprot_ind = 1
     for a_PTM in PTMs:
-        #print(a_PTM)
-        pos, aa, ptm_type = a_PTM
-        pos = int(pos) #this is ones-based counted
-        if aa_list[pos-1][proteomescout_ind]!=aa:
-            #print("error: proteomescout position is %s not %s"%(aa_list[int(pos)-1][proteomescout_ind], aa))
-            failed_PTMs.append((pos, aa, ptm_type, 'PTM reference issue, non-matching amino acid'))
+        pos_translated = check_and_return_mapped_position(aln, 'structure', 'reference', int(a_PTM[0])-1) #moving to zero-based
+        #pos, aa, ptm_type = a_PTM
+        if pos_translated != -1:
+            translated_PTMs.append((str(pos_translated+1), a_PTM[1], a_PTM[2])) #moving back to 1-based
         else:
-            if aa_list[pos-1][uniprot_ind]!=aa:
-                #print("Skipping %s, proteomescout and uniprot don't match"%(pos))
-                failed_PTMs.append((pos, aa, ptm_type, 'different amino acid'))
-            else:
-                pos_translated = map_to_ref[pos-1]+1
-                translated_PTMs.append((str(pos_translated), aa, ptm_type))
+            failed_PTMs.append(a_PTM) #failure is a gap or a different amino acid. 
+
 
     return(errors, translated_PTMs, failed_PTMs)
+
+def check_and_return_mapped_position(aln, seq1_name, seq2_name, pos_of_interest):
+    pos_of_seq2 = -1 #this is an error code, which will not be reset unless the amino acid of seq2 is the same as seq1
+    seq_to_aln_map = aln.get_gapped_seq(seq1_name).gap_maps()[0]
+    aln_to_seq_map = aln.get_gapped_seq(seq2_name).gap_maps()[1]
+    alignment_position = seq_to_aln_map[pos_of_interest] 
+    amino_acid_of_seq1 = aln.named_seqs[seq1_name][alignment_position]
+    amino_acid_of_seq2 = aln.named_seqs[seq2_name][alignment_position] 
+    if amino_acid_of_seq2 == amino_acid_of_seq1:
+        pos_of_seq2 = aln_to_seq_map[alignment_position]
+    return pos_of_seq2
 
 
 def get_PTMS_proteomeScout(uniprot_ID):
