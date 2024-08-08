@@ -146,6 +146,112 @@ def makeRefFile(Uniprot_IDs, outputFile):
     #now add the InterPro Domains.
     #InterProDomain.appendRefFile(outputfile, outputfile)
 
+def return_uniprot_record(uniprot_id):
+    """
+    For a uniprot_id, return information about the protein record in a dictionary format.
+    
+    """
+    protein_dict = {}
+    error = 0
+    protein_dict['uniprot_id'] = uniprot_id
+    try:
+        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{uniprot_id}')
+        if get_url.status_code == 200:
+            response = get_url.json()
+            #Gene
+            if 'gene' in response.keys():
+                if 'name' in response['gene'][0].keys():
+                    gene = response['gene'][0]['name']['value']
+                elif 'orfNames' in response['gene'][0].keys():
+                    gene = response['gene'][0]['orfNames'][0]['value']
+                else:
+                    gene = 'None'
+            else:
+                gene = 'None'
+            protein_dict['gene'] = gene
+
+            #Species
+            species = response['organism']['names'][0]['value']
+            protein_dict['species'] = species
+            #Reference sequence
+            if 'sequence' in response.keys():
+                seq = (response['sequence']['sequence'])
+            else:
+                seq = 'None'  
+            protein_dict['sequence'] = seq
+
+            #Domain name along with its boundaries
+            domainheader=[]
+            if 'features' in response.keys():
+                for i in range(len(response['features'])):
+                    s = response['features'][i]
+                    for k, v in s.items():
+                        if k == 'type':
+                            if v == 'DOMAIN':
+                                start = s['begin']
+                                end = s['end']
+                                name = s['description']
+                                #replace the name values if they have ';' in them
+                                name = name.replace(';', '')
+                                header = name+':'+start+':'+end
+                                domainheader.append(header)
+            Domain = ';'.join(map(str, domainheader))
+            protein_dict['domains'] = Domain
+
+            #PDB IDs
+            PDB_IDs=[]
+            for i in range(len(response['dbReferences'])):
+
+                reftype = response['dbReferences'][i]['type']
+                PDB_ID = response['dbReferences'][i]['id']
+
+                if reftype == 'PDB':
+                    PDB_IDs.append(PDB_ID)
+            PDBID = ';'.join(map(str, PDB_IDs))
+            protein_dict['PDB_IDs'] = PDBID
+
+            #Domain Architecture
+            domdict = {}
+            if 'features' in response.keys():
+                for i in range(len(response['features'])):
+                    s = response['features'][i]
+                    for k, v in s.items():
+                        if k == 'type':
+                            if v == 'DOMAIN':
+                                start_str = s['begin']
+                                if not start_str[0].isdigit():
+                                    start_str = start_str[1:]
+                                start = int(start_str)
+
+                                end_str = s['end']
+                                if not end_str[0].isdigit():
+                                    end_str = end_str[1:]
+                                end = int(end_str)
+                                name = s['description']
+                                domdict[start] = end, name
+
+            sorted_dict = dict(sorted(domdict.items(),reverse=False))
+            domain_arch = []
+            for key, value in sorted_dict.items():
+                sort_start = key
+                sort_end = value[0]
+                domain = value[1]
+                domain = domain.replace(';', '') #for the occasional issue of ';' in uniprot domain names
+                domain_arch.append(domain)
+
+            
+            final_domarch = '|'.join(domain_arch) 
+            protein_dict['domain_architecture'] = final_domarch  
+
+                    
+    except requests.exceptions.RequestException as err:
+        print('ERROR:',err)
+        error = 1
+
+
+    return protein_dict, error
+
+
 def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_offset=0):
     """
     Given a Uniprot Reference File of proteins, which contain Interpro domain annotations, create a dictionary 
