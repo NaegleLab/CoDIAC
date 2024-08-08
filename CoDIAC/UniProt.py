@@ -85,7 +85,7 @@ def return_uniprot_record(uniprot_id):
     error = 0
     protein_dict['uniprot_id'] = uniprot_id
     try:
-        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{uniprot_id}')
+        get_url = requests.get(f'http://www.ebi.ac.uk/proteins/api/proteins/{uniprot_id}?canonical=true')
         if get_url.status_code == 200:
             response = get_url.json()
             #Gene
