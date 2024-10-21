@@ -1,9 +1,10 @@
 
-from CoDIAC import IntegrateStructure_Reference, UniProt, proteomeScoutAPI, PhosphoSitePlus_Tools
+from CoDIAC import IntegrateStructure_Reference, UniProt, proteomeScoutAPI, PhosphoSitePlus_Tools, config
 import pandas as pd
 import os 
 
 package_directory = os.path.dirname(os.path.abspath(__file__))
+config.install_resource_files(package_directory)
 PROTEOMESCOUT_DATA = package_directory + '/data/proteomescout_everything_20190701/data.tsv'
 PTM_API = proteomeScoutAPI.ProteomeScoutAPI(PROTEOMESCOUT_DATA)
 

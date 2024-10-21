@@ -2,11 +2,12 @@ import pandas as pd
 import os 
 from Bio import SeqIO
 import codecs
-
+from CoDIAC import config
 
 #Given licensing terms of PhosphoSitePlus, you must create a download and point to your 
 #local directory of Phosphosite data and point that here. 
 package_directory = os.path.dirname(os.path.abspath(__file__))
+config.install_resource_files(package_directory)
 PHOSPHOSITE_FILE = package_directory + '/data/phosphositeplus_data.csv'
 if os.path.exists(PHOSPHOSITE_FILE):
     PHOSPHOSITE = pd.read_csv(PHOSPHOSITE_FILE, index_col=0)
