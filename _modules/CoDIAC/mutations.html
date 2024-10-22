@@ -76,7 +76,7 @@
                   <span class="s2">&quot;VAL&quot;</span><span class="p">:</span><span class="s1">&#39;V&#39;</span><span class="p">}</span>
 
 <div class="viewcode-block" id="gnomAD_mutations">
-<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.gnomAD_mutations">[docs]</a>
+<a class="viewcode-back" href="../../mutations.html#CoDIAC.mutations.gnomAD_mutations">[docs]</a>
 <span class="k">def</span> <span class="nf">gnomAD_mutations</span><span class="p">(</span><span class="n">fastafile</span><span class="p">,</span> <span class="n">downloads_path</span><span class="p">,</span> <span class="n">csvfiles_dir</span><span class="p">,</span> <span class="n">output_feafile</span><span class="p">,</span> <span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Mutations found on the domain of interest and are extracted from GnomAD using Uniprot ID and their corresponding Ensemble ID are stored in feature files</span>
 <span class="sd">    </span>
@@ -137,7 +137,7 @@
     
 
 <div class="viewcode-block" id="OMIM_mutations">
-<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.OMIM_mutations">[docs]</a>
+<a class="viewcode-back" href="../../mutations.html#CoDIAC.mutations.OMIM_mutations">[docs]</a>
 <span class="k">def</span> <span class="nf">OMIM_mutations</span><span class="p">(</span><span class="n">uniprot_refFile</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">ref_fastaFile</span><span class="p">,</span> <span class="n">output_featureFile</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">,</span><span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span> 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a feature file whose features are mutations found on the domain of interest and are extracted from OMIM database</span>
 
@@ -204,7 +204,7 @@
 
 
 <div class="viewcode-block" id="PDB_mutations">
-<a class="viewcode-back" href="../../Mutations.html#CoDIAC.mutations.PDB_mutations">[docs]</a>
+<a class="viewcode-back" href="../../mutations.html#CoDIAC.mutations.PDB_mutations">[docs]</a>
 <span class="k">def</span> <span class="nf">PDB_mutations</span><span class="p">(</span><span class="n">PDB_refFile</span><span class="p">,</span><span class="n">ref_fastaFile</span><span class="p">,</span> <span class="n">output_featureFile</span><span class="p">,</span> <span class="n">domain_of_interest</span><span class="p">,</span><span class="n">N_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">C_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Generates a feature file with mutations found on the domain of interest within PDB structures</span>
 <span class="sd">    </span>

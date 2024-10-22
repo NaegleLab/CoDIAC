@@ -38,11 +38,12 @@
             
   <h1>Source code for CoDIAC.PTM</h1><div class="highlight"><pre>
 <span></span>
-<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">IntegrateStructure_Reference</span><span class="p">,</span> <span class="n">UniProt</span><span class="p">,</span> <span class="n">proteomeScoutAPI</span><span class="p">,</span> <span class="n">PhosphoSitePlus_Tools</span>
+<span class="kn">from</span> <span class="nn">CoDIAC</span> <span class="kn">import</span> <span class="n">IntegrateStructure_Reference</span><span class="p">,</span> <span class="n">UniProt</span><span class="p">,</span> <span class="n">proteomeScoutAPI</span><span class="p">,</span> <span class="n">PhosphoSitePlus_Tools</span><span class="p">,</span> <span class="n">config</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">os</span> 
 
 <span class="n">package_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="n">config</span><span class="o">.</span><span class="n">install_resource_files</span><span class="p">(</span><span class="n">package_directory</span><span class="p">)</span>
 <span class="n">PROTEOMESCOUT_DATA</span> <span class="o">=</span> <span class="n">package_directory</span> <span class="o">+</span> <span class="s1">&#39;/data/proteomescout_everything_20190701/data.tsv&#39;</span>
 <span class="n">PTM_API</span> <span class="o">=</span> <span class="n">proteomeScoutAPI</span><span class="o">.</span><span class="n">ProteomeScoutAPI</span><span class="p">(</span><span class="n">PROTEOMESCOUT_DATA</span><span class="p">)</span>
 
