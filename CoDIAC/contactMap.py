@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,7 +9,7 @@ from sys import exit
 import re
 #import globals
 #globals.initialize()
-from CoDIAC.PDBHelper import PDBEntitiesClass
+from PDBHelper import PDBEntitiesClass
 
 class globals:
 
@@ -146,8 +148,17 @@ class chainMap:
       dict of dict, with outer key being the residue and inner keys being the residue that outer key interacts with and value is number of contacts  
 
     """
-    df_single_chain = df[df['Entity1']==entity]
-    df_single_chain = df_single_chain[df_single_chain['Entity2']==entity]
+    # df_single_chain = df[df['Entity1']==entity]
+    # df_single_chain = df_single_chain[df_single_chain['Entity2']==entity]
+    if entity in df['Entity1'].tolist() and df['Entity2'].tolist():
+        df_single_chain = df[df['Entity1']==entity]
+        df_single_chain = df_single_chain[df_single_chain['Entity2']==entity]
+
+    if entity in df['Entity1'].tolist():
+        df_single_chain = df[df['Entity1']==entity]
+    
+    if entity in df['Entity2'].tolist():
+        df_single_chain = df[df['Entity2']==entity]
     
     aa_dict = {}
     adjList = {}
@@ -525,7 +536,7 @@ def translate_chainMap_to_RefSeq(entity, pdbClass):
   """
 
   chainMap_aligned = copy_chainMap(entity)
-
+  print(pdbClass)
   match, offset = find_offset(entity, pdbClass)
   n_term_gaps = 0
   c_term_gaps = 0
@@ -1140,10 +1151,3 @@ def return_arr_subset_by_ROI(contact_arr, rowStart, rowEnd, rowMinRes, colStart,
   arr = contact_arr[yStart:yEnd+1, xStart:xEnd+1]
 
   return arr, x_AA, y_AA
-
-
-
-
-
-
-
