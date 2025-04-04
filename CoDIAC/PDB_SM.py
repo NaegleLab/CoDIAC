@@ -992,7 +992,7 @@ def generateStructureRefFile(PDB_IDs, outputFile):
         print("Could not fetch the following PDBs, these encountered errors, despite retrying %d times:"%(max_attempts))
         print(bad_PDBs)
     #interface.print_output_csv(outputFile)
-    return dict_list, bad_PDBs
+    #return dict_list, bad_PDBs
     
 def download_cifFile(PDB_list, PATH):
     '''generates .cif files for PDB structures
