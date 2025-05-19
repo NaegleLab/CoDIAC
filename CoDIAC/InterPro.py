@@ -160,7 +160,14 @@ def fetch_InterPro_json(protein_accessions):
     # code you want to evaluate
     with requests.Session() as session:
         for protein_accession in protein_accessions:
-            url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+            # check if protein is an isoform and chane the protein to add isform 
+            if '-' in protein_accession:
+                main_accession = protein_accession.split('-')[0]
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "/?isoform="+protein_accession+"&extra_fields=" + ','.join(extra_fields)
+                #url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "?extra_fields=" + ','.join(extra_fields) + "/?isoform="+protein_accession
+# check if protein is a main accession and add the isoform
+            else:
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
             try:
                 response_dict[protein_accession] = session.get(url).json()
 
