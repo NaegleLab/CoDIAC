@@ -207,6 +207,6 @@ def return_PTM_dict(PTM_str):
     for val in list_vals:
         if '-' in val:
             PTM, res = val.split('-')
-            transDict[int(res)] = PTM
+            transDict[int(res)] = PTM.strip()
 
     return transDict
