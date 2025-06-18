@@ -200,11 +200,11 @@ def Intraprotein_AdjFile(PDB_ID, PATH, translate_resid=False):
         
     #update residue numbers if needed
     if translate_resid == True:
-        if ResID_from_DBREF(PDB_ID)[1].values():
-            dict_resnums = (ResID_from_DBREF(PDB_ID)[1])
+        if ResID_from_DBREF(PDB_ID, PATH)[1].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID, PATH)[1])
     if translate_resid == False:
-        if ResID_from_DBREF(PDB_ID)[2].values():
-            dict_resnums = (ResID_from_DBREF(PDB_ID)[2])
+        if ResID_from_DBREF(PDB_ID, PATH)[2].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID, PATH)[2])
          
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
@@ -305,11 +305,11 @@ def Interprotein_AdjFile(PDB_ID,PATH, translate_resid=False):
     
     #update residue numbers if needed
     if translate_resid == True:
-        if ResID_from_DBREF(PDB_ID)[1].values():
-            dict_resnums = (ResID_from_DBREF(PDB_ID)[1])
+        if ResID_from_DBREF(PDB_ID, PATH)[1].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID, PATH)[1])
     if translate_resid == False:
-        if ResID_from_DBREF(PDB_ID)[2].values():
-            dict_resnums = (ResID_from_DBREF(PDB_ID)[2])
+        if ResID_from_DBREF(PDB_ID, PATH)[2].values():
+            dict_resnums = (ResID_from_DBREF(PDB_ID, PATH)[2])
          
     df['ResNum1_upd'] = df['map1'].map(dict_resnums)
     df['ResNum2_upd'] = df['map2'].map(dict_resnums)
@@ -391,13 +391,15 @@ def Interprotein_AdjFile(PDB_ID,PATH, translate_resid=False):
     return(df4)
     
     
-def ResID_from_DBREF(PDB_ID):
+def ResID_from_DBREF(PDB_ID, PATH):
     ''' This function uses the DBREF record from PDB header to find differences in residue numbers between PDB and reference (such as Uniprot) If PDB legacy formats are unavailable, we make use of the mmCif headers and extract the same information 
     
     Parameters
     ----------
         PDB_ID : str
             Input a PDB ID
+        PATH : str
+            Path to find the arpeggio generated adjacency file 
         
     Returns
     -------
@@ -435,8 +437,11 @@ def ResID_from_DBREF(PDB_ID):
                     dbref_dict[chain] = list_attributes
     else:
         i = PDBList()
-        file = i.retrieve_pdb_file(PDB_ID, pdir ='Data/AdjacencyFiles/',file_format='mmCif')
-        p = MMCIF2Dict("Data/AdjacencyFiles/"+\
+        # file = i.retrieve_pdb_file(PDB_ID, pdir ='Data/AdjacencyFiles/',file_format='mmCif')
+        # p = MMCIF2Dict("Data/AdjacencyFiles/"+\
+                    # PDB_ID+'.cif')
+        file = i.retrieve_pdb_file(PDB_ID, pdir =PATH+'/',file_format='mmCif')
+        p = MMCIF2Dict(PATH+'/'+\
                     PDB_ID+'.cif')
 
         df = pd.DataFrame()
