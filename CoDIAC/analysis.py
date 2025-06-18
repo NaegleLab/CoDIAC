@@ -409,14 +409,14 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
         
         if int(start) == ROI_start and int(end) == ROI_end:
             index = j+1
-            header = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)+'|'+DOI_IPR+'|'+start+'|'+end
+            header = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)+'|'+DOI_IPR+'|'+start+'|'+end #header = uniprot_id + '|'+gene+'|Homosapiens|'+DOI_domain+'|'+str(index)+'|'+DOI_IPR+'|'+start+'|'+end - used this for bromodomains since the reference fasta files have species in their headers. 
 
-    find_str = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index)
+    find_str = uniprot_id + '|'+gene+'|'+DOI_domain+'|'+str(index) #uniprot_id + '|'+gene+'|Homosapiens|'+DOI_domain+'|'+str(index) - for bromodomain included species 
 
     fasta_seq = SeqIO.parse(open(reference_fastafile), 'fasta')
     for fasta in fasta_seq:
         name, sequence = fasta.id, str(fasta.seq)
-        ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
+        ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|') #ref_uniprot_id, ref_gene,species, ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|') - includ species if needed
         if name == header:
             fasta_header = header
 
