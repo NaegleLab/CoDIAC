@@ -392,9 +392,9 @@ def makeHeader(PDB_ID, entity_id, ROI_start, ROI_end, domain_of_interest, pdb_an
         returns a reference fasta header for a specific PDB ID and domain of interest in that structure'''
     
     df = pd.read_csv(pdb_ann_file)
-    domain = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:domains']] ).values.item()
-    uniprot_id = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['database_accession']] ).values.item()
-    gene = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:gene name']] ).values.item()
+    domain = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:domains']] ).values[0].item()
+    uniprot_id = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['database_accession']] ).values[0].item()
+    gene = (df.loc[(df['PDB_ID'] == PDB_ID) & (df['ENTITY_ID'] == entity_id), ['ref:gene name']] ).values[0].item()
     domainlist = domain.split(';')
     DOI = []
     for i in range(len(domainlist)):
