@@ -163,11 +163,14 @@ def fetch_InterPro_json(protein_accessions):
             # check if protein is an isoform and chane the protein to add isform 
             if '-' in protein_accession:
                 main_accession = protein_accession.split('-')[0]
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "/?isoform="+protein_accession+"&extra_fields=" + ','.join(extra_fields)
+                
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "/?isoforms="+protein_accession
+                
+                #+"&extra_fields=" + ','.join(extra_fields)
                 #url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "?extra_fields=" + ','.join(extra_fields) + "/?isoform="+protein_accession
 # check if protein is a main accession and add the isoform
             else:
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession #+ "?extra_fields=" + ','.join(extra_fields)
             try:
                 response_dict[protein_accession] = session.get(url).json()
 
@@ -179,6 +182,33 @@ def fetch_InterPro_json(protein_accessions):
                     print(f"Error processing {protein_accession}: {e}")  # Debugging line
     return response_dict
 
+def fetch_domain_short_name(interpro_id):
+    """
+    Given an InterPro ID, fetch the short name of the domain from the InterPro API.
+    
+    Parameters
+    ----------
+    interpro_id: str
+        InterPro ID to search for
+    
+    Returns
+    -------
+    short_name: str
+        Short name of the domain associated with the InterPro ID
+    """
+    interpro_url = "https://www.ebi.ac.uk/interpro/api"
+    url = f"{interpro_url}/entry/interpro/{interpro_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+        data = response.json()
+        short_name = data['metadata']['name']['short']
+        return short_name
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching short name for {interpro_id}: {e}")
+        return None
 
 def get_domains(protein_accessions):
     """
