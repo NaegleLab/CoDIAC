@@ -208,11 +208,11 @@ def make_domain_fasta_dict(reference_csv, Interpro_ID, n_term_offset=0, c_term_o
                 new_start = int(start) - n_term_offset
                 if new_start < 1:
                     new_start = 1 
-                    print("NOTICE: %s n-term offset capped at start of protein"%(ID))
+                    print("NOTICE: %s n-term offset capped at start of protein"%(uniprot_id))
                 new_end = int(end) + c_term_offset
                 if new_end > len(seq):
                     new_end = len(seq)
-                    print("NOTICE: %s c-term offset capped at end of protein"%(ID))
+                    print("NOTICE: %s c-term offset capped at end of protein"%(uniprot_id))
                 domain_seq = seq[new_start-1:new_end] #0 based indexing for python access of protein indexes for start, then the 1
                 #uniprot_ID|gene|InterproID|domain_name|domain_number|domain_start|domain_end
                 #print("DEBUG: >%s|%s|%s|%s|%d|%s|%d|%d\n"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, new_start, new_end))
