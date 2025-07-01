@@ -213,6 +213,24 @@ def get_domains(protein_accessions):
     arch_dict = {}
     for protein_accession in resp_dict:
         domain_dict[protein_accession], domain_string_dict[protein_accession], arch_dict[protein_accession] = get_domains_from_response(resp_dict[protein_accession])
+    
+    # now let's get the short names for all domains found in that list of proteins.
+    interpro_domain_list = []
+    for protein_accession in domain_dict:
+        if domain_dict[protein_accession]:
+            interpro_domain_list.extend([domain['accession'] for domain in domain_dict[protein_accession]])
+
+    unique_domain_list = [{'accession': accession} for accession in set(interpro_domain_list)]
+    interpro_name_dict = fetch_interpro_short_names(unique_domain_list)
+    print(unique_domain_list)
+    print(interpro_name_dict)
+    for protein_accession in domain_dict:
+        # add the short names to the domain_dict, the domain_string_dict, and the arch_dict
+        for i, domain in enumerate(domain_dict[protein_accession]):
+            domain_dict[protein_accession][i]['short_name'] = interpro_name_dict[domain['accession']]
+        domain_string_dict[protein_accession] = [f"{domain['short_name']}:{domain['accession']}:{domain['start']}:{domain['end']}" for domain in domain_dict[protein_accession]]
+        arch_dict[protein_accession] = "|".join([domain['short_name'] for domain in domain_dict[protein_accession]])
+
     return domain_dict, domain_string_dict, arch_dict
 
 def get_domains_from_response(resp):
@@ -232,7 +250,7 @@ def get_domains_from_response(resp):
     sorted_domain_list: list
         list of dictionaries, each dictionary is a domain entry with keys 'name', 'start', 'end', 'accession', 'num_boundaries'
     domain_string_list: list
-        list of domain information short_name:id:start:end
+        list of domain information id:start:end
     domain_arch: string
         domain architecture as a string, | separated list of domain names
     """
@@ -333,7 +351,7 @@ def resolve_domain(d_resolved, dict_entry, threshold=0.5):
 
 def sort_domain_list(domain_list):
     """
-    Given a list of resolved domains, return a string of domain information short_name:id:start:end and a sorted list of
+    Given a list of resolved domains, return a string of domain information id:start:end and a sorted list of
     the domains according to the start site. 
 
     Parameters
@@ -345,7 +363,7 @@ def sort_domain_list(domain_list):
     sorted_domain_list: list
         list of domain dictionaries, now sorted by the start positions, also there is short name added
     domain_string_list: list
-        list of domain information short_name:id:start:end
+        list of domain information id:start:end
     domain_arch: string
         domain architecture as a string, | separated list of domain names
 
