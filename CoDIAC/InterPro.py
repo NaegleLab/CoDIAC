@@ -168,7 +168,7 @@ def fetch_InterPro_json(protein_accessions):
 # check if protein is a main accession and add the isoform
             else:
                 # going through the same URL for isoforms as canonical, so fixing the canonical to use -1
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "/?isoforms="+protein_accession+"-1"
+                url = interpro_url + "/protein/uniprot/" + protein_accession + "/?isoforms="+protein_accession+"-1"
             try:
                 response_dict[protein_accession] = session.get(url).json()
             except Exception as e:
