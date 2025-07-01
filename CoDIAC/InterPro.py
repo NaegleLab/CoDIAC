@@ -262,7 +262,7 @@ def get_domains_from_response(resp):
     d_dict = {}
     for i, entry in enumerate(resp['features']):
         domain_dict = collect_data(resp['features'][entry])
-        if domain_dict['source_database'] == 'interpro':
+        if domain_dict['source_database'] == 'interpro' and domain_dict['type'] == 'domain':  # only collect domains from InterPro
             d_dict[i] = domain_dict
         
 
