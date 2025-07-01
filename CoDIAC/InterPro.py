@@ -163,20 +163,23 @@ def fetch_InterPro_json(protein_accessions):
             # check if protein is an isoform and chane the protein to add isform 
             if '-' in protein_accession:
                 main_accession = protein_accession.split('-')[0]
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "/?isoform="+protein_accession+"&extra_fields=" + ','.join(extra_fields)
+                #https://www.ebi.ac.uk/interpro/api/protein/uniprot/P23497/?isoforms=P23497-4
+                url = interpro_url + "/protein/uniprot/" + main_accession + "/?isoforms="+protein_accession#+"&extra_fields=" + ','.join(extra_fields)
                 #url = interpro_url + "/entry/interpro/protein/uniprot/" + main_accession + "?extra_fields=" + ','.join(extra_fields) + "/?isoform="+protein_accession
 # check if protein is a main accession and add the isoform
             else:
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+                # going through the same URL for isoforms as canonical, so fixing the canonical to use -1
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "/?isoforms="+protein_accession+"-1"
             try:
                 response_dict[protein_accession] = session.get(url).json()
-
             except Exception as e:
                 if session.get(url).status_code == 204:
                     response_dict[protein_accession] = {}
                     print(f"An empty response was received for {protein_accession} resulting in empty domain architecture.")
                 else:
                     print(f"Error processing {protein_accession}: {e}")  # Debugging line
+            print(url)  # Debugging line
+                
     return response_dict
 
 
@@ -236,7 +239,14 @@ def get_domains_from_response(resp):
     """
     # An empty response passed from the Interpro API will bypass all this
     if resp:
-        entry_results = resp['results']
+        if "metadata" in resp:
+            entry_results = resp["metadata"]  # If the response has a metadata level, get the next level
+        elif "accession" in resp:
+            entry_results = resp # if accession can be seen then this is the same level
+        else:
+            print("No metadata or accession found in response, returning empty lists.")
+            return([], [], '')  # If no metadata or accession, return empty lists
+        #entry_results = resp['results']
         d_dict = {} # Dictionary to store domain information for each entry
         d_resolved = []
         for i, entry in enumerate(entry_results):
@@ -338,11 +348,11 @@ def sort_domain_list(domain_list):
     Parameters
     ----------
     domain_list: list
-        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'short', 'start', 'end'
+        list of domain dictionaries, where the dictonaries have keys 'name', 'accession', 'start', 'end'
     Returns
     -------
     sorted_domain_list: list
-        list of domain dictionaries, now sorted by the start positions.
+        list of domain dictionaries, now sorted by the start positions, also there is short name added
     domain_string_list: list
         list of domain information short_name:id:start:end
     domain_arch: string
@@ -360,11 +370,81 @@ def sort_domain_list(domain_list):
     sorted_domain_list = []
     domain_string_list = []
     domain_arch_names = []
+
+    # get the short names for the domains if 'short' is not in the domain dictionary
+    # test it 
+    # if 'short' not in domain_list[0]:
+    #     interpro_short_names = fetch_interpro_short_names(domain_list)
+    #     for domain in domain_list:
+    #         accession = domain['accession']
+    #         if accession in interpro_short_names:
+    #             domain['short'] = interpro_short_names[accession]
+    #         else:
+    #             domain['short'] = 'Unknown'
+
     for key, value in sorted_dict.items():
         sorted_domain_list.append(value)
-        domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
-        domain_arch_names.append(value['short'])
+        #domain_string_list.append(value['short']+':'+value['accession']+':'+str(key)+':'+str(value['end']))
+        domain_string_list.append(value['accession']+':'+str(key)+':'+str(value['end']))
+        #domain_arch_names.append(value['short'])
     return sorted_domain_list, domain_string_list, '|'.join(domain_arch_names)
+
+
+def fetch_domain_short_name(interpro_id):
+    """
+    Given an InterPro ID, fetch the short name of the domain from the InterPro API.
+    
+    Parameters
+    ----------
+    interpro_id: str
+        InterPro ID to search for
+    
+    Returns
+    -------
+    short_name: str
+        Short name of the domain associated with the InterPro ID
+    """
+    interpro_url = "https://www.ebi.ac.uk/interpro/api"
+    url = f"{interpro_url}/entry/interpro/{interpro_id}"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+        data = response.json()
+        short_name = data['metadata']['name']['short']
+        return short_name
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching short name for {interpro_id}: {e}")
+        return None
+    
+def fetch_interpro_short_names(domain_list):
+    """
+    Given a list of domains with domain['accession'] the InterPro ID, fetch the short names for each InterPro ID and return a dictionary
+    with InterPro ID as keys and short names as values.
+
+    Parameters
+    ----------
+    domain_list: list
+        List of domains in a protein record, where each domain has a dictionary with an 'accession' key
+
+    Returns
+    -------
+    dict
+        Dictionary with InterPro ID as keys and short names as values
+    """
+    interpro_short_names = {}
+
+    interpro_ids = [domain['accession'] for domain in domain_list if 'accession' in domain]
+    interpro_ids = list(set(interpro_ids))  # Remove duplicates
+    for interpro_id in interpro_ids:
+        short_name = fetch_domain_short_name(interpro_id)
+        if short_name:
+            interpro_short_names[interpro_id] = short_name
+        else:
+            interpro_short_names[interpro_id] = None  # Handle cases where short name is not found
+    return interpro_short_names
+
 
 
 def generateDomainMetadata_wfilter(uniprot_accessions):
@@ -556,7 +636,7 @@ def appendRefFile(input_RefFile, outputfile):
     -------
     df: Pandas Dataframe
         In addition to printing the dataframe to a CSV file (as defined by outputfile)
-        this returns the dataframe that is prented
+        this returns the dataframe that is presented
     '''
     df = pd.read_csv(input_RefFile)
     uniprotList = df['UniProt ID'].to_list()
