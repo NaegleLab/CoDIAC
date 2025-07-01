@@ -100,21 +100,17 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     return(UNIPROT_ID_LIST, species_dict)
 
 
-def collect_data(entry):
+def collect_data(feature):
     """
-    Given an entry from the InterPro API, collect the data for a protein accession
+    Given a domain feature from the InterPro API, collect the data for that feature
     and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
     where 'boundaries' is a list of dictionaries with keys 'start' and 'end'.
-    If 'short_name' is in the extra fields, this will be added to the dictionary as 'short'
     
     Parameters
     ----------
     entry: dict
         dictionary from the InterPro API
-    protein_accession: str
-        Uniprot accession ID for a protein
-    domain_database: str
-        Domain database to search for, default is None
+
     Returns
     -------
     dictionary: dict
@@ -122,31 +118,34 @@ def collect_data(entry):
         where 'boundaries' is a list of dictionaries with keys 'start' and 'end'
 
     """
-    entry_protein_locations = entry['proteins'][0]['entry_protein_locations']
-    if entry_protein_locations is None:
-        entry_protein_locations = []
+    dictionary = {}    
+    source_database = feature['source_database']
 
-    num_boundaries = len(entry_protein_locations)
-    if num_boundaries == 0:
-        return None
-
-    dictionary = { 
-        'name': entry['metadata']['name'],
-        'accession': entry['metadata']['accession'],
-        'num_boundaries': num_boundaries,
-        'boundaries': [
-            {
-                'start': bounds['start'],
-                'end': bounds['end']
-            } 
-            for i in range(num_boundaries)
-            for bounds in [entry_protein_locations[i]['fragments'][0]]
-            if bounds['dc-status'] == "CONTINUOUS"
-        ]
+    accession = feature['accession'] 
+    name = feature['name']
+    type = feature['type']
+    locations_list = feature['locations']
+    boundaries = []
+    
+    for location in locations_list:
+        for boundary in location['fragments']:
+            #print(location)
+            boundary_dict = {}
+            boundary_dict['start'] = boundary['start']
+            boundary_dict['end'] = boundary['end']
+            boundary_dict['dc-status'] = boundary['dc-status']
+            boundaries.append(boundary_dict)
+    dictionary = {
+        'name': name,
+        'accession': accession,
+        'type': type,
+        'source_database': source_database,
+        'num_boundaries': len(boundaries),
+        'boundaries': boundaries
     }
-    if 'extra_fields' in entry and 'short_name' in entry['extra_fields']:
-        dictionary['short'] = entry['extra_fields']['short_name']
+
     return dictionary
+
 
 def fetch_InterPro_json(protein_accessions):
     """
@@ -222,12 +221,12 @@ def get_domains_from_response(resp):
     each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
     These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
     we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
-    This returns the ordere list of domains and a list of domain information strings, based on start site.
+    This returns the ordered list of domains and a list of domain information strings, based on start site.
 
     Parameters
     ----------
     resp: dict
-        response from the InterPro API (json)
+        response from the InterPro API (json) for a speicfic uniprot_id
     Returns
     -------
     sorted_domain_list: list
@@ -238,36 +237,28 @@ def get_domains_from_response(resp):
         domain architecture as a string, | separated list of domain names
     """
     # An empty response passed from the Interpro API will bypass all this
-    if resp:
-        if "metadata" in resp:
-            entry_results = resp["metadata"]  # If the response has a metadata level, get the next level
-        elif "accession" in resp:
-            entry_results = resp # if accession can be seen then this is the same level
-        else:
-            print("No metadata or accession found in response, returning empty lists.")
-            return([], [], '')  # If no metadata or accession, return empty lists
-        #entry_results = resp['results']
-        d_dict = {} # Dictionary to store domain information for each entry
-        d_resolved = []
-        for i, entry in enumerate(entry_results):
-        #for i, entry in enumerate(entry_list):
-            if entry['metadata']['type'] == 'domain': #get domain level only features
-                d_dict[i] = collect_data(entry)
+    if 'features' not in resp:
+        print("No features found in response, returning empty lists.")
+        return([], [], '')
+    
+    d_dict = {}
+    for i, entry in enumerate(resp['features']):
+        domain_dict = collect_data(resp['features'][entry])
+        if domain_dict['source_database'] == 'interpro':
+            d_dict[i] = domain_dict
         
-        values = list(d_dict.keys())
-        if values:
-            d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
-        
-        for domain_num in values[1:]:
-        
-            d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
 
-        #having resolved, now let's sort the list and get the domain string information
-        sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
-    else:
-        sorted_domain_list = []
-        domain_string_list = []
-        domain_arch = ''
+    values = list(d_dict.keys())
+    d_resolved = []
+    if values:
+        d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+
+    for domain_num in values[1:]:
+        d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+
+#having resolved, now let's sort the list and get the domain string information
+    sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+
     return sorted_domain_list, domain_string_list, domain_arch
   
 def return_expanded_domains(domain_entry):
