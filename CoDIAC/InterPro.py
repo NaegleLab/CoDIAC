@@ -336,8 +336,6 @@ def get_domains_from_response(resp):
                 if domain_dict['source_database'] == 'interpro' and domain_dict['type'] == 'domain':  # only collect domains from InterPro
                     d_dict[i] = domain_dict
                 
-
-            d_dict = {new_idx: d_dict[old_idx] for new_idx, old_idx in enumerate(sorted(d_dict.keys(), reverse=True))}
             values = list(d_dict.keys())    
 
         # values = list(d_dict.keys())
