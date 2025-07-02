@@ -100,11 +100,58 @@ def fetch_uniprotids(interpro_ID, REVIEWED=True, species='Homo sapiens'):
     return(UNIPROT_ID_LIST, species_dict)
 
 
-def collect_data(feature):
+def collect_data_canonical(entry):
     """
     Given a domain feature from the InterPro API, collect the data for that feature
     and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
-    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'.
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'. This is 
+    for the canonical specific call to the InterPro API, where metadata exists.
+    
+    Parameters
+    ----------
+    entry: dict
+        dictionary from the InterPro API
+
+    Returns
+    -------
+    dictionary: dict
+        dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+        where 'boundaries' is a list of dictionaries with keys 'start' and 'end'
+
+    """
+    entry_protein_locations = entry['proteins'][0]['entry_protein_locations']
+    if entry_protein_locations is None:
+        entry_protein_locations = []
+
+    num_boundaries = len(entry_protein_locations)
+    if num_boundaries == 0:
+        return None
+
+    dictionary = { 
+        'name': entry['metadata']['name'],
+        'accession': entry['metadata']['accession'],
+        'num_boundaries': num_boundaries,
+        'boundaries': [
+            {
+                'start': bounds['start'],
+                'end': bounds['end']
+            } 
+            for i in range(num_boundaries)
+            for bounds in [entry_protein_locations[i]['fragments'][0]]
+            if bounds['dc-status'] == "CONTINUOUS"
+        ]
+    }
+    if 'extra_fields' in entry and 'short_name' in entry['extra_fields']:
+        dictionary['short'] = entry['extra_fields']['short_name']
+    return dictionary
+
+
+def collect_data_isoform(feature):
+    """
+    Given a domain feature from the InterPro API, collect the data for that feature
+    and return a dictionary with the keys 'name', 'accession', 'num_boundaries', 'boundaries'
+    where 'boundaries' is a list of dictionaries with keys 'start' and 'end'. This is 
+    for the isoform specific call to the InterPro API, where the feature is a dictionary
     
     Parameters
     ----------
@@ -168,7 +215,9 @@ def fetch_InterPro_json(protein_accessions):
 # check if protein is a main accession and add the isoform
             else:
                 # going through the same URL for isoforms as canonical, so fixing the canonical to use -1
-                url = interpro_url + "/protein/uniprot/" + protein_accession + "/?isoforms="+protein_accession+"-1"
+                #url = interpro_url + "/protein/uniprot/" + protein_accession #+ "/?isoforms="+protein_accession+"-1"
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
+            print(url)  # Debugging line
             try:
                 response_dict[protein_accession] = session.get(url).json()
             except Exception as e:
@@ -177,7 +226,7 @@ def fetch_InterPro_json(protein_accessions):
                     print(f"An empty response was received for {protein_accession} resulting in empty domain architecture.")
                 else:
                     print(f"Error processing {protein_accession}: {e}")  # Debugging line
-            print(url)  # Debugging line
+            #print(url)  # Debugging line
                 
     return response_dict
 
@@ -222,8 +271,8 @@ def get_domains(protein_accessions):
 
     unique_domain_list = [{'accession': accession} for accession in set(interpro_domain_list)]
     interpro_name_dict = fetch_interpro_short_names(unique_domain_list)
-    print(unique_domain_list)
-    print(interpro_name_dict)
+    #print(unique_domain_list)
+    #print(interpro_name_dict)
     for protein_accession in domain_dict:
         # add the short names to the domain_dict, the domain_string_dict, and the arch_dict
         for i, domain in enumerate(domain_dict[protein_accession]):
@@ -239,7 +288,10 @@ def get_domains_from_response(resp):
     each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
     These domains are in the order as returned by InterPro, where InterPro returns the parent nodes first. Once 
     we find domains that begin to overlap in the API response, we stop adding those to the final set of domains. 
-    This returns the ordered list of domains and a list of domain information strings, based on start site.
+    This returns the ordered list of domains and a list of domain information strings, based on start site. 
+
+    This function can detect if the repsonse came as a fetch to the isoform specific call or the canonical protein and uses
+    the correct approach to collect the data.
 
     Parameters
     ----------
@@ -254,30 +306,56 @@ def get_domains_from_response(resp):
     domain_arch: string
         domain architecture as a string, | separated list of domain names
     """
-    # An empty response passed from the Interpro API will bypass all this
-    if 'features' not in resp:
-        print("No features found in response, returning empty lists.")
-        return([], [], '')
-    
-    d_dict = {}
-    for i, entry in enumerate(resp['features']):
-        domain_dict = collect_data(resp['features'][entry])
-        if domain_dict['source_database'] == 'interpro' and domain_dict['type'] == 'domain':  # only collect domains from InterPro
-            d_dict[i] = domain_dict
-        
+    if resp:
+        #It's a canonical record
+        if 'results' in resp:  # this is the isoform specific fetch
+            entry_results = resp['results']
+            d_dict = {} # Dictionary to store domain information for each entry
+            d_resolved = []
+            for i, entry in enumerate(entry_results):
+            #for i, entry in enumerate(entry_list):
+                if entry['metadata']['type'] == 'domain': #get domain level only features
+                    d_dict[i] = collect_data_canonical(entry)
+            
+            values = list(d_dict.keys())
+            if values:
+                d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+            
+            for domain_num in values[1:]:
+            
+                d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
 
-    values = list(d_dict.keys())
-    d_resolved = []
-    if values:
-        d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
+            #having resolved, now let's sort the list and get the domain string information
+            sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+            
+        # It's an isoform
+        elif 'features' in resp:  # this is the canonical fetch
+            d_dict = {}
+            for i, entry in enumerate(resp['features']):
+                domain_dict = collect_data_isoform(resp['features'][entry])
+                if domain_dict['source_database'] == 'interpro' and domain_dict['type'] == 'domain':  # only collect domains from InterPro
+                    d_dict[i] = domain_dict
+                
 
-    for domain_num in values[1:]:
-        d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+            d_dict = {new_idx: d_dict[old_idx] for new_idx, old_idx in enumerate(sorted(d_dict.keys(), reverse=True))}
+            values = list(d_dict.keys())    
 
-#having resolved, now let's sort the list and get the domain string information
-    sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+        # values = list(d_dict.keys())
+            d_resolved = []
+            if values:
+                d_resolved+=return_expanded_domains(d_dict[values[0]]) # a list now: kick off the resolved domains, now start walking through and decide if taking a new domain or not.
 
+            for domain_num in values[1:]:
+                d_resolved = resolve_domain(d_resolved, d_dict[domain_num])
+
+        #having resolved, now let's sort the list and get the domain string information
+            sorted_domain_list, domain_string_list, domain_arch = sort_domain_list(d_resolved)
+    else:
+        sorted_domain_list = []
+        domain_string_list = []
+        domain_arch = ''
     return sorted_domain_list, domain_string_list, domain_arch
+
   
 def return_expanded_domains(domain_entry):
     """
