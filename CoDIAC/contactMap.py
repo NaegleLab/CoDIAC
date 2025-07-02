@@ -609,7 +609,7 @@ def translate_chainMap_to_RefSeq(entity, pdbClass):
       # need to pad the c-terminal tail
       print("Adding %d c-terminal gaps"%c_term_gaps)
       len_ref = len(pdbClass.ref_seq_mutated)
-      c_term_ext_str = pdbClass.ref_seq_mutated[len_ref-c_term_gaps:len_ref]
+      c_term_ext_str = pdbClass.ref_seq_mutated[len_ref-c_term_gaps+1:len_ref]
       structSeq_new = chainMap_aligned.structSeq + c_term_ext_str
       maxRes = chainMap_aligned.return_max_residue()
       for i in range(0, len(c_term_ext_str)):
