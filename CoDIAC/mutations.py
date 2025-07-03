@@ -544,7 +544,7 @@ def omim_mutation_dict(uniprot_ids, api_key):
             
     return mutation_dict
 
-def get_mutations_in_domains(uniprot_ref_file, mutations_file, Interpro_ID):
+def get_mutations_in_domains(uniprot_ref_file, mutations_file, Interpro_ID, N_offset=0, C_offset=0):
     """
     Maps mutations from a mutations file to the domains in a UniProt reference file based on InterPro ID.
 
@@ -557,6 +557,14 @@ def get_mutations_in_domains(uniprot_ref_file, mutations_file, Interpro_ID):
             Path to the mutations file.
         Interpro_ID : str
             The InterPro ID to filter domains.
+        N_offset : int, optional
+            Number of residues to add or remove from the N terminal end of the domain boundary (default is 0).
+        C_offset : int, optional
+            Number of residues to add or remove from the C terminal end of the domain boundary (default is 0).
+    Raises
+    ------
+        ValueError
+            If the UniProt reference DataFrame or mutations DataFrame does not contain the necessary columns.
 
     Returns
     -------
@@ -578,7 +586,7 @@ def get_mutations_in_domains(uniprot_ref_file, mutations_file, Interpro_ID):
 
 
     uniprot_mapping_dict, IDs_not_mapped = map_report_uniprot_ids(uniprot_reference_df, df_mut)
-    df_mutations_in_domain, error_dict = map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID)
+    df_mutations_in_domain, error_dict = map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID, N_offset, C_offset)
 
     #Let's write a report of errors
     print(f"Uniprot IDs not mapped between the mutation file and the reference file: {len(IDs_not_mapped)} \n\t")
@@ -636,7 +644,7 @@ def map_report_uniprot_ids(uniprot_reference_df, mutations_df):
             uniprot_mapping_dict[ID] = ID
     return uniprot_mapping_dict, IDs_not_mapped
 
-def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID):
+def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID, N_offset, C_offset):
     """
     Maps mutations to domains in a UniProt reference file based on InterPro ID.
     This assumes you have already run uniprot_mapping_dict, IDs_not_mapped = map_report_uniprot_ids(uniprot_reference_file, mutations_file)
@@ -653,6 +661,10 @@ def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df,
             DataFrame containing UniProt reference sequences and domain information.
         Interpro_ID : str
             The InterPro ID to filter domains.      
+        N_offset : int
+            Number of residues to add or remove from the N terminal end of the domain boundary.
+        C_offset : int
+            Number of residues to add or remove from the C terminal end of the domain boundary.
 
     Returns
     -------
@@ -680,10 +692,13 @@ def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df,
         domain_dict = {}
         num = 1
         aa_list_in_domains = []
-        domain_fasta_headers = return_long_fasta_header(uniprot_reference_df.loc[uniprot_reference_df['UniProt ID'] == uniprot_mapping_dict[uniprot_id]], Interpro_ID)
+        domain_fasta_headers = return_long_fasta_header(uniprot_reference_df.loc[uniprot_reference_df['UniProt ID'] == uniprot_mapping_dict[uniprot_id]], Interpro_ID, N_offset, C_offset)
 
         for domain in domain_arr:
             name, domain_intepro_ID, start, end = domain.split(':')
+            # change start and end to be inclusive of the N_offset and C_offset
+            start = max(int(start) - N_offset, 1)  # Ensure start is
+            end = min(int(end) + C_offset, len(seq))  # Ensure end does not exceed sequence length
             if domain_intepro_ID == Interpro_ID:
                 domain_dict[num] = {'start':start, 'end':end, 'name':name, 'Interpro_ID':domain_intepro_ID}
                 aa_list_in_domains.extend(range(int(start), int(end) + 1))  # +1 to include the end site
@@ -730,7 +745,7 @@ def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df,
     df_mutations_in_domain = pd.DataFrame(row_list)
     return df_mutations_in_domain, error_dict
 
-def return_long_fasta_header(uniprot_reference_row, Interpro_ID):
+def return_long_fasta_header(uniprot_reference_row, Interpro_ID, N_offset, C_offset):
     """ 
     Given a row from the uniprot reference file, return a long fasta header for each domain of interest in a
     domain dict, with keys equal to the domain number and values equal to the header.
@@ -758,12 +773,16 @@ def return_long_fasta_header(uniprot_reference_row, Interpro_ID):
         uniprot_id = row['UniProt ID']
         gene_name = row['Gene']
         species = row['Species']
+        seq = row['Ref Sequence']
         domainNum = 1
         for domain in domainsArr:
             domain_name, interpro, start, end = domain.split(':')
             if interpro == Interpro_ID:
                 #>O95696|BRD1|Homo sapiens|Bromodomain|1|IPR001487|560|668
-                header_dict[domainNum] = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, int(start), int(end))
+                start = max(int(start) - N_offset, 1)
+                end = min(int(end) + C_offset, len(seq))
+                #print("DEBUG: Domain %s, start %d, end %d"%(domain_name, start, end))
+                header_dict[domainNum] = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, start, end)
                 domainNum += 1
     return header_dict
 
