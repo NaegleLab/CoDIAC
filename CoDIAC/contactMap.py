@@ -609,7 +609,7 @@ def translate_chainMap_to_RefSeq(entity, pdbClass):
       # need to pad the c-terminal tail
       print("Adding %d c-terminal gaps"%c_term_gaps)
       len_ref = len(pdbClass.ref_seq_mutated)
-      c_term_ext_str = pdbClass.ref_seq_mutated[len_ref-c_term_gaps:len_ref]
+      c_term_ext_str = pdbClass.ref_seq_mutated[len_ref-c_term_gaps+1:len_ref]
       structSeq_new = chainMap_aligned.structSeq + c_term_ext_str
       maxRes = chainMap_aligned.return_max_residue()
       for i in range(0, len(c_term_ext_str)):
@@ -923,9 +923,11 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, N_offset1, feature
   arr = arr == threshold
   arr_sum = arr.sum(axis=1)
   featureLength = featureEnd +N_offset1- featureStart +1+C_offset1
+  if featureLength > len(arr_sum):
+    featureLength = featureLength - 1
   # print(featureLength,len(arr_sum))
   #contactLength = contactFromEnd - contactFromStart 
-  for i in range(featureLength):
+  for i in range(featureLength): 
     if arr_sum[i]: #if we wanted, could require arr_sum[i] >= NumResiduesContacted
       feature_file.write("%s\t%s\t-1\t%s\t%s\t%s\n"%(contactLabel, fastaHeader, str(i+1), str(i+1), contactLabel))
       # print(i)
