@@ -216,8 +216,9 @@ def fetch_InterPro_json(protein_accessions):
             else:
                 # going through the same URL for isoforms as canonical, so fixing the canonical to use -1
                 #url = interpro_url + "/protein/uniprot/" + protein_accession #+ "/?isoforms="+protein_accession+"-1"
-                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession + "?extra_fields=" + ','.join(extra_fields)
-            print(url)  # Debugging line
+                #shutting off short name fetch during this so we can ensure the names are all consistent between mixed canonical/isoform fetches
+                url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession #+ "?extra_fields=" + ','.join(extra_fields)
+            #print(url)  # Debugging line
             try:
                 response_dict[protein_accession] = session.get(url).json()
             except Exception as e:
