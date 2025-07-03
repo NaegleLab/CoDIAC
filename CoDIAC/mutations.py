@@ -11,6 +11,7 @@ from Bio import SeqIO
 from pybiomart import Dataset
 from xml.dom import minidom
 import requests
+from CoDIAC import featureTools
 
 
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
@@ -765,4 +766,34 @@ def return_long_fasta_header(uniprot_reference_row, Interpro_ID):
                 header_dict[domainNum] = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, int(start), int(end))
                 domainNum += 1
     return header_dict
-           
+
+def print_domain_mutation_features(df_mutations_in_domain, mapping_header_dict, color_dict, output_feature_file):
+    """
+    Prints a feature file for mutations in domains, where each mutation is represented as a feature in the format required by Jalview.
+    This function takes a DataFrame of mutations in domains and generates a feature file that can be used in Jalview for visualization.
+    Parameters
+    ----------
+        df_mutations_in_domain : pd.DataFrame
+            DataFrame containing mutations mapped to domains such as returned by `get_mutations_in_domains`.
+        color_dict : dict
+            Dictionary mapping mutation types to colors for visualization in Jalview.
+        output_feature_file : str
+            Path to the output feature file where the mutations will be written.    
+
+    """
+    mutation_feature_dict = {}
+    for name, group in df_mutations_in_domain.groupby('fasta header'):
+        # get the unique mutations for this fasta header
+        #make a mapping to the short header
+        name = name.split('>')[1]
+        if name in mapping_header_dict:
+            name_short = mapping_header_dict[name]['short']
+        else:
+            print("ERROR: Fasta header not found in mapping dictionary, using full header.")
+            name_short = name
+        unique_mutations = group['Domain Sequence Number'].unique()
+        mutation_feature_dict[name_short] ={}
+        for residue in unique_mutations:
+            mutation_feature_dict[name_short][residue] = ['mutation']
+    featureTools.print_jalview_feature_file(mutation_feature_dict, color_dict, output_feature_file)
+    print("Feature file written to %s"%output_feature_file)  
