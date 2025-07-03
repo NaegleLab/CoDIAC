@@ -12,6 +12,7 @@ from pybiomart import Dataset
 from xml.dom import minidom
 import requests
 
+
 clinvar_sig = ['Benign', 'Likely benign','Likely pathogenic', 'Pathogenic','Likely pathogenic, low penetrance','Pathogenic, low penetrance',
                'Likely risk allele']
 
@@ -542,5 +543,226 @@ def omim_mutation_dict(uniprot_ids, api_key):
             
     return mutation_dict
 
+def get_mutations_in_domains(uniprot_ref_file, mutations_file, Interpro_ID):
+    """
+    Maps mutations from a mutations file to the domains in a UniProt reference file based on InterPro ID.
+
+
+    Parameters
+    ----------
+        uniprot_ref_file : str
+            Path to the UniProt reference file.
+        mutations_file : str
+            Path to the mutations file.
+        Interpro_ID : str
+            The InterPro ID to filter domains.
+
+    Returns
+    -------
+        pd.DataFrame
+            DataFrame containing mapped mutations to domains.
+    """
+    uniprot_reference_df = pd.read_csv(uniprot_ref_file)
+    df_mut = pd.read_csv(mutations_file)
+
+    # Check that the uniprot and mutation dataframes have the necessary columns
+    if 'UniProt ID' not in uniprot_reference_df.columns:
+        raise ValueError("UniProt reference DataFrame must contain 'UniProt ID' column.")
+    if 'Ref Sequence' not in uniprot_reference_df.columns:
+        raise ValueError("UniProt reference DataFrame must contain 'Ref Sequence' column.")
+    if 'UniProt ID' not in df_mut.columns:
+        raise ValueError("Mutations DataFrame must contain 'UniProt ID' column.")
+    if 'mutation' not in df_mut.columns:
+        raise ValueError("Mutations DataFrame must contain 'mutation' column.")
+
+
+    uniprot_mapping_dict, IDs_not_mapped = map_report_uniprot_ids(uniprot_reference_df, df_mut)
+    df_mutations_in_domain, error_dict = map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID)
+
+    #Let's write a report of errors
+    print(f"Uniprot IDs not mapped between the mutation file and the reference file: {len(IDs_not_mapped)} \n\t")
+    print(IDs_not_mapped)
+
+    for uniprot_id, mutations in error_dict.items():
+        if uniprot_id not in IDs_not_mapped:
+            print(f"Uniprot ID: {uniprot_id} has the following mutation sites that do not match the reference sequence: \n\t {mutations}")
+
+    return df_mutations_in_domain
+
+
     
-            
+def map_report_uniprot_ids(uniprot_reference_df, mutations_df):
+    """
+    Maps Uniprot IDs from the mutations DataFrame to the reference DataFrame.
+    This function checks if the Uniprot IDs in the mutations DataFrame are present in the reference DataFrame.
+    If a Uniprot ID is not found, it checks if it is a canonical isoform (ending with -1) and maps it to the canonical ID.
+    If the Uniprot ID is not found in the reference DataFrame, it is added to a list of IDs not mapped.
+    Parameters
+    ----------
+        uniprot_reference_df : pd.DataFrame
+            DataFrame containing UniProt reference sequences with a column 'UniProt ID'.
+        mutations_df : pd.DataFrame
+            DataFrame containing mutations with a column 'Uniprot ID'.  
+    Returns 
+    -------
+        uniprot_mapping_dict : dict
+            Dictionary mapping Uniprot IDs to their canonical forms.
+        IDs_not_mapped : list
+            List of Uniprot IDs that could not be mapped to the reference DataFrame.
+    """
+    uniprot_IDs = uniprot_reference_df['UniProt ID'].to_list()
+
+    if 'UniProt ID' not in mutations_df.columns:
+        print("No Uniprot ID column in mutations, please make sure the mutations DataFrame has a 'Uniprot ID' column.")
+        return {}, []
+
+    uniprot_mutations = list(set(mutations_df['UniProt ID'].to_list()))
+    uniprot_mapping_dict = {}
+    IDs_not_mapped = []
+    for ID in uniprot_mutations:
+        if ID not in uniprot_IDs:
+            #check to see if it's a canonical isoform with a -1 at the end
+            if ID.endswith('-1'):
+                canonical_ID = ID[:-2]
+                if canonical_ID in uniprot_IDs:
+                    uniprot_mapping_dict[ID] = canonical_ID
+                else:
+                    # If the canonical ID is not found, add to IDs_not_mapped
+                    IDs_not_mapped.append(ID)
+            else:
+                IDs_not_mapped.append(ID)
+        else:
+            uniprot_mapping_dict[ID] = ID
+    return uniprot_mapping_dict, IDs_not_mapped
+
+def map_mutations_to_domains(uniprot_mapping_dict, df_mut, uniprot_reference_df, Interpro_ID):
+    """
+    Maps mutations to domains in a UniProt reference file based on InterPro ID.
+    This assumes you have already run uniprot_mapping_dict, IDs_not_mapped = map_report_uniprot_ids(uniprot_reference_file, mutations_file)
+    Here, we walk through each mutation, check that it is correctly the same amino acid in the
+    uniprot reference sequence, then see if it falls within a domain of interest and print this to a feature file.
+    
+    Parameters
+    ----------
+        uniprot_mapping_dict : dict
+            Dictionary mapping Uniprot IDs to their canonical forms.
+        df_mut : pd.DataFrame
+            DataFrame containing mutations with 'Uniprot ID' and 'mutation' columns.
+        uniprot_reference_df : pd.DataFrame
+            DataFrame containing UniProt reference sequences and domain information.
+        Interpro_ID : str
+            The InterPro ID to filter domains.      
+
+    Returns
+    -------
+        df_mutations_in_domain : pd.DataFrame
+            DataFrame containing mutations mapped to domains. Has columns:
+            - 'Uniprot ID'
+            - 'mutation Uniprot ID' - the Uniprot ID of the mutation
+            - 'mutation' - original mutation string
+            - 'Original Sequence Number' - original sequence number of the mutation
+            - 'fasta header' - fasta header of the domain this mutation maps into 
+            - 'Domain Sequence Number' - the sequence number of the mutation within the domain
+        error_dict : dict
+            Dictionary containing errors for mutations that do not match the reference sequence.    
+
+    """
+    df_mutations_in_domain = pd.DataFrame(columns=['Uniprot ID', 'mutation Uniprot ID', 'mutation', 'Original Sequence Number', 'fasta header', 'Domain Sequence Number'])
+    row_list = []
+    error_dict = {}
+    for uniprot_id, group in df_mut.groupby('UniProt ID'):
+        if uniprot_id not in uniprot_mapping_dict:
+            continue
+        seq = uniprot_reference_df[uniprot_reference_df['UniProt ID'] == uniprot_mapping_dict[uniprot_id]]['Ref Sequence'].values[0]    
+        domains = uniprot_reference_df[uniprot_reference_df['UniProt ID'] == uniprot_mapping_dict[uniprot_id]]['Interpro Domains'].values[0]  # Assuming this column contains domain information
+        domain_arr = domains.split(';')
+        domain_dict = {}
+        num = 1
+        aa_list_in_domains = []
+        domain_fasta_headers = return_long_fasta_header(uniprot_reference_df.loc[uniprot_reference_df['UniProt ID'] == uniprot_mapping_dict[uniprot_id]], Interpro_ID)
+
+        for domain in domain_arr:
+            name, domain_intepro_ID, start, end = domain.split(':')
+            if domain_intepro_ID == Interpro_ID:
+                domain_dict[num] = {'start':start, 'end':end, 'name':name, 'Interpro_ID':domain_intepro_ID}
+                aa_list_in_domains.extend(range(int(start), int(end) + 1))  # +1 to include the end site
+                num+=1
+        # now I have start and end areas I care about, let's go ahead and create a list of sequeneces that matter to me and if the mutation is in that list, then I will process it
+        for index, row in group.iterrows():
+            mutation = row['mutation']
+            # check that the mutation is in the correct format, that it starts and ends with a character and has a number in the middle
+            if not mutation[0].isalpha() or not mutation[-1].isalpha() or not mutation[1:-1].isdigit():
+                #print(f"Mutation {mutation} at index {index} is not in the correct format, skipping.")
+                continue
+            aa = mutation[0]
+            to_aa = mutation[-1]
+            site_num = int(mutation[1:-1])
+            if site_num in aa_list_in_domains:
+                # This mutation is within the domain of interest, process it
+                #print(f"Mutation {mutation} at site {site_num} is within the domain of interest for Uniprot ID {uniprot_id}.")
+                if seq[site_num - 1] != aa:
+                    #print(f"Warning: Mutation {mutation} at site {site_num} does not match the reference sequence for Uniprot ID {uniprot_id}. Reference sequence has {seq[site_num - 1]} at this position.")
+                    if uniprot_id not in error_dict:
+                        error_dict[uniprot_id] = []
+                    error_dict[uniprot_id].append(mutation)
+                    continue
+                if len(domain_dict) == 1:
+                    # If there is only one domain, we can set the domain sequence number to based on the start site
+                    domain_start = int(domain_dict[1]['start'])
+                    domain_sequence_number = site_num - domain_start + 1
+                    header = domain_fasta_headers[1]
+                else:
+                    for domain_num, domain_info in domain_dict.items():
+                        if int(domain_info['start']) <= site_num <= int(domain_info['end']):
+                            domain_sequence_number = site_num - int(domain_info['start']) + 1
+                            header = domain_fasta_headers[domain_num]
+                            break
+                temp_dict = {
+                    'Uniprot ID': uniprot_mapping_dict[uniprot_id],
+                    'mutation Uniprot ID': uniprot_id,
+                    'mutation': mutation,
+                    'Original Sequence Number': site_num,
+                    'fasta header': header,
+                    'Domain Sequence Number': domain_sequence_number #int(site_num) - int(domain_dict[0]['start']) + 1  # Adjusting to domain sequence number
+                }
+                row_list.append(temp_dict)
+    df_mutations_in_domain = pd.DataFrame(row_list)
+    return df_mutations_in_domain, error_dict
+
+def return_long_fasta_header(uniprot_reference_row, Interpro_ID):
+    """ 
+    Given a row from the uniprot reference file, return a long fasta header for each domain of interest in a
+    domain dict, with keys equal to the domain number and values equal to the header.
+
+    Parameters
+    ----------
+        uniprot_reference_row : pd.DataFrame
+            A single row of a DataFrame containing UniProt reference information.
+        Interpro_ID : str
+            The InterPro ID to filter domains.
+    Returns
+    -------
+        header_dict : dict
+            A dictionary where keys are domain numbers and values are formatted fasta headers.
+            The format is:
+            ">UniProt ID|Gene Name|Species|Domain Name|Domain Number|InterPro ID|Start|End"
+    """
+    if(len(uniprot_reference_row) != 1):
+        print("Expecting a single row of a dataframe, this will return the last row only")
+    for index, row in uniprot_reference_row.iterrows():
+        header_dict = {}
+        domainNum = 1
+        domains = row['Interpro Domains']
+        domainsArr = domains.split(';')
+        uniprot_id = row['UniProt ID']
+        gene_name = row['Gene']
+        species = row['Species']
+        domainNum = 1
+        for domain in domainsArr:
+            domain_name, interpro, start, end = domain.split(':')
+            if interpro == Interpro_ID:
+                #>O95696|BRD1|Homo sapiens|Bromodomain|1|IPR001487|560|668
+                header_dict[domainNum] = ">%s|%s|%s|%s|%d|%s|%d|%d"%(uniprot_id, gene_name, species, domain_name, domainNum, Interpro_ID, int(start), int(end))
+                domainNum += 1
+    return header_dict
+           
