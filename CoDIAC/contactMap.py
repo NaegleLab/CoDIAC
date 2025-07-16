@@ -924,7 +924,7 @@ def print_fasta_feature_files(contact_arr, seq, featureStart, N_offset1, feature
   arr_sum = arr.sum(axis=1)
   featureLength = featureEnd +N_offset1- featureStart +1+C_offset1
   if featureLength > len(arr_sum):
-    featureLength = featureLength - 1
+    featureLength = len(arr_sum)
   # print(featureLength,len(arr_sum))
   #contactLength = contactFromEnd - contactFromStart 
   for i in range(featureLength): 
