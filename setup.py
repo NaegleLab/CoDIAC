@@ -22,5 +22,10 @@ setup(
     include_package_data = True,
     python_requires=">=3.6",
     package_data={'': ['CoDIAC/data/proteomescout_everything_20190701/*.tsv']},
-    zip_safe = False
+    zip_safe = False,
+    entry_points={
+    'console_scripts': [
+        'run-analysis = analysis.analysis:main'
+    ]
+}
 )
