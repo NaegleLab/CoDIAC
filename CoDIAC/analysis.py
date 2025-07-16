@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from Bio import SeqIO
 import os
+import argparse
+import ast
 
 def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, append_refSeq = True, PTM='PTR', mutation=False, domain_of_interest='SH2', SH2_file='SH2_C', PTM_file='pTyr_C'):
     '''Generates contact features that are present across interprotein interfaces (between a domain and it sligand partner)
@@ -852,3 +854,79 @@ def map_PTM_localenv(fasta_file_unaligned, fasta_file_aligned, input_ptm_feafile
         os.remove(ptm_feafile)
     else:
         print("The file does not exist")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate interprotein contact features.")
+
+    parser.add_argument('--pdb_ann_file', type=str, required=True, help="Path to annotated PDB reference file")
+    parser.add_argument('--adjfiles_path', type=str, required=True, help="Path to adjacency files")
+    parser.add_argument('--reference_fastafile', type=str, required=True, help="FASTA file of domain reference sequences")
+    parser.add_argument('--error_structures_list', type=str, required=True,
+                        help="Path to .txt or .csv file containing list of PDB IDs to exclude")
+    parser.add_argument('--Noffset1', type=int, required=True, help="N-terminal offset 1 for domain")
+    parser.add_argument('--Noffset2', type=int, required=True, help="N-terminal offset 2 for ligand")
+    parser.add_argument('--Coffset1', type=int, required=True, help="C-terminal offset 1 for domain")
+    parser.add_argument('--Coffset2', type=int, required=True, help="C-terminal offset 2 for ligand")
+
+    # Optional arguments
+    parser.add_argument('--append_refSeq', type=ast.literal_eval, default=True, help="Append reference sequence (True/False)")
+    parser.add_argument('--PTM', type=str, default='PTR', help="PTM type (default PTR)")
+    parser.add_argument('--mutation', type=ast.literal_eval, default=False, help="Whether to filter for mutation structures (True/False)")
+    parser.add_argument('--domain_of_interest', type=str, default='SH2', help="Domain of interest (default SH2)")
+    parser.add_argument('--DOMAIN', type=str, default='SH2', help="Domain of interest -used for intraprotein extraction")
+    parser.add_argument('--SH2_file', type=str, default='SH2_C', help="Output filename for SH2 features")
+    parser.add_argument('--PTM_file', type=str, default='pTyr_C', help="Output filename for PTM features")
+    parser.add_argument('--intra_filename', type=str, default='SH2_intra', help="Output filename for intraprotein features")
+
+    # NEW argument to select which function(s) to run
+    parser.add_argument('--run_mode', type=str, default='both', choices=['interprotein', 'intraprotein', 'both'],
+                        help="Run mode: 'interprotein', 'intraprotein', or 'both' (default)")
+
+
+    args = parser.parse_args()
+
+    # Load error structure list
+    if args.error_structures_list.endswith('.txt') or args.error_structures_list.endswith('.csv'):
+        with open(args.error_structures_list) as f:
+            error_structures = [line.strip() for line in f if line.strip()]
+    else:
+        raise ValueError("error_structures_list must be a .txt or .csv file")
+
+    if args.run_mode in ('interprotein', 'both'):
+        Interprotein_Features(
+            pdb_ann_file=args.pdb_ann_file,
+            ADJFILES_PATH=args.adjfiles_path,
+            reference_fastafile=args.reference_fastafile,
+            error_structures_list=error_structures,
+            Noffset1=args.Noffset1,
+            Noffset2=args.Noffset2,
+            Coffset1=args.Coffset1,
+            Coffset2=args.Coffset2,
+            append_refSeq=args.append_refSeq,
+            PTM=args.PTM,
+            mutation=args.mutation,
+            domain_of_interest=args.domain_of_interest,
+            SH2_file=args.SH2_file,
+            PTM_file=args.PTM_file
+        )
+
+    if args.run_mode in ('intraprotein', 'both'):
+        Intraprotein_Features(
+            pdb_ann_file=args.pdb_ann_file,
+            ADJFILES_PATH=args.adjfiles_path,
+            reference_fastafile=args.reference_fastafile,
+            error_structures_list=error_structures,
+            Noffset1=args.Noffset1,
+            Noffset2=args.Noffset2,
+            Coffset1=args.Coffset1,
+            Coffset2=args.Coffset2,
+            append_refSeq=args.append_refSeq,
+            mutation=args.mutation,
+            DOMAIN=args.DOMAIN,
+            filename=args.intra_filename
+        )
+
+if __name__ == "__main__":
+    main()
+
