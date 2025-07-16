@@ -20,6 +20,8 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
             fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
         error_structures_list : list
             list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
+        Noffset1, Noffset2, Coffset1, Coffset2 : int
+            these are offsets for domain and ligand N and C terminal regions
         PTM : str
             PTM that binds to our domain of interest
         append_refSeq : boolean
@@ -155,6 +157,120 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                     ref_uniprot_id, ref_gene,ref_domain, ref_index, ref_ipr, ref_start, ref_end = name.split('|')
                     if query_uniprotid == ref_uniprot_id:
                         file.write('>'+name+'\n'+sequence+'\n')
+
+def Interprotein_contactPairs(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, PTM='PTR', mutation=False, domain_of_interest='SH2', outputfile = 'Contact_Pairs.fea'):
+    '''Generates features as contact pairs that are present across interprotein interfaces (between a domain and its ligand partner). The third and fourth columns of the feature file represent the residues on the ligand and domain respectively.
+    
+    Parameters
+    ----------
+        pdb_ann_file : str
+            PDB reference file with all PDB structures annotated and filtered based on the domain of interest
+        ADJFILES_PATH : str
+            path to fetch adjacency files
+        reference_fastafile : str
+            fasta file with reference sequences of domain of interest obtained from the Uniprot reference csv file
+        error_structures_list : list
+            list of PDB structures that are present in the PDB reference file but not useful for contactmap analysis due to issues in the PDB structure (discontinuous chains), error generate adjacency files, unable to assign a reference sequence, etc.
+        Noffset1, Noffset2, Coffset1, Coffset2 : int
+            these are offsets for domain and ligand N and C terminal regions
+        PTM : str
+            PTM that binds to our domain of interest
+        mutation : boolean
+            fetches native/mutant structures. Default set to retrieve native structures
+        domain_of_interest : str
+            the domain of interest
+        outputfile : str
+            name of feature files with ligand contact residuepairs
+            
+    Returns
+    -------
+        Fasta and feature files with interprotein interface contact features represented as pairs (domain-ligand)'''
+
+    with open(outputfile, 'w') as file:
+        main = pd.read_csv(pdb_ann_file)
+        list_of_uniprotids=[]
+        for name, group in main.groupby('PDB_ID'):
+            PDB_ID = name
+            print(PDB_ID)
+            
+            if PDB_ID not in error_structures_list:
+    
+                for index, row in group.iterrows():
+    
+                    if isinstance(row['modifications'], str):
+    
+                        transDict = PDBHelper.return_PTM_dict(row['modifications'])
+                        for res in transDict:
+                            if PTM in transDict[res]:
+                                lig_entity = row['ENTITY_ID']                             
+    
+                                entities = PDBHelper.PDBEntitiesClass(main, PDB_ID)
+                                for entity in entities.pdb_dict.keys():
+                                    domains = entities.pdb_dict[entity].domains
+                                    for domain_num in domains:
+                                        if domain_of_interest in domains[domain_num]:
+                                            SH2_entity = entity 
+                                            get_mutation = (pd.isnull(main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID ), 'ref:variants']))
+                                            check_mutation = get_mutation.values.tolist() 
+                                            df2 = main.loc[(main['ENTITY_ID'] == SH2_entity) & (main['PDB_ID'] == PDB_ID )]
+                                            uniprot_id = df2['database_accession'].values.tolist()
+                                            
+                                            
+                        transDict_stripped = []
+                        for i in transDict.values():
+                            i= i.strip()
+                            transDict_stripped.append(i)
+                        
+                        if PTM in transDict_stripped:
+                    
+                            if check_mutation[0] != mutation:
+                                list_of_uniprotids.append(uniprot_id[0])
+    
+                                pdbClass = entities.pdb_dict[lig_entity]
+                                dict_of_lig = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, lig_entity)
+                                dict_of_SH2 = contactMap.return_single_chain_dict(main, PDB_ID, ADJFILES_PATH, SH2_entity)
+    
+                                cm_aligned = dict_of_lig['cm_aligned']
+                                if hasattr(cm_aligned, 'refseq'):
+                                    value = True
+                                else:
+                                    value = False
+    
+                                for res in cm_aligned.transDict:
+                                    if res in cm_aligned.resNums:
+                                        if PTM in cm_aligned.transDict[res]: #print the aligned sequence
+                                            res_start, res_end, aligned_str, tick_labels = pTyr_helpers.return_pos_of_interest(
+                                                cm_aligned.resNums, cm_aligned.structSeq, res, n_term_num=5, c_term_num=5, PTR_value = 'y')
+    
+                                            from_dict = dict_of_lig
+                                            to_dict = dict_of_SH2
+                                            adjList, arr = contactMap.return_interChain_adj(ADJFILES_PATH, from_dict, to_dict)
+                                            adjList_alt, arr_alt = contactMap.return_interChain_adj(ADJFILES_PATH, to_dict, from_dict)
+    
+                                            domains = dict_of_SH2['pdb_class'].domains
+                                            for domain_num in domains:
+                                                if domain_of_interest in str(domains[domain_num]):
+    
+                                                    dom_header = list(domains[domain_num].keys())[0]
+                                                    SH2_start, SH2_stop, muts, gaps = domains[domain_num][dom_header]
+    
+    
+                                                    arr_sub, list_aa_from_sub, list_to_aa_sub = contactMap.return_arr_subset_by_ROI(arr, 
+                                                                     res_start, res_end, from_dict['cm_aligned'].return_min_residue(), 
+                                                                     SH2_start, SH2_stop, to_dict['cm_aligned'].return_min_residue())
+    
+                                                               
+                                                    fasta_header = makeHeader(PDB_ID, SH2_entity,int(SH2_start), int(SH2_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|lig_'+str(res)+'|'+PDB_ID
+    
+                                                    for i1 in adjList.keys():
+                                                        from_index = (i1 - res_start) + 1
+    
+                                                        for j1 in adjList[i1].keys():
+                                                            new_to_index = j1 - SH2_start +1
+                                                            if j1 in range(SH2_start+Noffset1, SH2_stop+Coffset1+1):
+                                                                if i1 in range(res_start+Noffset2, res_end+Coffset2+1):
+                                                                  
+                                                                    file.write("pTyr-SH2"+"\t"+str(fasta_header)+"\t"+"-1"+"\t"+str(from_index)+"\t"+str(new_to_index)+"\t"+"pTyr-SH2"+"\n")
 
 
 def Intraprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, append_refSeq=True, mutation = False, DOMAIN = 'SH2', filename='SH2_NC'):
@@ -877,11 +993,12 @@ def main():
     parser.add_argument('--DOMAIN', type=str, default='SH2', help="Domain of interest -used for intraprotein extraction")
     parser.add_argument('--SH2_file', type=str, default='SH2_C', help="Output filename for SH2 features")
     parser.add_argument('--PTM_file', type=str, default='pTyr_C', help="Output filename for PTM features")
-    parser.add_argument('--intra_filename', type=str, default='SH2_intra', help="Output filename for intraprotein features")
-
+    parser.add_argument('--filename', type=str, default='SH2_intra', help="Output filename for intraprotein features")
+    parser.add_argument('--outputfile', type=str, default='SH2_inter', help="Output filename for interprotein features (prints contact pairs)")
+    
     # NEW argument to select which function(s) to run
-    parser.add_argument('--run_mode', type=str, default='both', choices=['interprotein', 'intraprotein', 'both'],
-                        help="Run mode: 'interprotein', 'intraprotein', or 'both' (default)")
+    parser.add_argument('--run_mode', type=str, default='all', choices=['interprotein', 'intraprotein', 'interprotein_ContactPairs', 'all'],
+                        help="Run mode: 'interprotein', 'intraprotein', 'interprotein_ContactPairs' or 'all' (default)")
 
 
     args = parser.parse_args()
@@ -893,7 +1010,7 @@ def main():
     else:
         raise ValueError("error_structures_list must be a .txt or .csv file")
 
-    if args.run_mode in ('interprotein', 'both'):
+    if args.run_mode in ('interprotein', 'all'):
         Interprotein_Features(
             pdb_ann_file=args.pdb_ann_file,
             ADJFILES_PATH=args.adjfiles_path,
@@ -911,7 +1028,7 @@ def main():
             PTM_file=args.PTM_file
         )
 
-    if args.run_mode in ('intraprotein', 'both'):
+    if args.run_mode in ('intraprotein', 'all'):
         Intraprotein_Features(
             pdb_ann_file=args.pdb_ann_file,
             ADJFILES_PATH=args.adjfiles_path,
@@ -924,9 +1041,25 @@ def main():
             append_refSeq=args.append_refSeq,
             mutation=args.mutation,
             DOMAIN=args.DOMAIN,
-            filename=args.intra_filename
+            filename=args.filename
         )
+
+    if args.run_mode in ('interprotein_ContactPairs', 'all'):
+        Interprotein_contactPairs(
+            pdb_ann_file=args.pdb_ann_file,
+            ADJFILES_PATH=args.adjfiles_path,
+            reference_fastafile=args.reference_fastafile,
+            error_structures_list=error_structures,
+            Noffset1=args.Noffset1,
+            Noffset2=args.Noffset2,
+            Coffset1=args.Coffset1,
+            Coffset2=args.Coffset2,
+            PTM=args.PTM,
+            mutation=args.mutation,
+            domain_of_interest=args.domain_of_interest,
+            outputfile=args.outputfile
+        )
+
 
 if __name__ == "__main__":
     main()
-
