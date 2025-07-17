@@ -122,8 +122,8 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
                                                              fasta_header, 'pTyr',PTM_file, append=True, 
                                                                 use_ref_seq_aligned=value)
 
-                                                    cm_aligned.print_fasta_feature_files(res_start, Noffset1,res_end, Coffset1, 
-                                                                                         SH2_start, Noffset2, SH2_stop,Coffset2,
+                                                    cm_aligned.print_fasta_feature_files(res_start, Noffset2,res_end, Coffset2, 
+                                                                                         SH2_start, Noffset1, SH2_stop,Coffset1,
                                                              fasta_header, 'SH2',SH2_file, append=True, 
                                                                 use_ref_seq_aligned=value)
 
@@ -142,7 +142,7 @@ def Interprotein_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, erro
 
 
                                                     contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
-                                                                 res_start, Noffset1, res_end, Coffset1, from_dict['cm_aligned'].return_min_residue(), SH2_start, Noffset2, SH2_stop, Coffset2, to_dict['cm_aligned'].return_min_residue(),
+                                                                 res_start, Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(), SH2_start, Noffset1, SH2_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(),
                                                                 fasta_header,'SH2', SH2_file, threshold=1, append=True )
 
 
