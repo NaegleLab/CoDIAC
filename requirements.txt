@@ -1,0 +1,10 @@
+pandas==2.1.*
+numpy==1.26.*
+scipy==1.11.*
+matplotlib==3.7.*
+seaborn==0.13.*
+statsmodels==0.14.*
+biopython==1.79.*
+requests==2.31.*
+cogent3==2023.7.18a1
+
