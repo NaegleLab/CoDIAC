@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 # Run setup
 setup(
     name="codiac",
-    version="0.1.0",
+    version="1.0.0",
     author="Naegle Lab",
     author_email="kmn4mj@virginia.edu",
     url="https://github.com/NaegleLab/CoDIAC",
