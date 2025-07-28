@@ -45,7 +45,7 @@ test:
 about:
   home: https://github.com/NaegleLab/CoDIAC
   summary: 'CoDIAC: Comprehensive Domain Interface Anlysis of Contacts'
-  license: CC BY-NC-SA 4.0
+  license: CC-BY-NC-SA-4.0
   license_file: LICENSE
 
 extra:
