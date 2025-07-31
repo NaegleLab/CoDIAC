@@ -6,7 +6,7 @@ from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 
 def main():
-    PDB_list = ['4JGH','3TL0','5EHP','6R5G']
+    PDB_list = ['5EHP','6R5G']
     adj_path = './Data/Adjacency_files'
     filepath = './Data/'
     pdb_ref_csv='temp_pdb_structure.csv'
