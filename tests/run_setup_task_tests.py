@@ -35,14 +35,25 @@ def main():
     sh2_fasta_dict = UniProt.print_domain_fasta_file(domain_test_file, Interpro_ID, fasta_test_file, N_OFFSET, C_OFFSET, APPEND=False)
     assert len(sh2_fasta_dict) == 3, "Expected 3 SH2 domains in the fasta file, got {}".format(len(sh2_fasta_dict))
 
+    # print("Testing fasta file creation with different offsets...")
+    # N_OFFSET = 5
+    # C_OFFSET = 5
+    # sh2_fasta_dict_n_term_offset = UniProt.print_domain_fasta_file(domain_test_file, Interpro_ID, fasta_test_file, N_OFFSET, C_OFFSET, APPEND=False)
+    # assert len(sh2_fasta_dict_n_term_offset) == 3, "Expected 3 SH2 domains in the fasta file, got {}".format(len(sh2_fasta_dict_n_term_offset))
+    # # check that the sequences are longer than the original ones
+    # for uniprot_id in sh2_fasta_dict_n_term_offset:
+    #     assert len(sh2_fasta_dict_n_term_offset[uniprot_id]) == len(sh2_fasta_dict[uniprot_id])+10, f"Expected sequence for {uniprot_id} to be longer with offsets, but it was not."
     print("Testing fasta file creation with different offsets...")
-    N_OFFSET = 5
+    N_OFFSET = 2
     C_OFFSET = 5
     sh2_fasta_dict_n_term_offset = UniProt.print_domain_fasta_file(domain_test_file, Interpro_ID, fasta_test_file, N_OFFSET, C_OFFSET, APPEND=False)
     assert len(sh2_fasta_dict_n_term_offset) == 3, "Expected 3 SH2 domains in the fasta file, got {}".format(len(sh2_fasta_dict_n_term_offset))
-    # check that the sequences are longer than the original ones
     for uniprot_id in sh2_fasta_dict_n_term_offset:
-        assert len(sh2_fasta_dict_n_term_offset[uniprot_id]) == len(sh2_fasta_dict[uniprot_id])+10, f"Expected sequence for {uniprot_id} to be longer with offsets, but it was not."
+        query_header = '|'.join(uniprot_id.split('|')[:-2])
+        for header in sh2_fasta_dict.keys():  
+            if query_header in header:
+                assert len(sh2_fasta_dict_n_term_offset[uniprot_id]) == len(sh2_fasta_dict[header])+7, f"Expected sequence for {uniprot_id} to be longer with offsets, but it was not."
+
     
 
 if __name__ == "__main__":
