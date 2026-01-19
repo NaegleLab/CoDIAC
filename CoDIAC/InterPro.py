@@ -194,6 +194,44 @@ def collect_data_isoform(feature):
     return dictionary
 
 
+def is_api_error_response(response):
+    """
+    Check if a response indicates an API error rather than a successful empty result.
+    
+    Parameters
+    ----------
+    response: dict
+        Response dictionary from fetch_InterPro_json
+        
+    Returns
+    -------
+    bool
+        True if response indicates an API error, False if it's a valid empty response
+    """
+    return isinstance(response, dict) and "_api_error" in response
+
+
+def check_interpro_api_status():
+    """
+    Check if the InterPro API is accessible and working.
+    
+    Returns
+    -------
+    bool
+        True if API is accessible, False otherwise
+    """
+    try:
+        response = requests.get("https://www.ebi.ac.uk/interpro/api/", timeout=10)
+        if response.status_code == 200:
+            return True
+        else:
+            print(f"InterPro API returned status code: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"InterPro API is not accessible: {e}")
+        return False
+
+
 def fetch_InterPro_json(protein_accessions):
     """
     Instantiates an api fetch to InterPro database for domains. Returns a dictionary of those repsonses with keys equal 
@@ -220,13 +258,38 @@ def fetch_InterPro_json(protein_accessions):
                 url = interpro_url + "/entry/interpro/protein/uniprot/" + protein_accession #+ "?extra_fields=" + ','.join(extra_fields)
             #print(url)  # Debugging line
             try:
-                response_dict[protein_accession] = session.get(url).json()
-            except Exception as e:
-                if session.get(url).status_code == 204:
+                response = session.get(url, timeout=30)
+                response.raise_for_status()  # Raises an HTTPError for bad responses
+                response_dict[protein_accession] = response.json()
+            except requests.exceptions.HTTPError as e:
+                if response.status_code == 204:
                     response_dict[protein_accession] = {}
                     print(f"An empty response was received for {protein_accession} resulting in empty domain architecture.")
+                elif response.status_code == 500:
+                    # Check if this is a general API outage
+                    if not check_interpro_api_status():
+                        print(f"InterPro API is currently down (server error 500). This appears to be a general API outage affecting all requests.")
+                        response_dict[protein_accession] = {"_api_error": "API_OUTAGE", "_error_code": 500}
+                    else:
+                        print(f"InterPro API server error (500) for {protein_accession}. This may be a protein-specific issue.")
+                        response_dict[protein_accession] = {"_api_error": "SERVER_ERROR", "_error_code": 500}
                 else:
-                    print(f"Error processing {protein_accession}: {e}")  # Debugging line
+                    print(f"HTTP error {response.status_code} processing {protein_accession}: {e}")
+                    response_dict[protein_accession] = {"_api_error": "HTTP_ERROR", "_error_code": response.status_code}
+            except requests.exceptions.RequestException as e:
+                # For network errors, check if it's a general API issue
+                if not check_interpro_api_status():
+                    print(f"Network error for {protein_accession}: {e}. InterPro API appears to be inaccessible.")
+                    response_dict[protein_accession] = {"_api_error": "NETWORK_ERROR_API_DOWN"}
+                else:
+                    print(f"Network error processing {protein_accession}: {e}")
+                    response_dict[protein_accession] = {"_api_error": "NETWORK_ERROR"}
+            except ValueError as e:  # JSON decode error
+                print(f"JSON decode error for {protein_accession}: {e}")
+                response_dict[protein_accession] = {"_api_error": "JSON_DECODE_ERROR"}
+            except Exception as e:
+                print(f"Unexpected error processing {protein_accession}: {e}")
+                response_dict[protein_accession] = {"_api_error": "UNEXPECTED_ERROR"}
             #print(url)  # Debugging line
                 
     return response_dict
@@ -256,13 +319,37 @@ def get_domains(protein_accessions):
     arch_dict: dict of strings
         outer key values are the individual protein accessions
         these point to a string that is the domain architecture, | separated list of domain names
+    error_dict: dict of strings or None
+        outer key values are the individual protein accessions
+        these point to error type strings for failed API calls (e.g., 'API_OUTAGE', 'SERVER_ERROR')
+        or None for successful fetches (even if no domains found)
     """
     resp_dict = fetch_InterPro_json(protein_accessions) #pack and unpack as a list for a single domain fetch
     domain_dict = {}
     domain_string_dict = {}
     arch_dict = {}
+    error_dict = {}
+    
+    # Track API errors for reporting
+    api_errors = {}
+    
     for protein_accession in resp_dict:
-        domain_dict[protein_accession], domain_string_dict[protein_accession], arch_dict[protein_accession] = get_domains_from_response(resp_dict[protein_accession])
+        if is_api_error_response(resp_dict[protein_accession]):
+            # Store error info and provide empty results
+            error_type = resp_dict[protein_accession]["_api_error"]
+            api_errors[protein_accession] = error_type
+            error_dict[protein_accession] = error_type
+            domain_dict[protein_accession] = []
+            domain_string_dict[protein_accession] = []
+            arch_dict[protein_accession] = ""
+        else:
+            # Successful fetch (may be empty)
+            error_dict[protein_accession] = None
+            domain_dict[protein_accession], domain_string_dict[protein_accession], arch_dict[protein_accession] = get_domains_from_response(resp_dict[protein_accession])
+    
+    # Print summary of any API errors
+    if api_errors:
+        print(f"API errors encountered for {len(api_errors)} proteins: {list(api_errors.keys())}")
     
     # now let's get the short names for all domains found in that list of proteins.
     interpro_domain_list = []
@@ -275,13 +362,17 @@ def get_domains(protein_accessions):
     #print(unique_domain_list)
     #print(interpro_name_dict)
     for protein_accession in domain_dict:
+        # Skip API error cases - they already have empty lists
+        if protein_accession in api_errors:
+            continue
+            
         # add the short names to the domain_dict, the domain_string_dict, and the arch_dict
         for i, domain in enumerate(domain_dict[protein_accession]):
             domain_dict[protein_accession][i]['short_name'] = interpro_name_dict[domain['accession']]
         domain_string_dict[protein_accession] = [f"{domain['short_name']}:{domain['accession']}:{domain['start']}:{domain['end']}" for domain in domain_dict[protein_accession]]
         arch_dict[protein_accession] = "|".join([domain['short_name'] for domain in domain_dict[protein_accession]])
 
-    return domain_dict, domain_string_dict, arch_dict
+    return domain_dict, domain_string_dict, arch_dict, error_dict
 
 def get_domains_from_response(resp):
     """
@@ -308,6 +399,11 @@ def get_domains_from_response(resp):
         domain architecture as a string, | separated list of domain names
     """
     if resp:
+        # Check if this is an error response
+        if isinstance(resp, dict) and "_api_error" in resp:
+            # Return empty results but preserve error information for debugging
+            return [], [], ''
+        
         #It's a canonical record
         if 'results' in resp:  # this is the isoform specific fetch
             entry_results = resp['results']
