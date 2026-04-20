@@ -295,7 +295,7 @@ def fetch_InterPro_json(protein_accessions):
     return response_dict
 
 
-def get_domains(protein_accessions):
+def get_domains(protein_accessions, return_error_dict=False):
     """
     Given a uniprot accession (protein_accession), return a list of domain dictionaries
     each domain dictionary has keys 'name', 'start', 'end', 'accession' (InterPro ID), 'num_boundaries' (number of this type found)
@@ -306,6 +306,9 @@ def get_domains(protein_accessions):
     ----------
     protein_accession: str
         Uniprot accession ID for a protein
+    return_error_dict: bool, optional
+        When True, also return an error dictionary keyed by accession for failed API calls.
+        Defaults to False to preserve the historical three-value return contract.
     Returns
     -------
     domain_dict: dict of list of dicts
@@ -319,10 +322,11 @@ def get_domains(protein_accessions):
     arch_dict: dict of strings
         outer key values are the individual protein accessions
         these point to a string that is the domain architecture, | separated list of domain names
-    error_dict: dict of strings or None
+    error_dict: dict of strings or None, optional
         outer key values are the individual protein accessions
         these point to error type strings for failed API calls (e.g., 'API_OUTAGE', 'SERVER_ERROR')
-        or None for successful fetches (even if no domains found)
+        or None for successful fetches (even if no domains found). Returned only when
+        return_error_dict is True.
     """
     resp_dict = fetch_InterPro_json(protein_accessions) #pack and unpack as a list for a single domain fetch
     domain_dict = {}
@@ -372,7 +376,10 @@ def get_domains(protein_accessions):
         domain_string_dict[protein_accession] = [f"{domain['short_name']}:{domain['accession']}:{domain['start']}:{domain['end']}" for domain in domain_dict[protein_accession]]
         arch_dict[protein_accession] = "|".join([domain['short_name'] for domain in domain_dict[protein_accession]])
 
-    return domain_dict, domain_string_dict, arch_dict, error_dict
+    if return_error_dict:
+        return domain_dict, domain_string_dict, arch_dict, error_dict
+
+    return domain_dict, domain_string_dict, arch_dict
 
 def get_domains_from_response(resp):
     """
