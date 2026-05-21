@@ -658,6 +658,71 @@ def reference_seq(gene_of_interest, domain_of_interest, uniprot_ref_file):
                         index +=1
     return(fasta_dict)
 
+def Inter_entity_Features(pdb_ann_file, ADJFILES_PATH, reference_fastafile, domain_of_interest, error_structures_list, Noffset1, Noffset2, Coffset1, Coffset2, ligand_filename='ligand_entity', domain_filename = 'domain_entity'):
+    ''' Extracting contacts between any two polymer entities within a PDB structure. This enables mapping interactions between between proteins, DNA, RNA present in the same structure where each of these are generally represented as different entities in PDB files. Here contacts are not limited to PTM-based entities but can be generalized to interactions between any polymer entities.'''
+    
+    main = pd.read_csv(pdb_ann_file)
+    error=['3CW1', '3PGW']
+    for name, group in main.groupby('PDB_ID'):
+        if name not in error_structures_list:
+            # adjfile = 'Adjacency_files/'+name+'/'+name+'_BF.txt' 
+            adjfile = ADJFILES_PATH + name+'/'+name+'_BF.txt' 
+            if os.path.exists(adjfile):
+                print(name)
+                entities = PDBHelper.PDBEntitiesClass(main, name)
+                entity_ids = PDBHelper.PDBEntitiesClass(main, name).__dict__['pdb_dict'].keys()
+                
+                domain_entities = []
+                for entity in entity_ids:
+                    domains = entities.pdb_dict[entity].domains
+                    for domain_num in domains:
+                        if domain_of_interest in domains[domain_num]:
+                            domain_entities.append(entity)    
+                lig_entities= list(set(entity_ids) - set(domain_entities))
+                # print('entites:',domain_entities, lig_entities)
+                
+                for dom_entity in (domain_entities):
+                    domain_boundaries = (entities.pdb_dict[dom_entity].domains)
+                    for index, entry in domain_boundaries.items():
+                        for key, value in entry.items():
+                            if key == domain_of_interest:
+                                dom_start, dom_stop, muts, gaps = entry[domain_of_interest]
+                                # print('dom db:',dom_start, dom_stop)
+                        
+                                for lig_entity in lig_entities:
+                                    dict_of_lig = contactMap.return_single_chain_dict(main, name, ADJFILES_PATH, lig_entity)
+                                    dict_of_SH2 = contactMap.return_single_chain_dict(main, name, ADJFILES_PATH, dom_entity)
+                                    print(dom_entity, lig_entity,'---')
+                                    
+                                    from_dict = dict_of_lig
+                                    to_dict = dict_of_SH2
+                                    adjList, arr = contactMap.return_interChain_adj(ADJFILES_PATH, from_dict, to_dict)
+                                    adjList_alt, arr_alt = contactMap.return_interChain_adj(ADJFILES_PATH, to_dict, from_dict)
+                                    
+                                    res_start, res_end = min(dict_of_lig['cm_aligned'].resNums), max(dict_of_lig['cm_aligned'].resNums)
+                                    print('lig db:', res_start, res_end,'---dom')
+                                    # print('lig_entity:', lig_entity, adjList)
+                                    # print('dom_ent:',dom_entity, adjList_alt,'\n')
+                                
+                                    fasta_header = makeHeader(name, dom_entity,int(dom_start), int(dom_stop),domain_of_interest,pdb_ann_file, reference_fastafile)+'|ligent_'+str(lig_entity)+'|doment_'+str(dom_entity)+'|'+name
+                                
+                                    if hasattr(to_dict['cm_aligned'], 'refseq'):
+                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].refseq, 
+                                            dom_start, Noffset1, dom_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(), 
+                                            res_start, Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(),
+                                            fasta_header,'lig', ligand_filename, threshold=1, append=True)
+                                    else:
+                                        contactMap.print_fasta_feature_files(arr_alt, to_dict['cm_aligned'].structSeq, 
+                                            dom_start,  Noffset1, dom_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(), 
+                                            res_start,  Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(),
+                                            fasta_header,'lig', ligand_filename, threshold=1, append=True)
+                                    
+                        
+                                    contactMap.print_fasta_feature_files(arr, from_dict['cm_aligned'].structSeq, 
+                                                 res_start, Noffset2, res_end, Coffset2, from_dict['cm_aligned'].return_min_residue(), dom_start, Noffset1, dom_stop, Coffset1, to_dict['cm_aligned'].return_min_residue(),
+                                                fasta_header,domain_of_interest, domain_filename, threshold=1, append=True )
+
+        
 def assign_ID_AA(sequence_of_domain):
     '''assigns a position value to each residue of the sequence provided as an input. The aligned seqeunces that contain '-' characters will be skipped while reporting the updated residue positions '''
     sequence_with_ID=[]
@@ -995,9 +1060,12 @@ def main():
     parser.add_argument('--PTM_file', type=str, default='pTyr_C', help="Output filename for PTM features")
     parser.add_argument('--filename', type=str, default='SH2_intra', help="Output filename for intraprotein features")
     parser.add_argument('--outputfile', type=str, default='SH2_inter', help="Output filename for interprotein features (prints contact pairs)")
+    parser.add_argument('--ligand_filename', type=str, default='ligand_file', help="Output filename for ligand entities")
+    parser.add_argument('--domain_filename', type=str, default='domain_file', help="Output filename for domain entity")
+    
     
     # NEW argument to select which function(s) to run
-    parser.add_argument('--run_mode', type=str, default='all', choices=['interprotein', 'intraprotein', 'interprotein_ContactPairs', 'all'],
+    parser.add_argument('--run_mode', type=str, default='all', choices=['interprotein', 'intraprotein', 'interprotein_ContactPairs','inter_entity', 'all'],
                         help="Run mode: 'interprotein', 'intraprotein', 'interprotein_ContactPairs' or 'all' (default)")
 
 
@@ -1060,6 +1128,20 @@ def main():
             outputfile=args.outputfile
         )
 
+    if args.run_mode in ('inter_entity', 'all'):
+        Inter_entity_Features(
+            pdb_ann_file=args.pdb_ann_file, 
+            ADJFILES_PATH=args.adjfiles_path,
+            reference_fastafile=args.reference_fastafile,
+            domain_of_interest=args.domain_of_interest,
+            error_structures_list=error_structures, 
+            Noffset1=args.Noffset1,
+            Noffset2=args.Noffset2,
+            Coffset1=args.Coffset1,
+            Coffset2=args.Coffset2,
+            ligand_filename=args.ligand_filename, 
+            domain_filename=args.domain_filename
+        )
 
 if __name__ == "__main__":
     main()
