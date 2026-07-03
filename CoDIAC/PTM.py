@@ -1,12 +1,14 @@
 
-from CoDIAC import IntegrateStructure_Reference, UniProt, proteomeScoutAPI, PhosphoSitePlus_Tools, config
+from CoDIAC import IntegrateStructure_Reference, UniProt, PhosphoSitePlus_Tools, config
+from proteomeScoutAPI import ProteomeScoutAPI
 import pandas as pd
 import os 
 
-package_directory = os.path.dirname(os.path.abspath(__file__))
-config.install_resource_files(package_directory)
-PROTEOMESCOUT_DATA = package_directory + '/data/proteomescout_everything_20190701/data.tsv'
-PTM_API = proteomeScoutAPI.ProteomeScoutAPI(PROTEOMESCOUT_DATA)
+#proteomeScoutAPI v3 autoinstalls latest data.
+#package_directory = os.path.dirname(os.path.abspath(__file__))
+#config.install_resource_files(package_directory)
+#PROTEOMESCOUT_DATA = package_directory + '/data/proteomescout_everything_20190701/data.tsv'
+PTM_API = ProteomeScoutAPI()
 
 
 def write_PTM_features(Interpro_ID, uniprot_ref_file, feature_dir, mapping_file ='', n_term_offset=0, c_term_offset=0, gap_threshold=0.7, num_PTM_threshold = 5, PHOSPHOSITE_PLUS=False):

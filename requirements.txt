@@ -7,4 +7,5 @@ statsmodels==0.14.*
 biopython==1.79.*
 requests==2.31.*
 cogent3==2023.7.18a1
+proteomeScoutAPI==3.1.*
 
